@@ -1,0 +1,786 @@
+@font-face {
+  font-family: "Lemon Milk";
+  src: url("/fonts/LemonMilk-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Lemon Milk";
+  src: url("/fonts/LemonMilk-Medium.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Lemon Milk";
+  src: url("/fonts/LemonMilk-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #FF4D2D;
+  --color-surface-card: #FFFFFF;
+  --color-surface-bg: #F7F4EF;
+  --color-border-base: #E8E2D8;
+  
+  /* Shared Colors */
+  --color-success: #10B981;
+  --color-danger: #EF4444;
+  --color-news-accent: #FF4D2D;
+  --color-premium-accent: #C89B3C;
+  --color-business-accent: #1D4ED8;
+
+  --font-inter: "Inter", "SF Pro Display", -apple-system, sans-serif;
+  --font-manrope: "Manrope", "SF Pro Display", -apple-system, sans-serif;
+  --font-lemon: "Lemon Milk", "Montserrat", sans-serif;
+
+  --animate-marquee: marquee 30s linear infinite;
+  --animate-slow-glow: slow-glow 8s ease-in-out infinite;
+
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  @keyframes slow-glow {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.2); }
+  }
+}
+
+@layer base {
+  :root {
+    /* Dark Mode Palette (Default) */
+    --background-deep: #050505;
+    --background-mid: #080808;
+    --background-light: #0D0D0D;
+    --text-primary: #FFFFFF;
+    --text-secondary: #B8B8B8;
+    --text-muted: #666666;
+    --input-bg: rgba(255, 255, 255, 0.05);
+    --input-text: #FFFFFF;
+    --input-placeholder: #B8B8B8;
+    --input-border: rgba(255, 255, 255, 0.1);
+    --glass: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --border-color: rgba(255, 255, 255, 0.08);
+    --card-bg: rgba(255, 255, 255, 0.03);
+    --card-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    --surface-hover: rgba(255, 255, 255, 0.05);
+    
+    /* Glow System - Dark */
+    --glow-1: rgba(255, 69, 58, 0.1);
+    --glow-2: rgba(255, 255, 255, 0.05);
+    --glow-3: rgba(255, 69, 58, 0.02);
+    
+    color-scheme: dark;
+  }
+
+  :root.light {
+    /* Premium Professional Light Theme */
+    --background-deep: #F8F9FA;
+    --background-mid: #F3F4F6;
+    --background-light: #E5E7EB;
+    --text-primary: #111111;
+    --text-secondary: #555555;
+    --text-muted: #666666;
+    --input-bg: #FFFFFF;
+    --input-text: #111111;
+    --input-placeholder: #777777;
+    --input-border: #E5E7EB;
+    --glass: #FFFFFF;
+    --glass-border: #E5E7EB;
+    --border-color: #E5E7EB;
+    --card-bg: #FFFFFF;
+    --card-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    --surface-hover: #F9F8F6;
+    --breaking-bg: #FFF7F3;
+    
+    /* Subtle Professional Accents */
+    --glow-1: rgba(255, 77, 45, 0.05);
+    --glow-2: rgba(0, 0, 0, 0.02);
+    --glow-3: rgba(255, 77, 45, 0.02);
+
+    color-scheme: light;
+  }
+
+  body {
+    background-color: var(--background-deep);
+    color: var(--text-primary);
+    font-family: var(--font-manrope);
+    overflow-x: hidden;
+    transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Apply Lemon Milk to public headings (excludes Portals and Article Body Content) */
+  h1:not(.portal-container *, .article-content *),
+  h2:not(.portal-container *, .article-content *),
+  h3:not(.portal-container *, .article-content *),
+  h4:not(.portal-container *, .article-content *),
+  h5:not(.portal-container *, .article-content *),
+  h6:not(.portal-container *, .article-content *) {
+    font-family: var(--font-lemon) !important;
+    font-style: normal !important;
+    font-weight: 800 !important;
+    color: var(--text-primary);
+  }
+
+  /* Portal headings keep using default Montserrat */
+  .portal-container h1,
+  .portal-container h2,
+  .portal-container h3,
+  .portal-container h4,
+  .portal-container h5,
+  .portal-container h6 {
+    font-family: "Montserrat", sans-serif !important;
+  }
+
+  /* Article body headings keep using default Montserrat */
+  .article-content h1,
+  .article-content h2,
+  .article-content h3,
+  .article-content h4,
+  .article-content h5,
+  .article-content h6 {
+    font-family: "Montserrat", sans-serif !important;
+  }
+
+  p {
+    color: var(--text-secondary);
+  }
+
+  .light p {
+    color: var(--text-secondary);
+  }
+
+  span, div, input, textarea, button {
+    font-family: var(--font-manrope);
+  }
+
+  * {
+    border-color: var(--glass-border);
+  }
+}
+
+@layer utilities {
+  .font-lemon-milk,
+  .font-lemon-milk * {
+    font-family: "Lemon Milk", "Montserrat", sans-serif !important;
+  }
+
+  .glass-effect {
+    backdrop-filter: blur(25px);
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--card-shadow);
+  }
+
+  .light .glass-effect {
+    backdrop-filter: none;
+    background: #FFFFFF;
+  }
+
+  .liquid-glass {
+    backdrop-filter: blur(20px);
+    background: var(--card-bg);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--card-shadow);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.4s cubic-bezier(0.2, 0, 0.2, 1), box-shadow 0.4s cubic-bezier(0.2, 0, 0.2, 1), background 0.4s ease, border-color 0.4s ease;
+  }
+
+  .light .liquid-glass {
+    backdrop-filter: none;
+    background: #FFFFFF;
+    border: 1px solid var(--glass-border);
+  }
+
+  .liquid-glass::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(
+      circle at center,
+      var(--glow-3) 0%,
+      transparent 70%
+    );
+    pointer-events: none;
+    transition: transform 0.5s ease;
+  }
+
+  .light .liquid-glass::before {
+    opacity: 0.3;
+  }
+
+  .surface-hover {
+    background-color: var(--surface-hover);
+  }
+
+  .text-glow {
+    text-shadow: 0 0 10px rgba(255, 69, 58, 0.3);
+  }
+
+  .light .text-glow {
+    text-shadow: none;
+  }
+
+  .card-glow {
+    box-shadow: 0 0 20px rgba(255, 59, 48, 0.05);
+    transition: box-shadow 0.3s ease;
+  }
+
+  .light .card-glow {
+    box-shadow: 0 8px 20px rgba(255, 77, 45, 0.05);
+  }
+
+  .card-glow:hover {
+    box-shadow: 0 0 30px rgba(255, 59, 48, 0.12);
+  }
+
+  .light .card-glow:hover {
+    box-shadow: 0 12px 30px rgba(255, 77, 45, 0.1);
+  }
+
+  .premium-shadow {
+    box-shadow: var(--card-shadow);
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background-deep);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--glass-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(128, 128, 128, 0.3);
+}
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
+}
+
+/* Premium Tiptap Editor Styling */
+.ProseMirror {
+  font-family: var(--font-manrope);
+  color: var(--text-primary);
+  line-height: 1.8;
+  font-size: 18px;
+}
+
+.ProseMirror h1 {
+  font-family: var(--font-lemon) !important;
+  font-size: 48px;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+.ProseMirror h2 {
+  font-family: var(--font-lemon) !important;
+  font-size: 32px;
+  font-weight: 800;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+.ProseMirror h3 {
+  font-family: var(--font-lemon) !important;
+  font-size: 24px;
+  font-weight: 800;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+.ProseMirror p {
+  margin-bottom: 1.2em;
+  color: var(--text-secondary);
+}
+
+.ProseMirror blockquote {
+  border-left: 4px solid var(--color-primary);
+  padding-left: 1.5em;
+  margin-left: 0;
+  margin-right: 0;
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+.ProseMirror img {
+  border-radius: 12px;
+  max-width: 100%;
+  height: auto;
+  margin: 2em 0;
+  display: block;
+}
+
+.ProseMirror ul {
+  list-style-type: disc;
+  padding-left: 1.5em;
+  margin-bottom: 1.2em;
+}
+
+.ProseMirror ol {
+  list-style-type: decimal;
+  padding-left: 1.5em;
+  margin-bottom: 1.2em;
+}
+
+.ProseMirror li {
+  margin-bottom: 0.5em;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: var(--input-placeholder);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   PREMIUM LIGHT THEME VISIBILITY FIXES & REFINED CONTRAST OVERRIDES
+   ========================================================================== */
+
+/* 1. Category Badges - Dark Mode (Default) & Light Mode */
+.badge-national {
+  background-color: rgba(255, 59, 48, 0.1) !important;
+  border-color: rgba(255, 59, 48, 0.2) !important;
+  color: #FF453A !important;
+}
+.badge-global {
+  background-color: rgba(10, 132, 255, 0.1) !important;
+  border-color: rgba(10, 132, 255, 0.2) !important;
+  color: #0A84FF !important;
+}
+.badge-politics {
+  background-color: rgba(191, 90, 242, 0.1) !important;
+  border-color: rgba(191, 90, 242, 0.2) !important;
+  color: #BF5AF2 !important;
+}
+.badge-business {
+  background-color: rgba(10, 132, 255, 0.1) !important;
+  border-color: rgba(10, 132, 255, 0.2) !important;
+  color: #0A84FF !important;
+}
+.badge-sports {
+  background-color: rgba(48, 209, 88, 0.1) !important;
+  border-color: rgba(48, 209, 88, 0.2) !important;
+  color: #30D158 !important;
+}
+.badge-entertainment {
+  background-color: rgba(255, 55, 159, 0.1) !important;
+  border-color: rgba(255, 55, 159, 0.2) !important;
+  color: #FF379F !important;
+}
+.badge-automobile {
+  background-color: rgba(255, 159, 10, 0.1) !important;
+  border-color: rgba(255, 159, 10, 0.2) !important;
+  color: #FF9F0A !important;
+}
+.badge-lifestyle {
+  background-color: rgba(191, 90, 242, 0.1) !important;
+  border-color: rgba(191, 90, 242, 0.2) !important;
+  color: #BF5AF2 !important;
+}
+.badge-movies {
+  background-color: rgba(255, 55, 95, 0.1) !important;
+  border-color: rgba(255, 55, 95, 0.2) !important;
+  color: #FF375F !important;
+}
+.badge-startups {
+  background-color: rgba(94, 92, 230, 0.1) !important;
+  border-color: rgba(94, 92, 230, 0.2) !important;
+  color: #5E5CE6 !important;
+}
+.badge-studies {
+  background-color: rgba(255, 214, 10, 0.1) !important;
+  border-color: rgba(255, 214, 10, 0.2) !important;
+  color: #FFD60A !important;
+}
+.badge-case-studies {
+  background-color: rgba(48, 209, 88, 0.1) !important;
+  border-color: rgba(48, 209, 88, 0.2) !important;
+  color: #30D158 !important;
+}
+.badge-technology {
+  background-color: rgba(255, 59, 48, 0.1) !important;
+  border-color: rgba(255, 59, 48, 0.2) !important;
+  color: #FF453A !important;
+}
+.badge-default {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: var(--text-secondary) !important;
+}
+
+/* Light Theme Badges overrides */
+.light .badge-national {
+  background-color: #FFF0F0 !important;
+  border-color: #FFC1C1 !important;
+  color: #C91D13 !important;
+}
+.light .badge-global {
+  background-color: #F0F6FF !important;
+  border-color: #B3D4FF !important;
+  color: #0050B3 !important;
+}
+.light .badge-politics {
+  background-color: #FAF0FF !important;
+  border-color: #E8C1FF !important;
+  color: #5B1496 !important;
+}
+.light .badge-business {
+  background-color: #EBF3FF !important;
+  border-color: #BACFFF !important;
+  color: #0F3B9E !important;
+}
+.light .badge-sports {
+  background-color: #E6FFE6 !important;
+  border-color: #B3FFA6 !important;
+  color: #006C35 !important;
+}
+.light .badge-entertainment {
+  background-color: #FFF0F6 !important;
+  border-color: #FFC1E3 !important;
+  color: #A6135C !important;
+}
+.light .badge-automobile {
+  background-color: #FFF8EB !important;
+  border-color: #FFE0B3 !important;
+  color: #A65D00 !important;
+}
+.light .badge-lifestyle {
+  background-color: #FAF0FF !important;
+  border-color: #ECC8FF !important;
+  color: #781DAB !important;
+}
+.light .badge-movies {
+  background-color: #FFF0F2 !important;
+  border-color: #FFC1CB !important;
+  color: #BD1331 !important;
+}
+.light .badge-startups {
+  background-color: #F0F0FF !important;
+  border-color: #C6C6FF !important;
+  color: #3835B3 !important;
+}
+.light .badge-studies {
+  background-color: #FFFDF0 !important;
+  border-color: #FFEAA6 !important;
+  color: #7E5B00 !important;
+}
+.light .badge-case-studies {
+  background-color: #EDFAF1 !important;
+  border-color: #C1EFCB !important;
+  color: #1E6B2C !important;
+}
+.light .badge-technology {
+  background-color: #FFF1F0 !important;
+  border-color: #FFCCC7 !important;
+  color: #AD1E13 !important;
+}
+.light .badge-default {
+  background-color: var(--background-mid) !important;
+  border-color: var(--glass-border) !important;
+  color: var(--text-primary) !important;
+}
+
+/* 2. Global text color overrides for headings and hardcoded text-white */
+.light h1, 
+.light h2, 
+.light h3, 
+.light h4, 
+.light h5, 
+.light h6 {
+  color: var(--text-primary) !important;
+}
+
+.light .text-white,
+.light [class*="text-white/"] {
+  color: var(--text-primary) !important;
+}
+
+.light [class*="hover:text-white"]:hover {
+  color: var(--text-primary) !important;
+}
+
+/* 3. Re-assert white text for elements inside solid colored backgrounds & hover states */
+.light .bg-primary,
+.light .bg-primary *,
+.light .bg-red-500,
+.light .bg-red-500 *,
+.light .bg-purple-600,
+.light .bg-purple-600 *,
+.light .bg-purple-500,
+.light .bg-purple-500 *,
+.light .bg-green-500,
+.light .bg-green-500 *,
+.light .bg-orange-500,
+.light .bg-orange-500 *,
+.light .bg-blue-500,
+.light .bg-blue-500 *,
+.light button[class*="bg-primary"],
+.light button[class*="bg-red-"],
+.light button[class*="bg-purple-"],
+.light button[class*="bg-green-"],
+.light button[class*="bg-orange-"],
+.light button[class*="bg-blue-"],
+.light .bg-black *[class*="text-white"],
+.light .bg-black\/60 *[class*="text-white"],
+.light .bg-black\/40 *[class*="text-white"],
+.light .absolute.bg-black\/60 *[class*="text-white"],
+.light .absolute.bg-black\/40 *[class*="text-white"] {
+  color: #FFFFFF !important;
+}
+
+/* 4. Global inputs, textareas, and select elements */
+.light input,
+.light textarea,
+.light select,
+.light .ProseMirror {
+  background-color: var(--input-bg) !important;
+  color: var(--input-text) !important;
+  border-color: var(--input-border) !important;
+}
+
+.light input::placeholder,
+.light textarea::placeholder,
+.light .ProseMirror p.is-editor-empty:first-child::before {
+  color: var(--input-placeholder) !important;
+}
+
+/* 5. Background and card-level visibility overrides */
+.light .bg-white\/2,
+.light .bg-white\/5,
+.light .bg-white\/10 {
+  background-color: var(--surface-hover) !important;
+}
+
+/* 6. Border and divider visibility overrides */
+.light .border-white\/5,
+.light .border-white\/10,
+.light .border-white\/20,
+.light .divide-white\/5,
+.light .divide-white\/10,
+.light .divide-y.divide-white\/5 > *,
+.light .divide-y.divide-white\/10 > *,
+.light .border-b-2.border-\[var\(--input-border\)\] {
+  border-color: var(--glass-border) !important;
+}
+
+/* 7. Opacity boost for secondary texts, metadata, labels, and icons */
+.light .opacity-30,
+.light .opacity-40,
+.light .opacity-50,
+.light .opacity-60,
+.light .opacity-70 {
+  opacity: 0.9 !important;
+}
+
+.light .opacity-10,
+.light .opacity-20 {
+  opacity: 0.6 !important;
+}
+
+/* 8. Hover state enhancement for visibility */
+.light [class*="hover:bg-white"]:hover {
+  background-color: var(--background-light) !important;
+}
+
+/* 9. Fix table headers and status labels contrast */
+.light th {
+  color: var(--text-primary) !important;
+  font-weight: 900 !important;
+}
+
+.light .bg-white\/2.text-\[var\(--text-secondary\)\] {
+  background-color: var(--background-mid) !important;
+  color: var(--text-primary) !important;
+}
+
+/* 10. Theme-aware colors and contrast overrides for action buttons & icons */
+.light .text-red-500 {
+  color: #C91D13 !important;
+}
+.light .bg-red-500\/10 {
+  background-color: #FFF0F0 !important;
+  border-color: #FFC1C1 !important;
+}
+.light .hover\:bg-red-500:hover,
+.light .hover\:bg-red-600:hover {
+  background-color: #C91D13 !important;
+  color: #FFFFFF !important;
+}
+.light .hover\:bg-red-500:hover *,
+.light .hover\:bg-red-600:hover * {
+  color: #FFFFFF !important;
+}
+
+.light .text-blue-500 {
+  color: #0050B3 !important;
+}
+.light .bg-blue-500\/10 {
+  background-color: #F0F6FF !important;
+  border-color: #B3D4FF !important;
+}
+.light .hover\:bg-blue-500:hover,
+.light .hover\:bg-blue-600:hover,
+.light .hover\:bg-blue-700:hover {
+  background-color: #0050B3 !important;
+  color: #FFFFFF !important;
+}
+.light .hover\:bg-blue-500:hover *,
+.light .hover\:bg-blue-600:hover *,
+.light .hover\:bg-blue-700:hover * {
+  color: #FFFFFF !important;
+}
+
+.light .text-orange-500 {
+  color: #A65D00 !important;
+}
+.light .bg-orange-500\/10,
+.light .bg-orange-600\/10 {
+  background-color: #FFF8EB !important;
+  border-color: #FFE0B3 !important;
+}
+.light .hover\:bg-orange-500:hover,
+.light .hover\:bg-orange-600:hover {
+  background-color: #A65D00 !important;
+  color: #FFFFFF !important;
+}
+.light .hover\:bg-orange-500:hover *,
+.light .hover\:bg-orange-600:hover * {
+  color: #FFFFFF !important;
+}
+
+.light .text-success,
+.light .text-green-500 {
+  color: #006C35 !important;
+}
+.light .bg-success\/10,
+.light .bg-green-500\/10 {
+  background-color: #E6FFE6 !important;
+  border-color: #B3FFA6 !important;
+}
+.light .hover\:bg-success:hover,
+.light .hover\:bg-green-500:hover {
+  background-color: #006C35 !important;
+  color: #FFFFFF !important;
+}
+.light .hover\:bg-success:hover *,
+.light .hover\:bg-green-500:hover * {
+  color: #FFFFFF !important;
+}
+
+.light .text-purple-500 {
+  color: #781DAB !important;
+}
+.light .bg-purple-500\/10 {
+  background-color: #FAF0FF !important;
+  border-color: #ECC8FF !important;
+}
+.light .hover\:bg-purple-600:hover,
+.light .hover\:bg-purple-700:hover {
+  background-color: #781DAB !important;
+  color: #FFFFFF !important;
+}
+.light .hover\:bg-purple-600:hover *,
+.light .hover\:bg-purple-700:hover * {
+  color: #FFFFFF !important;
+}
+
+.light .text-cyan-500 {
+  color: #00688B !important;
+}
+.light .bg-cyan-500\/10 {
+  background-color: #E6F2F7 !important;
+  border-color: #B3D8E5 !important;
+}
+
+.light .text-gray-300,
+.light .text-slate-300,
+.light .text-gray-400,
+.light .text-slate-400,
+.light .text-zinc-300,
+.light .text-zinc-400 {
+  color: var(--text-secondary) !important;
+}
+
+/* Ensure icons inherit proper contrast colors */
+.light svg {
+  stroke: currentColor !important;
+}
+
+/* Portal theme overrides to fix contrast failures in Light Mode */
+.light .portal-container .text-white,
+.light .portal-container .text-white\/90,
+.light .portal-container .text-white\/80 {
+  color: var(--text-primary) !important;
+}
+
+.light .portal-container .text-white\/70,
+.light .portal-container .text-white\/60,
+.light .portal-container .text-white\/50,
+.light .portal-container .text-white\/40,
+.light .portal-container .text-white\/30 {
+  color: var(--text-secondary) !important;
+}
+
+.light .portal-container .bg-white\/5,
+.light .portal-container .bg-white\/10,
+.light .portal-container .bg-white\/15,
+.light .portal-container .bg-white\/20 {
+  background-color: var(--surface-hover) !important;
+}
+
+.light .portal-container .border-white\/5,
+.light .portal-container .border-white\/10,
+.light .portal-container .border-white\/15,
+.light .portal-container .border-white\/20,
+.light .portal-container .border-white\/30 {
+  border-color: var(--glass-border) !important;
+}
+
+/* Disabled button rules - dark and light mode for Portal */
+.portal-container button:disabled {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: rgba(255, 255, 255, 0.65) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  opacity: 1 !important;
+  cursor: not-allowed !important;
+}
+
+.light .portal-container button:disabled {
+  background-color: rgba(0, 0, 0, 0.08) !important;
+  color: rgba(0, 0, 0, 0.65) !important;
+  border-color: rgba(0, 0, 0, 0.15) !important;
+  opacity: 1 !important;
+}
+

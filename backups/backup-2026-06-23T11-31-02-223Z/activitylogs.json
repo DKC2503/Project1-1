@@ -1,0 +1,598 @@
+[
+  {
+    "_id": "6a3185c1929c6c3851254291",
+    "userId": "6a3184db929c6c3851254287",
+    "userName": "Karthik",
+    "action": "CREDIT_AWARD",
+    "details": {
+      "ruleKey": "MANUAL_ADJUSTMENT",
+      "credits": 10,
+      "description": "Admin Recognition",
+      "source": "ADMIN"
+    },
+    "createdAt": "2026-06-16T17:20:01.397Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a318744929c6c3851254298",
+    "userId": "6a3186f5929c6c3851254296",
+    "userName": "HARSHA G",
+    "action": "CREDIT_AWARD",
+    "details": {
+      "ruleKey": "MANUAL_ADJUSTMENT",
+      "credits": 10,
+      "description": "Admin Recognition",
+      "source": "ADMIN"
+    },
+    "createdAt": "2026-06-16T17:26:28.366Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a318898929c6c38512542a0",
+    "userId": "6a3187bf929c6c3851254299",
+    "userName": "AUTHOR 1",
+    "action": "CREDIT_AWARD",
+    "details": {
+      "ruleKey": "AUTHOR_ARTICLE_PUBLISH",
+      "credits": 10,
+      "referenceId": "6a318848929c6c385125429c",
+      "description": "Published article: ARTICLE 2_sample"
+    },
+    "createdAt": "2026-06-16T17:32:08.780Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a3188b6929c6c38512542a1",
+    "userId": "6a3184db929c6c3851254287",
+    "userName": "Karthik",
+    "action": "DOCX_EXPORT",
+    "details": {
+      "articleId": "6a318848929c6c385125429c",
+      "title": "ARTICLE 2_sample"
+    },
+    "createdAt": "2026-06-16T17:32:38.949Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a3188b7929c6c38512542a2",
+    "userId": "6a3184db929c6c3851254287",
+    "userName": "Karthik",
+    "action": "DOCX_EXPORT",
+    "details": {
+      "articleId": "6a318848929c6c385125429c",
+      "title": "ARTICLE 2_sample"
+    },
+    "createdAt": "2026-06-16T17:32:39.425Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a3188f8929c6c38512542a4",
+    "userId": "6a3187bf929c6c3851254299",
+    "userName": "AUTHOR 1",
+    "action": "CREDIT_AWARD",
+    "details": {
+      "ruleKey": "MANUAL_ADJUSTMENT",
+      "credits": 10,
+      "description": "Admin Recognition",
+      "source": "ADMIN"
+    },
+    "createdAt": "2026-06-16T17:33:44.568Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a3189d6929c6c38512542b4",
+    "userId": "6a3187bf929c6c3851254299",
+    "userName": "AUTHOR 1",
+    "action": "CREDIT_AWARD",
+    "details": {
+      "ruleKey": "AUTHOR_ARTICLE_PUBLISH",
+      "credits": 20,
+      "referenceId": "6a318990929c6c38512542b0",
+      "description": "Published article: SAMPLE ARTICLE 2"
+    },
+    "createdAt": "2026-06-16T17:37:26.340Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a318a6f929c6c38512542ba",
+    "userId": "6a3184db929c6c3851254287",
+    "action": "EXTERNAL_APIS_DISABLED",
+    "details": {
+      "setting": "externalApisEnabled",
+      "previousValue": true,
+      "newValue": false
+    },
+    "createdAt": "2026-06-16T17:39:59.646Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a318a72929c6c38512542c0",
+    "userId": "6a3184db929c6c3851254287",
+    "action": "CREDIT_SYSTEM_DISABLED",
+    "details": {
+      "setting": "creditSystemEnabled",
+      "previousValue": true,
+      "newValue": false
+    },
+    "createdAt": "2026-06-16T17:40:02.968Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a318a80929c6c38512542c6",
+    "userId": "6a3184db929c6c3851254287",
+    "action": "CREDIT_SYSTEM_ENABLED",
+    "details": {
+      "setting": "creditSystemEnabled",
+      "previousValue": false,
+      "newValue": true
+    },
+    "createdAt": "2026-06-16T17:40:16.962Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a318a86929c6c38512542cc",
+    "userId": "6a3184db929c6c3851254287",
+    "action": "EXTERNAL_APIS_ENABLED",
+    "details": {
+      "setting": "externalApisEnabled",
+      "previousValue": false,
+      "newValue": true
+    },
+    "createdAt": "2026-06-16T17:40:22.660Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a318a87929c6c38512542d2",
+    "userId": "6a3184db929c6c3851254287",
+    "action": "EXTERNAL_APIS_DISABLED",
+    "details": {
+      "setting": "externalApisEnabled",
+      "previousValue": true,
+      "newValue": false
+    },
+    "createdAt": "2026-06-16T17:40:23.344Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a32f6dcd17ed9ca5ebf9f37",
+    "userId": "6a3187bf929c6c3851254299",
+    "userName": "AUTHOR 1",
+    "action": "CREDIT_AWARD",
+    "details": {
+      "ruleKey": "MANUAL_ADJUSTMENT",
+      "credits": 10,
+      "description": "Admin Recognition",
+      "source": "ADMIN"
+    },
+    "createdAt": "2026-06-17T19:34:52.087Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a32f6dfd17ed9ca5ebf9f39",
+    "userId": "6a3187bf929c6c3851254299",
+    "userName": "AUTHOR 1",
+    "action": "CREDIT_AWARD",
+    "details": {
+      "ruleKey": "MANUAL_ADJUSTMENT",
+      "credits": 10,
+      "description": "Admin Recognition",
+      "source": "ADMIN"
+    },
+    "createdAt": "2026-06-17T19:34:55.833Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a3307c80340788817906d14",
+    "userId": "6a3184db929c6c3851254287",
+    "userName": "Karthik",
+    "action": "CREDIT_AWARD",
+    "details": {
+      "ruleKey": "ADMIN_ARTICLE_PUBLISH",
+      "credits": 10,
+      "referenceId": "6a32ee3ea540cf2819f52469",
+      "description": "Admin published article: SAMPLE ARTICLE 3"
+    },
+    "createdAt": "2026-06-17T20:47:04.831Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a3307e30340788817906d1a",
+    "userId": "6a3184db929c6c3851254287",
+    "action": "EXTERNAL_APIS_ENABLED",
+    "details": {
+      "setting": "externalApisEnabled",
+      "previousValue": false,
+      "newValue": true
+    },
+    "createdAt": "2026-06-17T20:47:31.349Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a3307e40340788817906d20",
+    "userId": "6a3184db929c6c3851254287",
+    "action": "EXTERNAL_APIS_DISABLED",
+    "details": {
+      "setting": "externalApisEnabled",
+      "previousValue": true,
+      "newValue": false
+    },
+    "createdAt": "2026-06-17T20:47:32.441Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a330c19e59575dcf50ac809",
+    "userId": "6a3187bf929c6c3851254299",
+    "userName": "AUTHOR 1",
+    "action": "CREDIT_AWARD",
+    "details": {
+      "ruleKey": "MANUAL_ADJUSTMENT",
+      "credits": 10,
+      "description": "Admin Recognition",
+      "source": "ADMIN"
+    },
+    "createdAt": "2026-06-17T21:05:29.065Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a330c19e59575dcf50ac80b",
+    "userId": "6a3187bf929c6c3851254299",
+    "userName": "AUTHOR 1",
+    "action": "CREDIT_DEDUCTION",
+    "details": {
+      "ruleKey": "MANUAL_ADJUSTMENT",
+      "credits": 0,
+      "description": "Penalty for Infraction",
+      "source": "ADMIN"
+    },
+    "createdAt": "2026-06-17T21:05:29.446Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a330c1ce59575dcf50ac80d",
+    "userId": "6a3187bf929c6c3851254299",
+    "userName": "AUTHOR 1",
+    "action": "CREDIT_DEDUCTION",
+    "details": {
+      "ruleKey": "MANUAL_ADJUSTMENT",
+      "credits": 0,
+      "description": "Penalty for Infraction",
+      "source": "ADMIN"
+    },
+    "createdAt": "2026-06-17T21:05:32.785Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a330c1ce59575dcf50ac80f",
+    "userId": "6a3187bf929c6c3851254299",
+    "userName": "AUTHOR 1",
+    "action": "CREDIT_DEDUCTION",
+    "details": {
+      "ruleKey": "MANUAL_ADJUSTMENT",
+      "credits": 0,
+      "description": "Penalty for Infraction",
+      "source": "ADMIN"
+    },
+    "createdAt": "2026-06-17T21:05:32.931Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a331815b148d1462da0be94",
+    "userId": "6a3184db929c6c3851254287",
+    "userName": "Karthik",
+    "action": "DOCX_EXPORT",
+    "details": {
+      "articleId": "6a32ee3ea540cf2819f52469",
+      "title": "SAMPLE ARTICLE 3"
+    },
+    "createdAt": "2026-06-17T21:56:37.261Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a3324e46275ca47cb480ac7",
+    "userId": "6a3184db929c6c3851254287",
+    "action": "BREAKING_NEWS_PRIORITY_ENABLED",
+    "details": {
+      "setting": "breakingNewsPriorityMode",
+      "previousValue": false,
+      "newValue": true
+    },
+    "createdAt": "2026-06-17T22:51:16.708Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a337997a18602e7e3e8a279",
+    "userId": "6a3184db929c6c3851254287",
+    "action": "EXTERNAL_APIS_ENABLED",
+    "details": {
+      "setting": "externalApisEnabled",
+      "previousValue": false,
+      "newValue": true
+    },
+    "createdAt": "2026-06-18T04:52:39.473Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a35b30ba90500317ea06513",
+    "userId": "6a3184db929c6c3851254287",
+    "action": "EXPORT_SYSTEM_DISABLED",
+    "details": {
+      "setting": "exportSystemEnabled",
+      "previousValue": true,
+      "newValue": false
+    },
+    "createdAt": "2026-06-19T21:22:19.822Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a35b316a90500317ea06514",
+    "userId": "6a3184db929c6c3851254287",
+    "userName": "Karthik",
+    "action": "DOCX_EXPORT",
+    "details": {
+      "articleId": "6a332fc1d77ebbfb3178319a",
+      "title": "ARTICLE X"
+    },
+    "createdAt": "2026-06-19T21:22:30.636Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a35b321a90500317ea0651a",
+    "userId": "6a3184db929c6c3851254287",
+    "action": "EXPORT_SYSTEM_ENABLED",
+    "details": {
+      "setting": "exportSystemEnabled",
+      "previousValue": false,
+      "newValue": true
+    },
+    "createdAt": "2026-06-19T21:22:41.822Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a3647416acc49381c1b91a8",
+    "userId": "6a3187bf929c6c3851254299",
+    "userName": "AUTHOR 1",
+    "action": "CREDIT_AWARD",
+    "details": {
+      "ruleKey": "AUTHOR_ARTICLE_PUBLISH",
+      "credits": 20,
+      "referenceId": "6a3647006acc49381c1b919f",
+      "description": "Published article: SAMPLE ARTICLE #12"
+    },
+    "createdAt": "2026-06-20T07:54:41.855Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a364adc4ae65406053946fc",
+    "userId": "6a364adc4ae65406053946fa",
+    "userName": "Test AUTHOR",
+    "action": "CREDIT_AWARD",
+    "details": {
+      "ruleKey": "AUTHOR_ARTICLE_PUBLISH",
+      "credits": 20,
+      "description": "Test published article"
+    },
+    "createdAt": "2026-06-20T08:10:04.887Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a364add4ae65406053946fe",
+    "userId": "6a364adc4ae65406053946f9",
+    "userName": "Test ADMIN",
+    "action": "CREDIT_AWARD",
+    "details": {
+      "ruleKey": "ADMIN_ARTICLE_APPROVAL",
+      "credits": 5,
+      "description": "Test approved article"
+    },
+    "createdAt": "2026-06-20T08:10:05.325Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a364add4ae6540605394700",
+    "userId": "6a364adc4ae65406053946f8",
+    "userName": "Test SUPER_ADMIN",
+    "action": "CREDIT_AWARD",
+    "details": {
+      "ruleKey": "ADMIN_COMMUNITY_MGMT",
+      "credits": 5,
+      "description": "Test community management settings update"
+    },
+    "createdAt": "2026-06-20T08:10:05.520Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a364bde87254ec41d625f2e",
+    "userId": "6a3184db929c6c3851254287",
+    "userName": "Karthik",
+    "action": "CREDIT_AWARD",
+    "details": {
+      "ruleKey": "ADMIN_ARTICLE_PUBLISH",
+      "credits": 23,
+      "referenceId": "6a364bde87254ec41d625f2c",
+      "description": "Admin published article: ARTICLE #13"
+    },
+    "createdAt": "2026-06-20T08:14:22.582Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a3672b9be1d7ced2436d76c",
+    "userId": "6a3184db929c6c3851254287",
+    "userName": "Karthik",
+    "action": "CREDIT_AWARD",
+    "details": {
+      "ruleKey": "ADMIN_ARTICLE_PUBLISH",
+      "credits": 23,
+      "referenceId": "6a3672b9be1d7ced2436d76a",
+      "description": "Admin published article: SAMPLE ARTICLE 3"
+    },
+    "createdAt": "2026-06-20T11:00:09.588Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a36743ebe1d7ced2436d774",
+    "userId": "6a3184db929c6c3851254287",
+    "userName": "Karthik",
+    "action": "CREDIT_AWARD",
+    "details": {
+      "ruleKey": "ADMIN_USER_APPROVAL",
+      "credits": 2,
+      "description": "Approved and invited new user: LOHIT (admin)"
+    },
+    "createdAt": "2026-06-20T11:06:38.204Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a37fcd6b26c8cfb978da758",
+    "userId": "6a3184db929c6c3851254287",
+    "userName": "Karthik",
+    "action": "CREDIT_AWARD",
+    "details": {
+      "ruleKey": "ADMIN_ARTICLE_REVIEW",
+      "credits": 3,
+      "referenceId": "6a3685ff4d57822f64c1fb20",
+      "description": "Issued revision directives for article: SAMPLE ARTICLE #3"
+    },
+    "createdAt": "2026-06-21T15:01:42.297Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a395bed8b87c7d43fc2c8ad",
+    "userId": "6a3184db929c6c3851254287",
+    "userName": "Karthik",
+    "action": "CREDIT_AWARD",
+    "details": {
+      "ruleKey": "ADMIN_ARTICLE_PUBLISH",
+      "credits": 23,
+      "referenceId": "6a395bed8b87c7d43fc2c8ab",
+      "description": "Admin published article: SAMPLE ARTICLE #4"
+    },
+    "createdAt": "2026-06-22T15:59:41.309Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a395f2ff2e14c82254e0e5c",
+    "userId": "6a3184db929c6c3851254287",
+    "userName": "Karthik",
+    "action": "CREDIT_AWARD",
+    "details": {
+      "ruleKey": "ADMIN_HOMEPAGE_FEATURE",
+      "credits": 5,
+      "referenceId": "6a395bed8b87c7d43fc2c8ab",
+      "description": "Featured article as Main Breaking on homepage: SAMPLE ARTICLE #4"
+    },
+    "createdAt": "2026-06-22T16:13:35.069Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a395f3bf2e14c82254e0e5e",
+    "userId": "6a3184db929c6c3851254287",
+    "userName": "Karthik",
+    "action": "CREDIT_AWARD",
+    "details": {
+      "ruleKey": "ADMIN_HOMEPAGE_FEATURE",
+      "credits": 5,
+      "referenceId": "6a3672b9be1d7ced2436d76a",
+      "description": "Featured article on homepage: SAMPLE ARTICLE 3"
+    },
+    "createdAt": "2026-06-22T16:13:47.048Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a395f3bf2e14c82254e0e60",
+    "userId": "6a3184db929c6c3851254287",
+    "userName": "Karthik",
+    "action": "CREDIT_AWARD",
+    "details": {
+      "ruleKey": "ADMIN_PREMIUM_SELECTION",
+      "credits": 5,
+      "referenceId": "6a3672b9be1d7ced2436d76a",
+      "description": "Selected premium article: SAMPLE ARTICLE 3"
+    },
+    "createdAt": "2026-06-22T16:13:47.559Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a39638b51f8746350f3c6f8",
+    "userId": "6a3184db929c6c3851254287",
+    "userName": "Karthik",
+    "action": "CREDIT_AWARD",
+    "details": {
+      "ruleKey": "ADMIN_ARTICLE_PUBLISH",
+      "credits": 23,
+      "referenceId": "6a39638a51f8746350f3c6f6",
+      "description": "Admin published article: SAMPLE ARTICLE #1"
+    },
+    "createdAt": "2026-06-22T16:32:11.590Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a3966b9d6f396c498477a30",
+    "userId": "6a3184db929c6c3851254287",
+    "userName": "Karthik",
+    "action": "CREDIT_AWARD",
+    "details": {
+      "ruleKey": "ADMIN_ARTICLE_PUBLISH",
+      "credits": 23,
+      "referenceId": "6a3966b8d6f396c498477a2e",
+      "description": "Admin published article: BREAKING NEWS"
+    },
+    "createdAt": "2026-06-22T16:45:45.425Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a3966bdd6f396c498477a32",
+    "userId": "6a3184db929c6c3851254287",
+    "userName": "Karthik",
+    "action": "CREDIT_AWARD",
+    "details": {
+      "ruleKey": "ADMIN_HOMEPAGE_FEATURE",
+      "credits": 5,
+      "referenceId": "6a3966b8d6f396c498477a2e",
+      "description": "Featured article as Main Breaking on homepage: BREAKING NEWS"
+    },
+    "createdAt": "2026-06-22T16:45:49.531Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a3966f4d6f396c498477a39",
+    "userId": "6a3184db929c6c3851254287",
+    "userName": "Karthik",
+    "action": "CREDIT_AWARD",
+    "details": {
+      "ruleKey": "ADMIN_HOMEPAGE_FEATURE",
+      "credits": 5,
+      "referenceId": "6a3966b8d6f396c498477a2e",
+      "description": "Featured article as Main Breaking on homepage: BREAKING NEWS"
+    },
+    "createdAt": "2026-06-22T16:46:44.303Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a396ad64c510d8353075363",
+    "userId": "6a3184db929c6c3851254287",
+    "userName": "Karthik",
+    "action": "CREDIT_AWARD",
+    "details": {
+      "ruleKey": "ADMIN_HOMEPAGE_FEATURE",
+      "credits": 5,
+      "referenceId": "6a3966b8d6f396c498477a2e",
+      "description": "Featured article on homepage: BREAKING NEWS"
+    },
+    "createdAt": "2026-06-22T17:03:18.200Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a396ad64c510d8353075365",
+    "userId": "6a3184db929c6c3851254287",
+    "userName": "Karthik",
+    "action": "CREDIT_AWARD",
+    "details": {
+      "ruleKey": "ADMIN_PREMIUM_SELECTION",
+      "credits": 5,
+      "referenceId": "6a3966b8d6f396c498477a2e",
+      "description": "Selected premium article: BREAKING NEWS"
+    },
+    "createdAt": "2026-06-22T17:03:18.419Z",
+    "__v": 0
+  }
+]

@@ -1,0 +1,11 @@
+[
+  {
+    "clusterId": "default",
+    "clusterName": "Primary MongoDB",
+    "databaseName": "test",
+    "host": "ac-m7j8tzg-shard-00-02.mtxrxzn.mongodb.net",
+    "status": "Connected",
+    "createdAt": "2026-06-23T16:06:15.639Z",
+    "isActive": true
+  }
+]

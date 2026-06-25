@@ -1,0 +1,34 @@
+[
+  {
+    "_id": "6a330b5ce59575dcf50ac7f6",
+    "visitorId": "1e8b9786-394d-47c6-a969-f4cf7d6c75e2",
+    "isReturning": true,
+    "firstVisit": "2026-06-17T21:02:20.253Z",
+    "lastVisit": "2026-06-22T18:30:08.214Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a33120a8b14319d6684f247",
+    "visitorId": "1e972ef0-def1-4e1d-b100-c077136916ac",
+    "isReturning": false,
+    "firstVisit": "2026-06-17T21:30:50.068Z",
+    "lastVisit": "2026-06-17T21:30:50.068Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a35347052a4c20e3c49ea97",
+    "visitorId": "e4e6e157-c3b7-4345-81a0-86d71a630a46",
+    "isReturning": true,
+    "firstVisit": "2026-06-19T12:22:08.371Z",
+    "lastVisit": "2026-06-19T12:22:35.168Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a361d9da5c107480d77de66",
+    "visitorId": "11bda536-5473-4b83-9fbf-09b06b57dbbc",
+    "isReturning": true,
+    "firstVisit": "2026-06-20T04:57:01.294Z",
+    "lastVisit": "2026-06-20T12:23:11.839Z",
+    "__v": 0
+  }
+]

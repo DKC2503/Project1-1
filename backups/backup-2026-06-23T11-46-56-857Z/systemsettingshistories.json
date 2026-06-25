@@ -1,0 +1,1139 @@
+[
+  {
+    "_id": "6a318916929c6c38512542ad",
+    "settings": {
+      "credits": {
+        "AUTHOR_ARTICLE_PUBLISH": 20,
+        "AUTHOR_PREMIUM_ARTICLE": 5,
+        "AUTHOR_BREAKING_NEWS": 10,
+        "AUTHOR_SEO_OPTIMIZED": 5,
+        "AUTHOR_TRENDING_10": 10,
+        "AUTHOR_TRENDING_30": 30,
+        "milestones": [
+          {
+            "views": 500,
+            "credits": 5,
+            "title": "500 Views Milestone",
+            "_id": "6a318529929c6c385125428b"
+          },
+          {
+            "views": 1000,
+            "credits": 10,
+            "title": "1,000 Views Milestone",
+            "_id": "6a318529929c6c385125428c"
+          },
+          {
+            "views": 5000,
+            "credits": 20,
+            "title": "5,000 Views Milestone",
+            "_id": "6a318529929c6c385125428d"
+          },
+          {
+            "views": 10000,
+            "credits": 50,
+            "title": "10,000+ Views Milestone",
+            "_id": "6a318529929c6c385125428e"
+          }
+        ],
+        "STREAK_7_DAYS": 20,
+        "STREAK_15_DAYS": 50,
+        "STREAK_30_DAYS": 100,
+        "STREAK_60_DAYS": 250,
+        "STREAK_90_DAYS": 500,
+        "ADMIN_USER_APPROVAL": 2,
+        "ADMIN_AUTHOR_VERIFICATION": 3,
+        "ADMIN_ARTICLE_REVIEW": 3,
+        "ADMIN_ARTICLE_APPROVAL": 5,
+        "ADMIN_PREMIUM_SELECTION": 5,
+        "ADMIN_CATEGORY_MANAGEMENT": 2,
+        "ADMIN_SEO_MANAGEMENT": 5,
+        "ADMIN_HOMEPAGE_FEATURE": 5,
+        "ADMIN_BREAKING_VERIFICATION": 5,
+        "ADMIN_AD_MANAGEMENT": 5,
+        "ADMIN_REVENUE_OPS": 10,
+        "ADMIN_COMMUNITY_MGMT": 5,
+        "ADMIN_SUPPORT_RESOLUTION": 5,
+        "TECH_BUG_FIX": 10,
+        "TECH_FEATURE_DEV": 50,
+        "TECH_SITE_OPTIMIZATION": 25,
+        "TECH_SEO_IMPROVEMENT": 25,
+        "TECH_SECURITY_FIX": 50,
+        "TECH_INFRA_MGMT": 20,
+        "TECH_DEPLOYMENT": 20,
+        "TECH_PERFORMANCE_FIX": 50,
+        "DEDUCT_MISSED_DEADLINE": -5,
+        "DEDUCT_POOR_QUALITY": -5,
+        "DEDUCT_CARELESSNESS": -10,
+        "DEDUCT_UNVERIFIED": -20,
+        "DEDUCT_PLAGIARISM": -50
+      },
+      "_id": "6a318529929c6c385125428a",
+      "creditSystemEnabled": true,
+      "externalApisEnabled": true,
+      "analyticsEnabled": true,
+      "exportSystemEnabled": true,
+      "emergencyMode": false,
+      "breakingNewsPriorityMode": false,
+      "version": 2,
+      "updatedAt": "2026-06-16T17:34:14.276Z",
+      "__v": 0,
+      "updatedBy": "6a3184db929c6c3851254287"
+    },
+    "updatedBy": "6a3184db929c6c3851254287",
+    "timestamp": "2026-06-16T17:34:14.323Z",
+    "version": 2,
+    "__v": 0
+  },
+  {
+    "_id": "6a318a6f929c6c38512542b9",
+    "settings": {
+      "credits": {
+        "AUTHOR_ARTICLE_PUBLISH": 20,
+        "AUTHOR_PREMIUM_ARTICLE": 5,
+        "AUTHOR_BREAKING_NEWS": 10,
+        "AUTHOR_SEO_OPTIMIZED": 5,
+        "AUTHOR_TRENDING_10": 10,
+        "AUTHOR_TRENDING_30": 30,
+        "milestones": [
+          {
+            "views": 500,
+            "credits": 5,
+            "title": "500 Views Milestone",
+            "_id": "6a318529929c6c385125428b"
+          },
+          {
+            "views": 1000,
+            "credits": 10,
+            "title": "1,000 Views Milestone",
+            "_id": "6a318529929c6c385125428c"
+          },
+          {
+            "views": 5000,
+            "credits": 20,
+            "title": "5,000 Views Milestone",
+            "_id": "6a318529929c6c385125428d"
+          },
+          {
+            "views": 10000,
+            "credits": 50,
+            "title": "10,000+ Views Milestone",
+            "_id": "6a318529929c6c385125428e"
+          }
+        ],
+        "STREAK_7_DAYS": 20,
+        "STREAK_15_DAYS": 50,
+        "STREAK_30_DAYS": 100,
+        "STREAK_60_DAYS": 250,
+        "STREAK_90_DAYS": 500,
+        "ADMIN_USER_APPROVAL": 2,
+        "ADMIN_AUTHOR_VERIFICATION": 3,
+        "ADMIN_ARTICLE_REVIEW": 3,
+        "ADMIN_ARTICLE_APPROVAL": 5,
+        "ADMIN_PREMIUM_SELECTION": 5,
+        "ADMIN_CATEGORY_MANAGEMENT": 2,
+        "ADMIN_SEO_MANAGEMENT": 5,
+        "ADMIN_HOMEPAGE_FEATURE": 5,
+        "ADMIN_BREAKING_VERIFICATION": 5,
+        "ADMIN_AD_MANAGEMENT": 5,
+        "ADMIN_REVENUE_OPS": 10,
+        "ADMIN_COMMUNITY_MGMT": 5,
+        "ADMIN_SUPPORT_RESOLUTION": 5,
+        "TECH_BUG_FIX": 10,
+        "TECH_FEATURE_DEV": 50,
+        "TECH_SITE_OPTIMIZATION": 25,
+        "TECH_SEO_IMPROVEMENT": 25,
+        "TECH_SECURITY_FIX": 50,
+        "TECH_INFRA_MGMT": 20,
+        "TECH_DEPLOYMENT": 20,
+        "TECH_PERFORMANCE_FIX": 50,
+        "DEDUCT_MISSED_DEADLINE": -5,
+        "DEDUCT_POOR_QUALITY": -5,
+        "DEDUCT_CARELESSNESS": -10,
+        "DEDUCT_UNVERIFIED": -20,
+        "DEDUCT_PLAGIARISM": -50
+      },
+      "_id": "6a318529929c6c385125428a",
+      "creditSystemEnabled": true,
+      "externalApisEnabled": false,
+      "analyticsEnabled": true,
+      "exportSystemEnabled": true,
+      "emergencyMode": false,
+      "breakingNewsPriorityMode": false,
+      "version": 3,
+      "updatedAt": "2026-06-16T17:39:59.539Z",
+      "__v": 0,
+      "updatedBy": "6a3184db929c6c3851254287"
+    },
+    "updatedBy": "6a3184db929c6c3851254287",
+    "timestamp": "2026-06-16T17:39:59.605Z",
+    "version": 3,
+    "__v": 0
+  },
+  {
+    "_id": "6a318a72929c6c38512542bf",
+    "settings": {
+      "credits": {
+        "AUTHOR_ARTICLE_PUBLISH": 20,
+        "AUTHOR_PREMIUM_ARTICLE": 5,
+        "AUTHOR_BREAKING_NEWS": 10,
+        "AUTHOR_SEO_OPTIMIZED": 5,
+        "AUTHOR_TRENDING_10": 10,
+        "AUTHOR_TRENDING_30": 30,
+        "milestones": [
+          {
+            "views": 500,
+            "credits": 5,
+            "title": "500 Views Milestone",
+            "_id": "6a318529929c6c385125428b"
+          },
+          {
+            "views": 1000,
+            "credits": 10,
+            "title": "1,000 Views Milestone",
+            "_id": "6a318529929c6c385125428c"
+          },
+          {
+            "views": 5000,
+            "credits": 20,
+            "title": "5,000 Views Milestone",
+            "_id": "6a318529929c6c385125428d"
+          },
+          {
+            "views": 10000,
+            "credits": 50,
+            "title": "10,000+ Views Milestone",
+            "_id": "6a318529929c6c385125428e"
+          }
+        ],
+        "STREAK_7_DAYS": 20,
+        "STREAK_15_DAYS": 50,
+        "STREAK_30_DAYS": 100,
+        "STREAK_60_DAYS": 250,
+        "STREAK_90_DAYS": 500,
+        "ADMIN_USER_APPROVAL": 2,
+        "ADMIN_AUTHOR_VERIFICATION": 3,
+        "ADMIN_ARTICLE_REVIEW": 3,
+        "ADMIN_ARTICLE_APPROVAL": 5,
+        "ADMIN_PREMIUM_SELECTION": 5,
+        "ADMIN_CATEGORY_MANAGEMENT": 2,
+        "ADMIN_SEO_MANAGEMENT": 5,
+        "ADMIN_HOMEPAGE_FEATURE": 5,
+        "ADMIN_BREAKING_VERIFICATION": 5,
+        "ADMIN_AD_MANAGEMENT": 5,
+        "ADMIN_REVENUE_OPS": 10,
+        "ADMIN_COMMUNITY_MGMT": 5,
+        "ADMIN_SUPPORT_RESOLUTION": 5,
+        "TECH_BUG_FIX": 10,
+        "TECH_FEATURE_DEV": 50,
+        "TECH_SITE_OPTIMIZATION": 25,
+        "TECH_SEO_IMPROVEMENT": 25,
+        "TECH_SECURITY_FIX": 50,
+        "TECH_INFRA_MGMT": 20,
+        "TECH_DEPLOYMENT": 20,
+        "TECH_PERFORMANCE_FIX": 50,
+        "DEDUCT_MISSED_DEADLINE": -5,
+        "DEDUCT_POOR_QUALITY": -5,
+        "DEDUCT_CARELESSNESS": -10,
+        "DEDUCT_UNVERIFIED": -20,
+        "DEDUCT_PLAGIARISM": -50
+      },
+      "_id": "6a318529929c6c385125428a",
+      "creditSystemEnabled": false,
+      "externalApisEnabled": false,
+      "analyticsEnabled": true,
+      "exportSystemEnabled": true,
+      "emergencyMode": false,
+      "breakingNewsPriorityMode": false,
+      "version": 4,
+      "updatedAt": "2026-06-16T17:40:02.868Z",
+      "__v": 0,
+      "updatedBy": "6a3184db929c6c3851254287"
+    },
+    "updatedBy": "6a3184db929c6c3851254287",
+    "timestamp": "2026-06-16T17:40:02.919Z",
+    "version": 4,
+    "__v": 0
+  },
+  {
+    "_id": "6a318a80929c6c38512542c5",
+    "settings": {
+      "credits": {
+        "AUTHOR_ARTICLE_PUBLISH": 20,
+        "AUTHOR_PREMIUM_ARTICLE": 5,
+        "AUTHOR_BREAKING_NEWS": 10,
+        "AUTHOR_SEO_OPTIMIZED": 5,
+        "AUTHOR_TRENDING_10": 10,
+        "AUTHOR_TRENDING_30": 30,
+        "milestones": [
+          {
+            "views": 500,
+            "credits": 5,
+            "title": "500 Views Milestone",
+            "_id": "6a318529929c6c385125428b"
+          },
+          {
+            "views": 1000,
+            "credits": 10,
+            "title": "1,000 Views Milestone",
+            "_id": "6a318529929c6c385125428c"
+          },
+          {
+            "views": 5000,
+            "credits": 20,
+            "title": "5,000 Views Milestone",
+            "_id": "6a318529929c6c385125428d"
+          },
+          {
+            "views": 10000,
+            "credits": 50,
+            "title": "10,000+ Views Milestone",
+            "_id": "6a318529929c6c385125428e"
+          }
+        ],
+        "STREAK_7_DAYS": 20,
+        "STREAK_15_DAYS": 50,
+        "STREAK_30_DAYS": 100,
+        "STREAK_60_DAYS": 250,
+        "STREAK_90_DAYS": 500,
+        "ADMIN_USER_APPROVAL": 2,
+        "ADMIN_AUTHOR_VERIFICATION": 3,
+        "ADMIN_ARTICLE_REVIEW": 3,
+        "ADMIN_ARTICLE_APPROVAL": 5,
+        "ADMIN_PREMIUM_SELECTION": 5,
+        "ADMIN_CATEGORY_MANAGEMENT": 2,
+        "ADMIN_SEO_MANAGEMENT": 5,
+        "ADMIN_HOMEPAGE_FEATURE": 5,
+        "ADMIN_BREAKING_VERIFICATION": 5,
+        "ADMIN_AD_MANAGEMENT": 5,
+        "ADMIN_REVENUE_OPS": 10,
+        "ADMIN_COMMUNITY_MGMT": 5,
+        "ADMIN_SUPPORT_RESOLUTION": 5,
+        "TECH_BUG_FIX": 10,
+        "TECH_FEATURE_DEV": 50,
+        "TECH_SITE_OPTIMIZATION": 25,
+        "TECH_SEO_IMPROVEMENT": 25,
+        "TECH_SECURITY_FIX": 50,
+        "TECH_INFRA_MGMT": 20,
+        "TECH_DEPLOYMENT": 20,
+        "TECH_PERFORMANCE_FIX": 50,
+        "DEDUCT_MISSED_DEADLINE": -5,
+        "DEDUCT_POOR_QUALITY": -5,
+        "DEDUCT_CARELESSNESS": -10,
+        "DEDUCT_UNVERIFIED": -20,
+        "DEDUCT_PLAGIARISM": -50
+      },
+      "_id": "6a318529929c6c385125428a",
+      "creditSystemEnabled": true,
+      "externalApisEnabled": false,
+      "analyticsEnabled": true,
+      "exportSystemEnabled": true,
+      "emergencyMode": false,
+      "breakingNewsPriorityMode": false,
+      "version": 5,
+      "updatedAt": "2026-06-16T17:40:16.874Z",
+      "__v": 0,
+      "updatedBy": "6a3184db929c6c3851254287"
+    },
+    "updatedBy": "6a3184db929c6c3851254287",
+    "timestamp": "2026-06-16T17:40:16.917Z",
+    "version": 5,
+    "__v": 0
+  },
+  {
+    "_id": "6a318a86929c6c38512542cb",
+    "settings": {
+      "credits": {
+        "AUTHOR_ARTICLE_PUBLISH": 20,
+        "AUTHOR_PREMIUM_ARTICLE": 5,
+        "AUTHOR_BREAKING_NEWS": 10,
+        "AUTHOR_SEO_OPTIMIZED": 5,
+        "AUTHOR_TRENDING_10": 10,
+        "AUTHOR_TRENDING_30": 30,
+        "milestones": [
+          {
+            "views": 500,
+            "credits": 5,
+            "title": "500 Views Milestone",
+            "_id": "6a318529929c6c385125428b"
+          },
+          {
+            "views": 1000,
+            "credits": 10,
+            "title": "1,000 Views Milestone",
+            "_id": "6a318529929c6c385125428c"
+          },
+          {
+            "views": 5000,
+            "credits": 20,
+            "title": "5,000 Views Milestone",
+            "_id": "6a318529929c6c385125428d"
+          },
+          {
+            "views": 10000,
+            "credits": 50,
+            "title": "10,000+ Views Milestone",
+            "_id": "6a318529929c6c385125428e"
+          }
+        ],
+        "STREAK_7_DAYS": 20,
+        "STREAK_15_DAYS": 50,
+        "STREAK_30_DAYS": 100,
+        "STREAK_60_DAYS": 250,
+        "STREAK_90_DAYS": 500,
+        "ADMIN_USER_APPROVAL": 2,
+        "ADMIN_AUTHOR_VERIFICATION": 3,
+        "ADMIN_ARTICLE_REVIEW": 3,
+        "ADMIN_ARTICLE_APPROVAL": 5,
+        "ADMIN_PREMIUM_SELECTION": 5,
+        "ADMIN_CATEGORY_MANAGEMENT": 2,
+        "ADMIN_SEO_MANAGEMENT": 5,
+        "ADMIN_HOMEPAGE_FEATURE": 5,
+        "ADMIN_BREAKING_VERIFICATION": 5,
+        "ADMIN_AD_MANAGEMENT": 5,
+        "ADMIN_REVENUE_OPS": 10,
+        "ADMIN_COMMUNITY_MGMT": 5,
+        "ADMIN_SUPPORT_RESOLUTION": 5,
+        "TECH_BUG_FIX": 10,
+        "TECH_FEATURE_DEV": 50,
+        "TECH_SITE_OPTIMIZATION": 25,
+        "TECH_SEO_IMPROVEMENT": 25,
+        "TECH_SECURITY_FIX": 50,
+        "TECH_INFRA_MGMT": 20,
+        "TECH_DEPLOYMENT": 20,
+        "TECH_PERFORMANCE_FIX": 50,
+        "DEDUCT_MISSED_DEADLINE": -5,
+        "DEDUCT_POOR_QUALITY": -5,
+        "DEDUCT_CARELESSNESS": -10,
+        "DEDUCT_UNVERIFIED": -20,
+        "DEDUCT_PLAGIARISM": -50
+      },
+      "_id": "6a318529929c6c385125428a",
+      "creditSystemEnabled": true,
+      "externalApisEnabled": true,
+      "analyticsEnabled": true,
+      "exportSystemEnabled": true,
+      "emergencyMode": false,
+      "breakingNewsPriorityMode": false,
+      "version": 6,
+      "updatedAt": "2026-06-16T17:40:22.559Z",
+      "__v": 0,
+      "updatedBy": "6a3184db929c6c3851254287"
+    },
+    "updatedBy": "6a3184db929c6c3851254287",
+    "timestamp": "2026-06-16T17:40:22.608Z",
+    "version": 6,
+    "__v": 0
+  },
+  {
+    "_id": "6a318a87929c6c38512542d1",
+    "settings": {
+      "credits": {
+        "AUTHOR_ARTICLE_PUBLISH": 20,
+        "AUTHOR_PREMIUM_ARTICLE": 5,
+        "AUTHOR_BREAKING_NEWS": 10,
+        "AUTHOR_SEO_OPTIMIZED": 5,
+        "AUTHOR_TRENDING_10": 10,
+        "AUTHOR_TRENDING_30": 30,
+        "milestones": [
+          {
+            "views": 500,
+            "credits": 5,
+            "title": "500 Views Milestone",
+            "_id": "6a318529929c6c385125428b"
+          },
+          {
+            "views": 1000,
+            "credits": 10,
+            "title": "1,000 Views Milestone",
+            "_id": "6a318529929c6c385125428c"
+          },
+          {
+            "views": 5000,
+            "credits": 20,
+            "title": "5,000 Views Milestone",
+            "_id": "6a318529929c6c385125428d"
+          },
+          {
+            "views": 10000,
+            "credits": 50,
+            "title": "10,000+ Views Milestone",
+            "_id": "6a318529929c6c385125428e"
+          }
+        ],
+        "STREAK_7_DAYS": 20,
+        "STREAK_15_DAYS": 50,
+        "STREAK_30_DAYS": 100,
+        "STREAK_60_DAYS": 250,
+        "STREAK_90_DAYS": 500,
+        "ADMIN_USER_APPROVAL": 2,
+        "ADMIN_AUTHOR_VERIFICATION": 3,
+        "ADMIN_ARTICLE_REVIEW": 3,
+        "ADMIN_ARTICLE_APPROVAL": 5,
+        "ADMIN_PREMIUM_SELECTION": 5,
+        "ADMIN_CATEGORY_MANAGEMENT": 2,
+        "ADMIN_SEO_MANAGEMENT": 5,
+        "ADMIN_HOMEPAGE_FEATURE": 5,
+        "ADMIN_BREAKING_VERIFICATION": 5,
+        "ADMIN_AD_MANAGEMENT": 5,
+        "ADMIN_REVENUE_OPS": 10,
+        "ADMIN_COMMUNITY_MGMT": 5,
+        "ADMIN_SUPPORT_RESOLUTION": 5,
+        "TECH_BUG_FIX": 10,
+        "TECH_FEATURE_DEV": 50,
+        "TECH_SITE_OPTIMIZATION": 25,
+        "TECH_SEO_IMPROVEMENT": 25,
+        "TECH_SECURITY_FIX": 50,
+        "TECH_INFRA_MGMT": 20,
+        "TECH_DEPLOYMENT": 20,
+        "TECH_PERFORMANCE_FIX": 50,
+        "DEDUCT_MISSED_DEADLINE": -5,
+        "DEDUCT_POOR_QUALITY": -5,
+        "DEDUCT_CARELESSNESS": -10,
+        "DEDUCT_UNVERIFIED": -20,
+        "DEDUCT_PLAGIARISM": -50
+      },
+      "_id": "6a318529929c6c385125428a",
+      "creditSystemEnabled": true,
+      "externalApisEnabled": false,
+      "analyticsEnabled": true,
+      "exportSystemEnabled": true,
+      "emergencyMode": false,
+      "breakingNewsPriorityMode": false,
+      "version": 7,
+      "updatedAt": "2026-06-16T17:40:23.252Z",
+      "__v": 0,
+      "updatedBy": "6a3184db929c6c3851254287"
+    },
+    "updatedBy": "6a3184db929c6c3851254287",
+    "timestamp": "2026-06-16T17:40:23.294Z",
+    "version": 7,
+    "__v": 0
+  },
+  {
+    "_id": "6a32ee4da540cf2819f52472",
+    "settings": {
+      "credits": {
+        "AUTHOR_ARTICLE_PUBLISH": 20,
+        "AUTHOR_PREMIUM_ARTICLE": 5,
+        "AUTHOR_BREAKING_NEWS": 10,
+        "AUTHOR_SEO_OPTIMIZED": 5,
+        "AUTHOR_TRENDING_10": 10,
+        "AUTHOR_TRENDING_30": 30,
+        "milestones": [
+          {
+            "views": 500,
+            "credits": 5,
+            "title": "500 Views Milestone",
+            "_id": "6a318529929c6c385125428b"
+          },
+          {
+            "views": 1000,
+            "credits": 10,
+            "title": "1,000 Views Milestone",
+            "_id": "6a318529929c6c385125428c"
+          },
+          {
+            "views": 5000,
+            "credits": 20,
+            "title": "5,000 Views Milestone",
+            "_id": "6a318529929c6c385125428d"
+          },
+          {
+            "views": 10000,
+            "credits": 50,
+            "title": "10,000+ Views Milestone",
+            "_id": "6a318529929c6c385125428e"
+          }
+        ],
+        "STREAK_7_DAYS": 20,
+        "STREAK_15_DAYS": 50,
+        "STREAK_30_DAYS": 100,
+        "STREAK_60_DAYS": 250,
+        "STREAK_90_DAYS": 500,
+        "ADMIN_USER_APPROVAL": 2,
+        "ADMIN_AUTHOR_VERIFICATION": 3,
+        "ADMIN_ARTICLE_REVIEW": 3,
+        "ADMIN_ARTICLE_APPROVAL": 5,
+        "ADMIN_PREMIUM_SELECTION": 5,
+        "ADMIN_HOMEPAGE_FEATURE": 5,
+        "ADMIN_COMMUNITY_MGMT": 5,
+        "ADMIN_SUPPORT_RESOLUTION": 5,
+        "ADMIN_ARTICLE_PUBLISH": 10,
+        "DEDUCT_MISSED_DEADLINE": -5,
+        "DEDUCT_POOR_QUALITY": -5,
+        "DEDUCT_CARELESSNESS": -10,
+        "DEDUCT_UNVERIFIED": -20,
+        "DEDUCT_PLAGIARISM": -50
+      },
+      "_id": "6a318529929c6c385125428a",
+      "creditSystemEnabled": true,
+      "externalApisEnabled": false,
+      "analyticsEnabled": true,
+      "exportSystemEnabled": true,
+      "emergencyMode": false,
+      "breakingNewsPriorityMode": false,
+      "version": 8,
+      "updatedAt": "2026-06-17T18:58:21.005Z",
+      "__v": 0,
+      "updatedBy": "6a3184db929c6c3851254287"
+    },
+    "updatedBy": "6a3184db929c6c3851254287",
+    "timestamp": "2026-06-17T18:58:21.141Z",
+    "version": 8,
+    "__v": 0
+  },
+  {
+    "_id": "6a3307e30340788817906d19",
+    "settings": {
+      "credits": {
+        "AUTHOR_ARTICLE_PUBLISH": 20,
+        "AUTHOR_PREMIUM_ARTICLE": 5,
+        "AUTHOR_BREAKING_NEWS": 10,
+        "AUTHOR_SEO_OPTIMIZED": 5,
+        "AUTHOR_TRENDING_10": 10,
+        "AUTHOR_TRENDING_30": 30,
+        "milestones": [
+          {
+            "views": 500,
+            "credits": 5,
+            "title": "500 Views Milestone",
+            "_id": "6a318529929c6c385125428b"
+          },
+          {
+            "views": 1000,
+            "credits": 10,
+            "title": "1,000 Views Milestone",
+            "_id": "6a318529929c6c385125428c"
+          },
+          {
+            "views": 5000,
+            "credits": 20,
+            "title": "5,000 Views Milestone",
+            "_id": "6a318529929c6c385125428d"
+          },
+          {
+            "views": 10000,
+            "credits": 50,
+            "title": "10,000+ Views Milestone",
+            "_id": "6a318529929c6c385125428e"
+          }
+        ],
+        "STREAK_7_DAYS": 20,
+        "STREAK_15_DAYS": 50,
+        "STREAK_30_DAYS": 100,
+        "STREAK_60_DAYS": 250,
+        "STREAK_90_DAYS": 500,
+        "ADMIN_USER_APPROVAL": 2,
+        "ADMIN_AUTHOR_VERIFICATION": 3,
+        "ADMIN_ARTICLE_REVIEW": 3,
+        "ADMIN_ARTICLE_APPROVAL": 5,
+        "ADMIN_PREMIUM_SELECTION": 5,
+        "ADMIN_HOMEPAGE_FEATURE": 5,
+        "ADMIN_COMMUNITY_MGMT": 5,
+        "ADMIN_SUPPORT_RESOLUTION": 5,
+        "ADMIN_ARTICLE_PUBLISH": 10,
+        "DEDUCT_MISSED_DEADLINE": -5,
+        "DEDUCT_POOR_QUALITY": -5,
+        "DEDUCT_CARELESSNESS": -10,
+        "DEDUCT_UNVERIFIED": -20,
+        "DEDUCT_PLAGIARISM": -50
+      },
+      "_id": "6a318529929c6c385125428a",
+      "creditSystemEnabled": true,
+      "externalApisEnabled": true,
+      "analyticsEnabled": true,
+      "exportSystemEnabled": true,
+      "emergencyMode": false,
+      "breakingNewsPriorityMode": false,
+      "version": 9,
+      "updatedAt": "2026-06-17T20:47:31.050Z",
+      "__v": 0,
+      "updatedBy": "6a3184db929c6c3851254287"
+    },
+    "updatedBy": "6a3184db929c6c3851254287",
+    "timestamp": "2026-06-17T20:47:31.144Z",
+    "version": 9,
+    "__v": 0
+  },
+  {
+    "_id": "6a3307e40340788817906d1f",
+    "settings": {
+      "credits": {
+        "AUTHOR_ARTICLE_PUBLISH": 20,
+        "AUTHOR_PREMIUM_ARTICLE": 5,
+        "AUTHOR_BREAKING_NEWS": 10,
+        "AUTHOR_SEO_OPTIMIZED": 5,
+        "AUTHOR_TRENDING_10": 10,
+        "AUTHOR_TRENDING_30": 30,
+        "milestones": [
+          {
+            "views": 500,
+            "credits": 5,
+            "title": "500 Views Milestone",
+            "_id": "6a318529929c6c385125428b"
+          },
+          {
+            "views": 1000,
+            "credits": 10,
+            "title": "1,000 Views Milestone",
+            "_id": "6a318529929c6c385125428c"
+          },
+          {
+            "views": 5000,
+            "credits": 20,
+            "title": "5,000 Views Milestone",
+            "_id": "6a318529929c6c385125428d"
+          },
+          {
+            "views": 10000,
+            "credits": 50,
+            "title": "10,000+ Views Milestone",
+            "_id": "6a318529929c6c385125428e"
+          }
+        ],
+        "STREAK_7_DAYS": 20,
+        "STREAK_15_DAYS": 50,
+        "STREAK_30_DAYS": 100,
+        "STREAK_60_DAYS": 250,
+        "STREAK_90_DAYS": 500,
+        "ADMIN_USER_APPROVAL": 2,
+        "ADMIN_AUTHOR_VERIFICATION": 3,
+        "ADMIN_ARTICLE_REVIEW": 3,
+        "ADMIN_ARTICLE_APPROVAL": 5,
+        "ADMIN_PREMIUM_SELECTION": 5,
+        "ADMIN_HOMEPAGE_FEATURE": 5,
+        "ADMIN_COMMUNITY_MGMT": 5,
+        "ADMIN_SUPPORT_RESOLUTION": 5,
+        "ADMIN_ARTICLE_PUBLISH": 10,
+        "DEDUCT_MISSED_DEADLINE": -5,
+        "DEDUCT_POOR_QUALITY": -5,
+        "DEDUCT_CARELESSNESS": -10,
+        "DEDUCT_UNVERIFIED": -20,
+        "DEDUCT_PLAGIARISM": -50
+      },
+      "_id": "6a318529929c6c385125428a",
+      "creditSystemEnabled": true,
+      "externalApisEnabled": false,
+      "analyticsEnabled": true,
+      "exportSystemEnabled": true,
+      "emergencyMode": false,
+      "breakingNewsPriorityMode": false,
+      "version": 10,
+      "updatedAt": "2026-06-17T20:47:32.069Z",
+      "__v": 0,
+      "updatedBy": "6a3184db929c6c3851254287"
+    },
+    "updatedBy": "6a3184db929c6c3851254287",
+    "timestamp": "2026-06-17T20:47:32.284Z",
+    "version": 10,
+    "__v": 0
+  },
+  {
+    "_id": "6a330c11e59575dcf50ac807",
+    "settings": {
+      "credits": {
+        "AUTHOR_ARTICLE_PUBLISH": 20,
+        "AUTHOR_PREMIUM_ARTICLE": 5,
+        "AUTHOR_BREAKING_NEWS": 10,
+        "AUTHOR_SEO_OPTIMIZED": 5,
+        "AUTHOR_TRENDING_10": 10,
+        "AUTHOR_TRENDING_30": 30,
+        "milestones": [
+          {
+            "views": 500,
+            "credits": 5,
+            "title": "500 Views Milestone",
+            "_id": "6a318529929c6c385125428b"
+          },
+          {
+            "views": 1000,
+            "credits": 10,
+            "title": "1,000 Views Milestone",
+            "_id": "6a318529929c6c385125428c"
+          },
+          {
+            "views": 5000,
+            "credits": 20,
+            "title": "5,000 Views Milestone",
+            "_id": "6a318529929c6c385125428d"
+          },
+          {
+            "views": 10000,
+            "credits": 50,
+            "title": "10,000+ Views Milestone",
+            "_id": "6a318529929c6c385125428e"
+          }
+        ],
+        "ADMIN_USER_APPROVAL": 2,
+        "ADMIN_AUTHOR_VERIFICATION": 3,
+        "ADMIN_ARTICLE_REVIEW": 3,
+        "ADMIN_ARTICLE_APPROVAL": 5,
+        "ADMIN_PREMIUM_SELECTION": 5,
+        "ADMIN_HOMEPAGE_FEATURE": 5,
+        "ADMIN_COMMUNITY_MGMT": 5,
+        "ADMIN_SUPPORT_RESOLUTION": 5,
+        "ADMIN_ARTICLE_PUBLISH": 24,
+        "DEDUCT_MISSED_DEADLINE": -5,
+        "DEDUCT_POOR_QUALITY": -5,
+        "DEDUCT_CARELESSNESS": -10,
+        "DEDUCT_UNVERIFIED": -20,
+        "DEDUCT_PLAGIARISM": -50
+      },
+      "_id": "6a318529929c6c385125428a",
+      "creditSystemEnabled": true,
+      "externalApisEnabled": false,
+      "analyticsEnabled": true,
+      "exportSystemEnabled": true,
+      "emergencyMode": false,
+      "breakingNewsPriorityMode": false,
+      "version": 11,
+      "updatedAt": "2026-06-17T21:05:21.137Z",
+      "__v": 0,
+      "updatedBy": "6a3184db929c6c3851254287"
+    },
+    "updatedBy": "6a3184db929c6c3851254287",
+    "timestamp": "2026-06-17T21:05:21.332Z",
+    "version": 11,
+    "__v": 0
+  },
+  {
+    "_id": "6a3324e46275ca47cb480ac6",
+    "settings": {
+      "credits": {
+        "AUTHOR_ARTICLE_PUBLISH": 20,
+        "AUTHOR_PREMIUM_ARTICLE": 5,
+        "AUTHOR_BREAKING_NEWS": 10,
+        "AUTHOR_SEO_OPTIMIZED": 5,
+        "AUTHOR_TRENDING_10": 10,
+        "AUTHOR_TRENDING_30": 30,
+        "milestones": [
+          {
+            "views": 500,
+            "credits": 5,
+            "title": "500 Views Milestone",
+            "_id": "6a318529929c6c385125428b"
+          },
+          {
+            "views": 1000,
+            "credits": 10,
+            "title": "1,000 Views Milestone",
+            "_id": "6a318529929c6c385125428c"
+          },
+          {
+            "views": 5000,
+            "credits": 20,
+            "title": "5,000 Views Milestone",
+            "_id": "6a318529929c6c385125428d"
+          },
+          {
+            "views": 10000,
+            "credits": 50,
+            "title": "10,000+ Views Milestone",
+            "_id": "6a318529929c6c385125428e"
+          }
+        ],
+        "ADMIN_USER_APPROVAL": 2,
+        "ADMIN_AUTHOR_VERIFICATION": 3,
+        "ADMIN_ARTICLE_REVIEW": 3,
+        "ADMIN_ARTICLE_APPROVAL": 5,
+        "ADMIN_PREMIUM_SELECTION": 5,
+        "ADMIN_HOMEPAGE_FEATURE": 5,
+        "ADMIN_COMMUNITY_MGMT": 5,
+        "ADMIN_SUPPORT_RESOLUTION": 5,
+        "ADMIN_ARTICLE_PUBLISH": 24,
+        "DEDUCT_MISSED_DEADLINE": -5,
+        "DEDUCT_POOR_QUALITY": -5,
+        "DEDUCT_CARELESSNESS": -10,
+        "DEDUCT_UNVERIFIED": -20,
+        "DEDUCT_PLAGIARISM": -50
+      },
+      "_id": "6a318529929c6c385125428a",
+      "creditSystemEnabled": true,
+      "externalApisEnabled": false,
+      "analyticsEnabled": true,
+      "exportSystemEnabled": true,
+      "emergencyMode": false,
+      "breakingNewsPriorityMode": true,
+      "version": 12,
+      "updatedAt": "2026-06-17T22:51:16.415Z",
+      "__v": 0,
+      "updatedBy": "6a3184db929c6c3851254287"
+    },
+    "updatedBy": "6a3184db929c6c3851254287",
+    "timestamp": "2026-06-17T22:51:16.606Z",
+    "version": 12,
+    "__v": 0
+  },
+  {
+    "_id": "6a3367dbcaa26b6d25592de6",
+    "settings": {
+      "credits": {
+        "AUTHOR_ARTICLE_PUBLISH": 20,
+        "AUTHOR_PREMIUM_ARTICLE": 5,
+        "AUTHOR_BREAKING_NEWS": 10,
+        "AUTHOR_SEO_OPTIMIZED": 5,
+        "AUTHOR_TRENDING_10": 10,
+        "AUTHOR_TRENDING_30": 30,
+        "milestones": [
+          {
+            "views": 500,
+            "credits": 5,
+            "title": "500 Views Milestone",
+            "_id": "6a318529929c6c385125428b"
+          },
+          {
+            "views": 1000,
+            "credits": 10,
+            "title": "1,000 Views Milestone",
+            "_id": "6a318529929c6c385125428c"
+          },
+          {
+            "views": 5000,
+            "credits": 20,
+            "title": "5,000 Views Milestone",
+            "_id": "6a318529929c6c385125428d"
+          },
+          {
+            "views": 10000,
+            "credits": 50,
+            "title": "10,000+ Views Milestone",
+            "_id": "6a318529929c6c385125428e"
+          }
+        ],
+        "ADMIN_USER_APPROVAL": 2,
+        "ADMIN_AUTHOR_VERIFICATION": 3,
+        "ADMIN_ARTICLE_REVIEW": 3,
+        "ADMIN_ARTICLE_APPROVAL": 5,
+        "ADMIN_PREMIUM_SELECTION": 5,
+        "ADMIN_HOMEPAGE_FEATURE": 5,
+        "ADMIN_COMMUNITY_MGMT": 5,
+        "ADMIN_SUPPORT_RESOLUTION": 5,
+        "ADMIN_ARTICLE_PUBLISH": 23,
+        "DEDUCT_MISSED_DEADLINE": -5,
+        "DEDUCT_POOR_QUALITY": -5,
+        "DEDUCT_CARELESSNESS": -10,
+        "DEDUCT_UNVERIFIED": -20,
+        "DEDUCT_PLAGIARISM": -50
+      },
+      "_id": "6a318529929c6c385125428a",
+      "creditSystemEnabled": true,
+      "externalApisEnabled": false,
+      "analyticsEnabled": true,
+      "exportSystemEnabled": true,
+      "emergencyMode": false,
+      "breakingNewsPriorityMode": true,
+      "version": 13,
+      "updatedAt": "2026-06-18T03:36:59.146Z",
+      "__v": 0,
+      "updatedBy": "6a3184db929c6c3851254287"
+    },
+    "updatedBy": "6a3184db929c6c3851254287",
+    "timestamp": "2026-06-18T03:36:59.240Z",
+    "version": 13,
+    "__v": 0
+  },
+  {
+    "_id": "6a337997a18602e7e3e8a278",
+    "settings": {
+      "credits": {
+        "AUTHOR_ARTICLE_PUBLISH": 20,
+        "AUTHOR_PREMIUM_ARTICLE": 5,
+        "AUTHOR_BREAKING_NEWS": 10,
+        "AUTHOR_SEO_OPTIMIZED": 5,
+        "AUTHOR_TRENDING_10": 10,
+        "AUTHOR_TRENDING_30": 30,
+        "milestones": [
+          {
+            "views": 500,
+            "credits": 5,
+            "title": "500 Views Milestone",
+            "_id": "6a318529929c6c385125428b"
+          },
+          {
+            "views": 1000,
+            "credits": 10,
+            "title": "1,000 Views Milestone",
+            "_id": "6a318529929c6c385125428c"
+          },
+          {
+            "views": 5000,
+            "credits": 20,
+            "title": "5,000 Views Milestone",
+            "_id": "6a318529929c6c385125428d"
+          },
+          {
+            "views": 10000,
+            "credits": 50,
+            "title": "10,000+ Views Milestone",
+            "_id": "6a318529929c6c385125428e"
+          }
+        ],
+        "ADMIN_USER_APPROVAL": 2,
+        "ADMIN_AUTHOR_VERIFICATION": 3,
+        "ADMIN_ARTICLE_REVIEW": 3,
+        "ADMIN_ARTICLE_APPROVAL": 5,
+        "ADMIN_PREMIUM_SELECTION": 5,
+        "ADMIN_HOMEPAGE_FEATURE": 5,
+        "ADMIN_COMMUNITY_MGMT": 5,
+        "ADMIN_SUPPORT_RESOLUTION": 5,
+        "ADMIN_ARTICLE_PUBLISH": 23,
+        "DEDUCT_MISSED_DEADLINE": -5,
+        "DEDUCT_POOR_QUALITY": -5,
+        "DEDUCT_CARELESSNESS": -10,
+        "DEDUCT_UNVERIFIED": -20,
+        "DEDUCT_PLAGIARISM": -50
+      },
+      "_id": "6a318529929c6c385125428a",
+      "creditSystemEnabled": true,
+      "externalApisEnabled": true,
+      "analyticsEnabled": true,
+      "exportSystemEnabled": true,
+      "emergencyMode": false,
+      "breakingNewsPriorityMode": true,
+      "version": 14,
+      "updatedAt": "2026-06-18T04:52:39.287Z",
+      "__v": 0,
+      "updatedBy": "6a3184db929c6c3851254287"
+    },
+    "updatedBy": "6a3184db929c6c3851254287",
+    "timestamp": "2026-06-18T04:52:39.414Z",
+    "version": 14,
+    "__v": 0
+  },
+  {
+    "_id": "6a35b30ba90500317ea06512",
+    "settings": {
+      "credits": {
+        "AUTHOR_ARTICLE_PUBLISH": 20,
+        "AUTHOR_PREMIUM_ARTICLE": 5,
+        "AUTHOR_BREAKING_NEWS": 10,
+        "AUTHOR_SEO_OPTIMIZED": 5,
+        "AUTHOR_TRENDING_10": 10,
+        "AUTHOR_TRENDING_30": 30,
+        "milestones": [
+          {
+            "views": 500,
+            "credits": 5,
+            "title": "500 Views Milestone",
+            "_id": "6a318529929c6c385125428b"
+          },
+          {
+            "views": 1000,
+            "credits": 10,
+            "title": "1,000 Views Milestone",
+            "_id": "6a318529929c6c385125428c"
+          },
+          {
+            "views": 5000,
+            "credits": 20,
+            "title": "5,000 Views Milestone",
+            "_id": "6a318529929c6c385125428d"
+          },
+          {
+            "views": 10000,
+            "credits": 50,
+            "title": "10,000+ Views Milestone",
+            "_id": "6a318529929c6c385125428e"
+          }
+        ],
+        "ADMIN_USER_APPROVAL": 2,
+        "ADMIN_AUTHOR_VERIFICATION": 3,
+        "ADMIN_ARTICLE_REVIEW": 3,
+        "ADMIN_ARTICLE_APPROVAL": 5,
+        "ADMIN_PREMIUM_SELECTION": 5,
+        "ADMIN_HOMEPAGE_FEATURE": 5,
+        "ADMIN_COMMUNITY_MGMT": 5,
+        "ADMIN_SUPPORT_RESOLUTION": 5,
+        "ADMIN_ARTICLE_PUBLISH": 23,
+        "DEDUCT_MISSED_DEADLINE": -5,
+        "DEDUCT_POOR_QUALITY": -5,
+        "DEDUCT_CARELESSNESS": -10,
+        "DEDUCT_UNVERIFIED": -20,
+        "DEDUCT_PLAGIARISM": -50
+      },
+      "_id": "6a318529929c6c385125428a",
+      "creditSystemEnabled": true,
+      "externalApisEnabled": true,
+      "analyticsEnabled": true,
+      "exportSystemEnabled": false,
+      "emergencyMode": false,
+      "breakingNewsPriorityMode": true,
+      "version": 15,
+      "updatedAt": "2026-06-19T21:22:19.689Z",
+      "__v": 0,
+      "updatedBy": "6a3184db929c6c3851254287"
+    },
+    "updatedBy": "6a3184db929c6c3851254287",
+    "timestamp": "2026-06-19T21:22:19.760Z",
+    "version": 15,
+    "__v": 0
+  },
+  {
+    "_id": "6a35b321a90500317ea06519",
+    "settings": {
+      "credits": {
+        "AUTHOR_ARTICLE_PUBLISH": 20,
+        "AUTHOR_PREMIUM_ARTICLE": 5,
+        "AUTHOR_BREAKING_NEWS": 10,
+        "AUTHOR_SEO_OPTIMIZED": 5,
+        "AUTHOR_TRENDING_10": 10,
+        "AUTHOR_TRENDING_30": 30,
+        "milestones": [
+          {
+            "views": 500,
+            "credits": 5,
+            "title": "500 Views Milestone",
+            "_id": "6a318529929c6c385125428b"
+          },
+          {
+            "views": 1000,
+            "credits": 10,
+            "title": "1,000 Views Milestone",
+            "_id": "6a318529929c6c385125428c"
+          },
+          {
+            "views": 5000,
+            "credits": 20,
+            "title": "5,000 Views Milestone",
+            "_id": "6a318529929c6c385125428d"
+          },
+          {
+            "views": 10000,
+            "credits": 50,
+            "title": "10,000+ Views Milestone",
+            "_id": "6a318529929c6c385125428e"
+          }
+        ],
+        "ADMIN_USER_APPROVAL": 2,
+        "ADMIN_AUTHOR_VERIFICATION": 3,
+        "ADMIN_ARTICLE_REVIEW": 3,
+        "ADMIN_ARTICLE_APPROVAL": 5,
+        "ADMIN_PREMIUM_SELECTION": 5,
+        "ADMIN_HOMEPAGE_FEATURE": 5,
+        "ADMIN_COMMUNITY_MGMT": 5,
+        "ADMIN_SUPPORT_RESOLUTION": 5,
+        "ADMIN_ARTICLE_PUBLISH": 23,
+        "DEDUCT_MISSED_DEADLINE": -5,
+        "DEDUCT_POOR_QUALITY": -5,
+        "DEDUCT_CARELESSNESS": -10,
+        "DEDUCT_UNVERIFIED": -20,
+        "DEDUCT_PLAGIARISM": -50
+      },
+      "_id": "6a318529929c6c385125428a",
+      "creditSystemEnabled": true,
+      "externalApisEnabled": true,
+      "analyticsEnabled": true,
+      "exportSystemEnabled": true,
+      "emergencyMode": false,
+      "breakingNewsPriorityMode": true,
+      "version": 16,
+      "updatedAt": "2026-06-19T21:22:41.727Z",
+      "__v": 0,
+      "updatedBy": "6a3184db929c6c3851254287"
+    },
+    "updatedBy": "6a3184db929c6c3851254287",
+    "timestamp": "2026-06-19T21:22:41.774Z",
+    "version": 16,
+    "__v": 0
+  }
+]

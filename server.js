@@ -1,0 +1,2434 @@
+const express = require('express');
+const path = require('path');
+const cors = require('cors');
+const multer = require('multer');
+const cloudinary = require('cloudinary').v2;
+require('dotenv').config({ override: true });
+const mongoose = require('mongoose'); // Added mongoose import for connection tracking
+const UAParser = require('ua-parser-js');
+const { connectDB, getHealthStatus } = require('./config/database');
+
+// ... (previous imports)
+
+// --- HELPERS ---
+const getDeviceInfo = (userAgentString) => {
+    const parser = new UAParser(userAgentString);
+    const result = parser.getResult();
+    return {
+        browser: `${result.browser.name || 'Unknown'} ${result.browser.version || ''}`.trim(),
+        operatingSystem: `${result.os.name || 'Unknown'} ${result.os.version || ''}`.trim(),
+        deviceType: result.device.type || 'desktop'
+    };
+};
+
+// Import Models
+const User = require('./models/User');
+const Article = require('./models/Article');
+const FlashNews = require('./models/FlashNews');
+const LoginLog = require('./models/LoginLog');
+const OTP = require('./models/OTP');
+const CreditRule = require('./models/CreditRule');
+const CreditTransaction = require('./models/CreditTransaction');
+const ActivityLog = require('./models/ActivityLog');
+const Analytics = require('./models/Analytics');
+const Notification = require('./models/Notification');
+const StorageConfig = require('./models/StorageConfig');
+const StorageHistory = require('./models/StorageHistory');
+const { encrypt, decrypt } = require('./utils/crypto');
+
+// Import Services & Middleware
+const creditService = require('./services/creditService');
+const exportService = require('./services/exportService');
+const emailService = require('./services/emailService');
+const settingsService = require('./services/settingsService');
+const analyticsRoutes = require('./routes/analyticsRoutes');
+const marketService = require('./services/marketService');
+const weatherService = require('./services/weatherService');
+const populationService = require('./services/populationService');
+const uploadProfileImage = require('./services/uploadProfileImage');
+const uploadArticleImage = require('./services/uploadArticleImage');
+
+const authUtils = require('./utils/auth');
+const { verifyToken, requireAdmin, requireSuperAdmin, requireEditor, requireReviewer } = require('./middleware/auth');
+
+// Helper for generating Admin Notifications
+const createAdminNotification = async (title, message) => {
+    try {
+        const User = require('./models/User');
+        const Notification = require('./models/Notification');
+        const admins = await User.find({ role: { $in: ['super_admin', 'admin', 'editor', 'reviewer'] } });
+        const notifications = admins.map(admin => ({
+            userId: admin._id.toString(),
+            title,
+            message,
+            isRead: false,
+            createdAt: new Date()
+        }));
+        if (notifications.length > 0) {
+            await Notification.insertMany(notifications);
+            console.log(`[SYS_NOTIF] Created ${notifications.length} admin notifications: "${title}"`);
+        }
+    } catch (err) {
+        console.error('Error creating admin notification:', err);
+    }
+};
+
+// Configure Cloudinary Accounts
+require('./config/cloudinaryProfile');
+require('./config/cloudinaryArticle');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// --- MIDDLEWARE (Tier 1: SECURITY & PARSING) ---
+app.use(cors({
+  origin: [
+    'http://localhost:5173', 
+    'http://127.0.0.1:5173', 
+    'https://newspercent.com', 
+    'https://www.newspercent.com'
+  ],
+  credentials: true
+}));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+const handleError = (res, error, context = 'Server Error') => {
+    console.error(`[${context}]:`, error);
+    
+    const isMongoError = error.name === 'MongoError' || 
+                         error.name === 'ValidationError' || 
+                         error.name === 'MongooseError' ||
+                         error.message.toLowerCase().includes('mongo') || 
+                         error.message.toLowerCase().includes('mongoose') ||
+                         error.message.toLowerCase().includes('connection') ||
+                         error.message.toLowerCase().includes('topology');
+                         
+    return res.status(500).json({
+        success: false,
+        error: error.message || 'Internal Server Error',
+        context,
+        databaseState: mongoose.connection.readyState === 1 ? 'CONNECTED' : 'DISCONNECTED',
+        isMongoError,
+        timestamp: new Date().toISOString(),
+        stack: error.stack
+    });
+};
+
+// --- MARKET INTEL API ---
+app.get('/api/market/intel', async (req, res) => {
+    try {
+        const intel = await marketService.getMarketData();
+        res.status(200).json(intel);
+    } catch (err) {
+        handleError(res, err, 'Market Intel Error');
+    }
+});
+
+// --- WEATHER API ---
+app.get('/api/weather/report', async (req, res) => {
+    try {
+        const { q, lat, lon } = req.query;
+        let query = q;
+        if (!query && lat && lon) {
+            query = `${lat},${lon}`;
+        }
+        const result = await weatherService.getWeatherData(query || 'London');
+        res.status(200).json(result);
+    } catch (err) {
+        handleError(res, err, 'Weather API Error');
+    }
+});
+
+// --- POPULATION INTELLIGENCE API ---
+app.get('/api/population/intel', async (req, res) => {
+    try {
+        const intel = await populationService.getPopulationIntel();
+        res.status(200).json(intel);
+    } catch (err) {
+        handleError(res, err, 'Population Intel Error');
+    }
+});
+
+// --- ANALYTICS ROUTES ---
+app.use('/api/analytics', analyticsRoutes);
+
+// --- REQUEST LOGGING ---
+app.use((req, res, next) => {
+    console.log(`[REQ] ${req.method} ${req.originalUrl}`);
+    next();
+});
+
+// --- SYSTEM DIAGNOSTICS ---
+app.get('/api/health', (req, res) => {
+    try {
+        const dbStatus = getHealthStatus();
+        res.json({
+            status: "ok",
+            ...dbStatus,
+            uptime: process.uptime(),
+            timestamp: new Date()
+        });
+    } catch (err) {
+        handleError(res, err, 'Health Check Error');
+    }
+});
+
+// --- SUPER ADMIN INITIALIZATION ---
+const SUPER_ADMIN_EMAIL = 'newsprecent57@gmail.com';
+const initializeSuperAdmin = async () => {
+    try {
+        const superAdminExists = await User.findOne({ email: SUPER_ADMIN_EMAIL });
+        
+        if (superAdminExists) {
+            console.log("Current User:", superAdminExists);
+            console.log("Profile Image:", superAdminExists.profileImage);
+        } else {
+            const superAdmin = {
+                name: "Karthik",
+                email: SUPER_ADMIN_EMAIL,
+                role: "super_admin",
+                isActive: true,
+                createdAt: new Date()
+            };
+            const createdAdmin = await User.create(superAdmin);
+            console.log(`[SYS] Super Admin initialized: ${SUPER_ADMIN_EMAIL}`);
+            console.log("Current User:", createdAdmin);
+            console.log("Profile Image:", createdAdmin.profileImage);
+        }
+    } catch (err) {
+        console.error('[SYS] Super Admin initialization error:', err);
+    }
+};
+// Initialization will be handled in the startup sequence
+
+// --- AUTHENTICATION API ---
+
+// 1. Send OTP
+app.post('/api/auth/send-otp', async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            console.log("[OTP] Error: Email missing in request payload");
+            return res.status(400).json({ error: 'Email is required.' });
+        }
+
+        const normalizedEmail = email.toLowerCase().trim();
+        console.log(`[OTP] Initiating access protocol for: ${normalizedEmail}`);
+
+        const user = await User.findOne({ email: normalizedEmail });
+        if (!user) {
+            console.log(`[OTP] Denied: ${normalizedEmail} (Identity not found in mainframe)`);
+            return res.status(403).json({ success: false, message: 'User not authorized.', error: 'User not authorized.' });
+        }
+
+        console.log(`[OTP] Node Identified: ${user.email} (Clearance: ${user.role})`);
+
+        if (!user.isActive) {
+            console.log(`[OTP] Locked: ${user.email} (Node disabled by command)`);
+            return res.status(403).json({ error: 'Permission Denied: Account disabled.' });
+        }
+
+        const generatedOTP = authUtils.generateOTP();
+        const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+
+        await OTP.deleteMany({ email: normalizedEmail });
+        await OTP.create({
+            email: normalizedEmail,
+            otp: generatedOTP,
+            expiresAt
+        });
+
+        console.log(`[OTP] Internal code synchronized for ${user.email}`);
+
+        // Send Email with robust error handling
+        try {
+            console.log(`[OTP] Attempting SMTP transmission to ${user.email}...`);
+            await emailService.sendOTP(user.email, generatedOTP);
+            console.log(`[OTP] SUCCESS: Transmission verified for ${user.email}`);
+            res.json({ 
+                success: true, 
+                message: 'OTP sent successfully.', 
+                profileImage: user.profileImage, 
+                name: user.name 
+            });
+        } catch (emailErr) {
+            console.error(`[OTP] SMTP ERROR for ${user.email}:`, emailErr);
+            return res.status(500).json({ error: 'Failed to transmit access code. Security server unreachable.' });
+        }
+    } catch (err) {
+        handleError(res, err, 'OTP Send Error');
+    }
+});
+
+// 2. Verify OTP
+app.post('/api/auth/verify-otp', async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+        if (!email || !otp) return res.status(400).json({ error: 'Email and OTP required.' });
+
+        const otpRecord = await OTP.findOne({ email: email.toLowerCase() });
+        const deviceInfo = getDeviceInfo(req.get('User-Agent'));
+        
+        if (!otpRecord) {
+            return res.status(400).json({ error: 'OTP expired or not found.' });
+        }
+        
+        const isMatch = await otpRecord.compareOTP(otp);
+        if (!isMatch) {
+            const user = await User.findOne({ email: email.toLowerCase() });
+            await LoginLog.create({
+                userId: user ? user._id : null,
+                name: user ? user.name : 'Unknown',
+                email: email.toLowerCase(),
+                role: user ? user.role : 'unauthorized',
+                loginTime: new Date(),
+                ipAddress: req.ip,
+                ...deviceInfo,
+                status: 'failed',
+                userAgent: req.get('User-Agent')
+            });
+            return res.status(400).json({ error: 'Invalid OTP code.' });
+        }
+
+        const user = await User.findOne({ email: email.toLowerCase() });
+        console.log("Current User:", user);
+        console.log("Profile Image:", user ? user.profileImage : undefined);
+        
+        user.lastLogin = new Date();
+        await user.save();
+
+        const token = authUtils.generateToken(user);
+
+        const log = await LoginLog.create({
+            userId: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            loginTime: new Date(),
+            ipAddress: req.ip,
+            ...deviceInfo,
+            status: 'success',
+            userAgent: req.get('User-Agent')
+        });
+
+        await OTP.deleteMany({ email: email.toLowerCase() });
+
+        res.json({
+            success: true,
+            token,
+            loginLogId: log._id,
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                isActive: user.isActive,
+                profileImage: user.profileImage
+            }
+        });
+    } catch (err) {
+        handleError(res, err, 'OTP Verify Error');
+    }
+});
+
+// 3. Logout
+app.post('/api/auth/logout', verifyToken, async (req, res) => {
+    try {
+        const { loginLogId } = req.body;
+        if (loginLogId) {
+            const log = await LoginLog.findById(loginLogId);
+            if (log) {
+                log.logoutTime = new Date();
+                const durationMs = log.logoutTime - log.loginTime;
+                log.sessionDuration = Math.round(durationMs / 60000); // duration in minutes
+                await log.save();
+            }
+        }
+        res.json({ success: true, message: 'Logged out successfully.' });
+    } catch (err) {
+        handleError(res, err, 'Logout Error');
+    }
+});
+
+// 4. Get Current User
+app.get('/api/auth/me', verifyToken, (req, res) => {
+    try {
+        console.log("Current User:", req.user);
+        console.log("Profile Image:", req.user ? req.user.profileImage : undefined);
+        res.json({ user: req.user });
+    } catch (err) {
+        handleError(res, err, 'Auth Me Error');
+    }
+});
+
+// Update Display Name (Unified Admin/Author profile change)
+app.put('/api/users/profile/name', verifyToken, async (req, res) => {
+    try {
+        const { name } = req.body;
+        if (!name || name.trim() === '') {
+            return res.status(400).json({ error: 'Display name cannot be empty' });
+        }
+
+        const userId = req.user._id;
+        const dbUser = await User.findById(userId);
+        if (!dbUser) {
+            return res.status(404).json({ error: 'User account not found' });
+        }
+
+        const oldName = dbUser.name;
+        const newName = name.trim();
+
+        // 1. Update name on user document
+        dbUser.name = newName;
+        await dbUser.save();
+
+        // 2. Update authorName across all matching articles
+        const Article = require('./models/Article');
+        await Article.updateMany({ authorId: userId.toString() }, { authorName: newName });
+
+        // 3. Update reviewedBy across all matching articles
+        await Article.updateMany({ reviewedBy: oldName }, { reviewedBy: newName });
+
+        // 4. Update userName across activity logs
+        const ActivityLog = require('./models/ActivityLog');
+        await ActivityLog.updateMany({ userId }, { userName: newName });
+
+        // 5. Update adminName / updatedBy in storage history & configs
+        const StorageHistory = require('./models/StorageHistory');
+        await StorageHistory.updateMany({ adminName: oldName }, { adminName: newName });
+        await StorageConfig.updateMany({ updatedBy: oldName }, { updatedBy: newName });
+
+        console.log(`[USER PROFILE UPDATE] User ${userId} name updated from "${oldName}" to "${newName}"`);
+        
+        // Return updated user object
+        res.json({ 
+            success: true, 
+            message: 'Display name updated successfully',
+            user: {
+                _id: dbUser._id,
+                name: dbUser.name,
+                email: dbUser.email,
+                role: dbUser.role,
+                isActive: dbUser.isActive,
+                profileImage: dbUser.profileImage,
+                createdAt: dbUser.createdAt
+            }
+        });
+    } catch (err) {
+        handleError(res, err, 'Update Profile Name Error');
+    }
+});
+
+// --- USER MANAGEMENT API (RBAC PROTECTED) ---
+
+app.get('/api/admin/users', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const users = await User.aggregate([
+            {
+                $addFields: {
+                    userIdString: { $toString: "$_id" }
+                }
+            },
+            {
+                $lookup: {
+                    from: 'articles',
+                    localField: 'userIdString',
+                    foreignField: 'authorId',
+                    as: 'userArticles'
+                }
+            },
+            {
+                $addFields: {
+                    publishedArticles: {
+                        $filter: {
+                            input: "$userArticles",
+                            as: "art",
+                            cond: { $eq: ["$$art.status", "PUBLISHED"] }
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    name: 1,
+                    email: 1,
+                    role: 1,
+                    profileImage: 1,
+                    isActive: 1,
+                    totalCredits: 1,
+                    monthlyCredits: 1,
+                    yearlyCredits: 1,
+                    createdAt: 1,
+                    lastLogin: 1,
+                    articlesPublished: { $size: "$publishedArticles" },
+                    totalViews: { $sum: "$publishedArticles.views" }
+                }
+            },
+            { $sort: { createdAt: -1 } }
+        ]);
+        res.json(users);
+    } catch (err) {
+        handleError(res, err, 'Fetch Users Error');
+    }
+});
+
+app.post('/api/admin/users', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        console.log('[CREATE USER] Payload:', req.body);
+        console.log("[STEP] Validation Started");
+        let { name, email, role, profileImage } = req.body;
+
+        if (!name) return res.status(400).json({ success: false, error: 'Name is required' });
+        if (!email) return res.status(400).json({ success: false, error: 'Email is required' });
+        if (!role) return res.status(400).json({ success: false, error: 'Role is required' });
+
+        email = email.toLowerCase().trim();
+        role = role.toLowerCase().trim();
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ success: false, error: 'Invalid email format' });
+        }
+        
+        console.log("[STEP] Email Validation Passed");
+
+        const validRoles = ['super_admin', 'admin', 'editor', 'reviewer', 'author'];
+        if (!validRoles.includes(role)) {
+            return res.status(400).json({ success: false, error: `Invalid role. Must be one of: ${validRoles.join(', ')}` });
+        }
+
+        // Only super_admin and admin can create users
+        if (!['super_admin', 'admin'].includes(req.user.role)) {
+            return res.status(403).json({ success: false, error: 'Permission Denied: Insufficient clearance to create users.' });
+        }
+
+        console.log("[STEP] Checking Existing User");
+        const exists = await User.findOne({ email });
+        if (exists) {
+            console.log("[STEP] Existing User Found");
+            console.log("[DB] Existing User:", exists);
+            return res.status(409).json({ success: false, error: 'User with this email already exists' });
+        }
+
+        console.log("[STEP] Creating User");
+        const newUser = await User.create({
+            name,
+            email,
+            role,
+            profileImage: profileImage || '',
+            isActive: true,
+            invitedBy: req.user._id,
+            createdAt: new Date()
+        });
+        console.log("[STEP] User Created");
+
+        await creditService.awardCredits(req.user._id, 'ADMIN_USER_APPROVAL', {
+            description: `Approved and invited new user: ${newUser.name} (${newUser.role})`
+        });
+
+        let emailWarning = null;
+        console.log("[STEP] Sending Invitation Email");
+        try {
+            await emailService.sendAccountCreated(newUser.email, newUser.name, newUser.role);
+            console.log("[STEP] Invitation Email Sent");
+        } catch (emailErr) {
+            console.error("[EMAIL ERROR]", emailErr);
+            // If email fails, user is still created, we just warn the client
+            emailWarning = "User created but invitation email failed to send.";
+        }
+
+        console.log("[CREATE USER] SUCCESS");
+        res.status(201).json({
+            success: true,
+            user: newUser,
+            message: emailWarning || "User created successfully",
+            warning: !!emailWarning
+        });
+    } catch (err) {
+        console.error("[CREATE USER ERROR]", err);
+        handleError(res, err, 'Create User Error');
+    }
+});
+
+app.patch('/api/admin/users/:id', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const targetUser = await User.findById(req.params.id);
+        if (!targetUser) return res.status(404).json({ error: 'User not found' });
+        
+        const oldIsActive = targetUser.isActive;
+        Object.assign(targetUser, req.body);
+        await targetUser.save();
+
+        if (req.body.isActive === true && oldIsActive === false) {
+            if (targetUser.role === 'author') {
+                await creditService.awardCredits(req.user._id, 'ADMIN_AUTHOR_VERIFICATION', {
+                    description: `Verified and activated author: ${targetUser.name}`
+                });
+            } else {
+                await creditService.awardCredits(req.user._id, 'ADMIN_USER_APPROVAL', {
+                    description: `Approved and activated user: ${targetUser.name}`
+                });
+            }
+        }
+
+        res.json(targetUser);
+    } catch (err) {
+        handleError(res, err, 'Update User Error');
+    }
+});
+
+app.delete('/api/admin/users/:id', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const targetUser = await User.findById(req.params.id);
+        if (!targetUser) return res.status(404).json({ error: 'User not found' });
+        
+        if (targetUser._id.toString() === req.user._id.toString()) {
+            return res.status(403).json({ error: 'Permission Denied: You cannot delete your own account.' });
+        }
+
+        // Allow removing administrative users
+
+        await User.findByIdAndDelete(req.params.id);
+        res.json({ message: 'User removed successfully' });
+    } catch (err) {
+        handleError(res, err, 'Delete User Error');
+    }
+});
+
+// --- CONTENT MANAGEMENT API ---
+
+app.get('/api/news', async (req, res) => {
+    try {
+        let filter = { status: 'PUBLISHED' };
+        if (req.query.category && req.query.category !== 'Home') {
+            filter.category = req.query.category;
+        }
+        const news = await Article.find(filter).sort({ publishedAt: -1 });
+        console.log(`[FETCH NEWS] Found ${news.length} articles. Categories:`, news.map(a => a.category));
+        res.json(news);
+    } catch (err) {
+        handleError(res, err, 'Fetch News Error');
+    }
+});
+
+app.get('/api/articles/:id', async (req, res) => {
+    try {
+        const article = await Article.findById(req.params.id);
+        if (!article) return res.status(404).json({ error: 'Article not found' });
+        
+        article.views += 1;
+        await article.save();
+        
+        res.json(article);
+    } catch (err) {
+        handleError(res, err, 'Fetch Article Error');
+    }
+});
+
+app.post('/api/articles/:id/share', async (req, res) => {
+    try {
+        const article = await Article.findById(req.params.id);
+        if (!article) return res.status(404).json({ error: 'Article not found' });
+        
+        article.shares += 1;
+        await article.save();
+        
+        // Update Analytics
+        await Analytics.findOneAndUpdate(
+            { articleId: article._id },
+            { $inc: { shares: 1 }, updatedAt: new Date() },
+            { upsert: true, new: true }
+        );
+        
+        res.json({ success: true, shares: article.shares });
+    } catch (err) {
+        handleError(res, err, 'Share Article Error');
+    }
+});
+
+// LIKE ARTICLE
+app.post('/api/articles/:id/like', async (req, res) => {
+    try {
+        const article = await Article.findById(req.params.id);
+        if (!article) return res.status(404).json({ error: 'Article not found' });
+        
+        article.likes += 1;
+        await article.save();
+        
+        // Update Analytics
+        await Analytics.findOneAndUpdate(
+            { articleId: article._id },
+            { $inc: { likes: 1 }, updatedAt: new Date() },
+            { upsert: true, new: true }
+        );
+        
+        res.json({ success: true, likes: article.likes });
+    } catch (err) {
+        handleError(res, err, 'Like Article Error');
+    }
+});
+
+// UNLIKE ARTICLE
+app.delete('/api/articles/:id/like', async (req, res) => {
+    try {
+        const article = await Article.findById(req.params.id);
+        if (!article) return res.status(404).json({ error: 'Article not found' });
+        
+        article.likes = Math.max(0, article.likes - 1);
+        await article.save();
+        
+        // Update Analytics
+        await Analytics.findOneAndUpdate(
+            { articleId: article._id },
+            { $inc: { likes: -1 }, updatedAt: new Date() },
+            { upsert: true, new: true }
+        );
+        
+        res.json({ success: true, likes: article.likes });
+    } catch (err) {
+        handleError(res, err, 'Unlike Article Error');
+    }
+});
+
+
+
+// GET /api/breaking/main
+app.get('/api/breaking/main', async (req, res) => {
+    try {
+        const breaking = await Article.findOne({ isMainBreaking: true, status: 'PUBLISHED' });
+        res.json({
+            success: true,
+            article: breaking || null
+        });
+    } catch (err) {
+        handleError(res, err, 'Fetch Main Breaking Error');
+    }
+});
+
+// GET /api/breaking/categories
+app.get('/api/breaking/categories', async (req, res) => {
+    try {
+        const categoriesList = ["Technology", "Business", "Politics", "Sports", "Entertainment", "Science", "Health", "Education"];
+        
+        // Find articles that have isBreakingNews: true OR have isCategoryBreaking assigned (any non-null value)
+        const articles = await Article.find({
+            $or: [
+                { isBreakingNews: true },
+                { isCategoryBreaking: { $exists: true, $ne: null } }
+            ],
+            status: 'PUBLISHED'
+        }).sort({ publishedAt: -1, createdAt: -1 });
+        
+        console.log("Category Breaking Articles Returned:", articles.map(a => ({
+            id: a._id,
+            title: a.title,
+            isCategoryBreaking: a.isCategoryBreaking,
+            isBreakingNews: a.isBreakingNews,
+            category: a.category
+        })));
+        
+        const categoryMap = {};
+        for (const cat of categoriesList) {
+            // Find the latest breaking news article in this category (case-insensitive check)
+            const matched = articles.find(a => 
+                (a.isCategoryBreaking && a.isCategoryBreaking.toLowerCase() === cat.toLowerCase()) ||
+                (a.isBreakingNews && a.category && a.category.toLowerCase() === cat.toLowerCase())
+            );
+            categoryMap[cat] = matched || null;
+        }
+        
+        res.json({
+            success: true,
+            categories: categoryMap
+        });
+    } catch (err) {
+        handleError(res, err, 'Fetch Category Breaking News Error');
+    }
+});
+
+// GET /api/big-breaking
+app.get('/api/big-breaking', async (req, res) => {
+    try {
+        const article = await Article.findOne({ isBigBreaking: true, status: 'PUBLISHED' });
+        res.json({
+            success: true,
+            article: article || null
+        });
+    } catch (err) {
+        handleError(res, err, 'Fetch Big Breaking Error');
+    }
+});
+
+// PUT /api/admin/big-breaking/:articleId - Assign article as Big Breaking
+app.put('/api/admin/big-breaking/:articleId', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const { articleId } = req.params;
+        const article = await Article.findById(articleId);
+        if (!article) {
+            return res.status(404).json({ error: 'Article not found' });
+        }
+
+        // Find existing and set false
+        await Article.updateMany({ isBigBreaking: true }, { $set: { isBigBreaking: false } });
+
+        // Set new article isBigBreaking = true
+        article.isBigBreaking = true;
+        await article.save();
+
+        // Award admin credits
+        await creditService.awardCredits(req.user._id, 'ADMIN_HOMEPAGE_FEATURE', {
+            referenceId: article._id,
+            description: `Featured article as Big Breaking on homepage: ${article.title}`
+        });
+
+        res.json({ success: true, message: 'Article assigned as Big Breaking News', article });
+    } catch (err) {
+        handleError(res, err, 'Assign Big Breaking Error');
+    }
+});
+
+// DELETE /api/admin/big-breaking - Remove Big Breaking
+app.delete('/api/admin/big-breaking', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        await Article.updateMany({ isBigBreaking: true }, { $set: { isBigBreaking: false } });
+        res.json({ success: true, message: 'Big Breaking News assignment removed' });
+    } catch (err) {
+        handleError(res, err, 'Remove Big Breaking Error');
+    }
+});
+
+// PUT /api/admin/breaking/main/:articleId - Assign article as Main Breaking
+app.put('/api/admin/breaking/main/:articleId', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const { articleId } = req.params;
+        const article = await Article.findById(articleId);
+        if (!article) {
+            return res.status(404).json({ error: 'Article not found' });
+        }
+
+        // Clear existing main breaking
+        await Article.updateMany({ isMainBreaking: true }, { $set: { isMainBreaking: false } });
+        
+        // Also clear/update the legacy single isBreakingNews field
+        await Article.updateMany({ isBreakingNews: true }, { $set: { isBreakingNews: false } });
+
+        article.isMainBreaking = true;
+        article.isBreakingNews = true;
+        await article.save();
+
+        // Award admin credits
+        await creditService.awardCredits(req.user._id, 'ADMIN_HOMEPAGE_FEATURE', {
+            referenceId: article._id,
+            description: `Featured article as Main Breaking on homepage: ${article.title}`
+        });
+
+        res.json({ success: true, message: 'Article assigned as Main Breaking News', article });
+    } catch (err) {
+        handleError(res, err, 'Assign Main Breaking Error');
+    }
+});
+
+// DELETE /api/admin/breaking/main - Remove Main Breaking
+app.delete('/api/admin/breaking/main', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        await Article.updateMany({ isMainBreaking: true }, { $set: { isMainBreaking: false } });
+        await Article.updateMany({ isBreakingNews: true }, { $set: { isBreakingNews: false } });
+        res.json({ success: true, message: 'Main Breaking News assignment removed' });
+    } catch (err) {
+        handleError(res, err, 'Remove Main Breaking Error');
+    }
+});
+
+// PUT /api/admin/breaking/category/:articleId - Assign article as Category Breaking
+app.put('/api/admin/breaking/category/:articleId', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const { articleId } = req.params;
+        const { category } = req.body;
+
+        const categoriesList = ["Technology", "Business", "Politics", "Sports", "Entertainment", "Science", "Health", "Education"];
+        if (!categoriesList.includes(category)) {
+            return res.status(400).json({ error: 'Invalid category for Category Breaking News' });
+        }
+
+        const article = await Article.findById(articleId);
+        if (!article) {
+            return res.status(404).json({ error: 'Article not found' });
+        }
+
+        // Clear existing category breaking news for this category
+        await Article.updateMany({ isCategoryBreaking: category }, { $set: { isCategoryBreaking: null } });
+
+        article.isCategoryBreaking = category;
+        await article.save();
+
+        res.json({ success: true, message: `Article assigned as Category Breaking News for ${category}`, article });
+    } catch (err) {
+        handleError(res, err, 'Assign Category Breaking Error');
+    }
+});
+
+// DELETE /api/admin/breaking/category/:category - Remove Category Breaking for a category
+app.delete('/api/admin/breaking/category/:category', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const { category } = req.params;
+        await Article.updateMany({ isCategoryBreaking: category }, { $set: { isCategoryBreaking: null } });
+        res.json({ success: true, message: `Category Breaking News assignment removed for ${category}` });
+    } catch (err) {
+        handleError(res, err, 'Remove Category Breaking Error');
+    }
+});
+
+app.put('/api/admin/articles/:id/breaking', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        await Article.updateMany({ isBreakingNews: true }, { $set: { isBreakingNews: false } });
+        const article = await Article.findByIdAndUpdate(
+            req.params.id, 
+            { $set: { isBreakingNews: true } },
+            { new: true }
+        );
+
+        if (article) {
+            await creditService.awardCredits(req.user._id, 'ADMIN_HOMEPAGE_FEATURE', {
+                referenceId: article._id,
+                description: `Featured article on homepage: ${article.title}`
+            });
+            await creditService.awardCredits(req.user._id, 'ADMIN_PREMIUM_SELECTION', {
+                referenceId: article._id,
+                description: `Selected premium article: ${article.title}`
+            });
+        }
+
+        res.json(article);
+    } catch (err) {
+        handleError(res, err, 'Set Breaking News Error');
+    }
+});
+
+app.delete('/api/admin/articles/:id/breaking', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const article = await Article.findByIdAndUpdate(
+            req.params.id, 
+            { $set: { isBreakingNews: false, isMainBreaking: false } },
+            { new: true }
+        );
+        res.json(article);
+    } catch (err) {
+        handleError(res, err, 'Remove Breaking News Error');
+    }
+});
+
+// Admin Analytics
+app.get('/api/admin/analytics', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const totalUsers = (await User.countDocuments()) || 0;
+        const totalArticles = (await Article.countDocuments()) || 0;
+        const publishedArticles = (await Article.countDocuments({ status: 'PUBLISHED' })) || 0;
+        const pendingReviews = (await Article.countDocuments({ status: 'PENDING_REVIEW' })) || 0;
+        const authors = (await User.countDocuments({ role: 'author' })) || 0;
+        const admins = (await User.countDocuments({ role: { $in: ['admin', 'super_admin'] } })) || 0;
+        
+        const viewStats = await Article.aggregate([
+            { $group: { _id: null, totalViews: { $sum: "$views" } } }
+        ]);
+        const totalViews = viewStats.length > 0 ? viewStats[0].totalViews : 0;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const publishedToday = (await Article.countDocuments({ 
+            status: 'PUBLISHED', 
+            publishedAt: { $gte: today } 
+        })) || 0;
+
+        res.json({
+            totalUsers,
+            totalViews,
+            totalArticles,
+            publishedArticles,
+            publishedToday,
+            totalAuthors: authors,
+            totalAdmins: admins,
+            pendingReviews
+        });
+    } catch (err) {
+        handleError(res, err, 'Analytics Error');
+    }
+});
+
+// Security Analytics
+app.get('/api/security/stats', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const totalUsers = await User.countDocuments();
+        const totalAdmins = await User.countDocuments({ role: { $in: ['admin', 'super_admin'] } });
+        const totalAuthors = await User.countDocuments({ role: 'author' });
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const successfulLoginsToday = await LoginLog.countDocuments({ 
+            status: 'success', 
+            loginTime: { $gte: today } 
+        });
+
+        const failedLoginsToday = await LoginLog.countDocuments({ 
+            status: 'failed', 
+            loginTime: { $gte: today } 
+        });
+
+        const activeSessions = await LoginLog.countDocuments({
+            status: 'success',
+            logoutTime: { $exists: false },
+            loginTime: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } // Last 24 hours
+        });
+
+        const latestLogin = await LoginLog.findOne({ status: 'success' }).sort({ loginTime: -1 });
+
+        res.json({
+            totalUsers,
+            totalAdmins,
+            totalAuthors,
+            activeSessions,
+            successfulLoginsToday,
+            failedLoginsToday,
+            latestLogin
+        });
+    } catch (err) {
+        handleError(res, err, 'Security Stats Error');
+    }
+});
+
+app.get('/api/security/logins', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const { filter = 'all', page = 1, limit = 20 } = req.query;
+        let query = {};
+
+        if (filter === 'admins') {
+            query.role = { $in: ['admin', 'super_admin'] };
+        } else if (filter === 'authors') {
+            query.role = 'author';
+        } else if (filter === 'failed') {
+            query.status = 'failed';
+        }
+
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+
+        const logs = await LoginLog.find(query)
+            .sort({ loginTime: -1 })
+            .skip(skip)
+            .limit(parseInt(limit));
+
+        const total = await LoginLog.countDocuments(query);
+
+        res.json({
+            logs,
+            pagination: {
+                total,
+                page: parseInt(page),
+                limit: parseInt(limit),
+                pages: Math.ceil(total / parseInt(limit))
+            }
+        });
+    } catch (err) {
+        handleError(res, err, 'Security Logins Error');
+    }
+});
+
+app.get('/api/admin/pending',
+ verifyToken, requireReviewer, async (req, res) => {
+    try {
+        const articles = await Article.find({ 
+            status: { $in: ['PENDING_REVIEW', 'REVISION_REQUESTED'] } 
+        }).sort({ updatedAt: -1 });
+        res.json(articles);
+    } catch (err) {
+        handleError(res, err, 'Fetch Pending Error');
+    }
+});
+
+app.patch('/api/admin/articles/:id', verifyToken, requireEditor, async (req, res) => {
+    try {
+        const article = await Article.findById(req.params.id);
+        if (!article) return res.status(404).json({ error: 'Article not found' });
+        
+        const oldStatus = article.status;
+        Object.assign(article, req.body);
+        article.updatedAt = new Date();
+
+        if (req.body.status === 'PUBLISHED' && !article.publishedAt) {
+            article.publishedAt = new Date();
+        }
+
+        if (['APPROVED', 'PUBLISHED', 'REVISION_REQUESTED', 'REJECTED'].includes(req.body.status)) {
+            article.reviewedAt = new Date();
+            article.reviewedBy = req.user.name;
+        }
+        
+        await article.save();
+
+        if (['APPROVED', 'PUBLISHED'].includes(req.body.status) && !['APPROVED', 'PUBLISHED'].includes(oldStatus)) {
+            await creditService.awardCredits(req.user._id, 'ADMIN_ARTICLE_REVIEW', {
+                referenceId: article._id,
+                description: `Reviewed article: ${article.title}`
+            });
+            await creditService.awardCredits(req.user._id, 'ADMIN_ARTICLE_APPROVAL', {
+                referenceId: article._id,
+                description: `Approved article: ${article.title}`
+            });
+        } else if (req.body.status === 'REVISION_REQUESTED' && oldStatus !== 'REVISION_REQUESTED') {
+            await creditService.awardCredits(req.user._id, 'ADMIN_ARTICLE_REVIEW', {
+                referenceId: article._id,
+                description: `Issued revision directives for article: ${article.title}`
+            });
+        }
+
+        if (article.status === 'PUBLISHED' && oldStatus !== 'PUBLISHED') {
+            await creditService.processArticlePublish(article);
+        }
+
+        // Trigger status email notification asynchronously (do not block client/response)
+        emailService.checkAndSendArticleStatusEmail(
+            article,
+            oldStatus,
+            article.status,
+            req.user.name,
+            req.body.revisionMessage || req.body.reviewComments
+        ).catch(err => console.error('[SMTP] Failed in checkAndSendArticleStatusEmail:', err));
+
+        res.json(article);
+    } catch (err) {
+        handleError(res, err, 'Update Article Error');
+    }
+});
+
+app.delete('/api/admin/articles/:id', verifyToken, requireEditor, async (req, res) => {
+    try {
+        console.log(`[DELETE] Request for Article ID: ${req.params.id} by ${req.user.email}`);
+        const article = await Article.findById(req.params.id);
+        
+        if (!article) {
+            console.log(`[DELETE] Failure: Article ${req.params.id} not found.`);
+            return res.status(404).json({ success: false, error: 'Article not found' });
+        }
+
+        await Article.findByIdAndDelete(req.params.id);
+        console.log(`[DELETE] Success: Article ${req.params.id} purged.`);
+        res.json({ success: true, message: 'Article deleted successfully' });
+    } catch (err) {
+        console.error(`[DELETE] Database Error:`, err);
+        handleError(res, err, 'Delete Article Error');
+    }
+});
+
+// Author/Admin APIs
+app.get('/api/articles', verifyToken, async (req, res) => {
+    try {
+        console.log('--- ADMIN FETCH ARTICLES ROUTE ---');
+        console.log('User identity:', req.user.email, '| Clearance:', req.user.role);
+        
+        // Diagnostic Check: Mongoose Connection State
+        if (mongoose.connection.readyState !== 1) {
+            throw new Error(`Database connection is not ready. Mongoose readyState is ${mongoose.connection.readyState}`);
+        }
+
+        // Diagnostic Check: Registered model existence
+        if (!mongoose.modelNames().includes('Article')) {
+            throw new Error('Database model validation failed: "Article" model is not loaded or missing.');
+        }
+
+        const articles = await Article.find().sort({ updatedAt: -1 });
+        res.json(articles);
+    } catch (err) {
+        console.error('[API ROUTE FAILURE] GET /api/articles failed:', err);
+        handleError(res, err, 'Fetch Articles Error');
+    }
+});
+
+app.get('/api/my-articles', verifyToken, async (req, res) => {
+    try {
+        console.log('--- MY ARTICLES ROUTE ---');
+        console.log('User identity:', req.user.email, '| Clearance:', req.user.role);
+        
+        // Diagnostic Check: Mongoose Connection State
+        if (mongoose.connection.readyState !== 1) {
+            throw new Error(`Database connection is not ready. Mongoose readyState is ${mongoose.connection.readyState}`);
+        }
+
+        // Diagnostic Check: Registered model existence
+        if (!mongoose.modelNames().includes('Article')) {
+            throw new Error('Database model validation failed: "Article" model is not loaded or missing.');
+        }
+
+        const filter = req.user.role === 'author' ? { authorId: req.user._id } : {};
+        const articles = await Article.find(filter).sort({ updatedAt: -1 });
+        res.json(articles);
+    } catch (err) {
+        console.error('[API ROUTE FAILURE] GET /api/my-articles failed:', err);
+        handleError(res, err, 'Fetch My Articles Error');
+    }
+});
+
+const isReviewStatus = (status) => {
+    if (!status) return false;
+    const normalized = status.toString().toLowerCase();
+    return normalized === 'pending' || normalized === 'submitted_for_review' || normalized === 'pending_review';
+};
+
+app.patch('/api/articles/:id', verifyToken, async (req, res) => {
+    try {
+        const article = await Article.findById(req.params.id);
+        if (!article) return res.status(404).json({ error: 'Article not found' });
+
+        // Authorization: Only owner or admin/editor can update
+        const isOwner = article.authorId.toString() === req.user._id.toString();
+        const isAdmin = ['admin', 'super_admin', 'editor'].includes(req.user.role);
+
+        if (!isOwner && !isAdmin) {
+            return res.status(403).json({ error: 'Permission Denied: You can only update your own articles.' });
+        }
+
+        // Backend Authorization check for article status changes (preventing privilege escalation)
+        if (req.body.status && req.body.status !== article.status) {
+            const adminRoles = ['admin', 'super_admin', 'editor', 'reviewer'];
+            const isTargetAdminStatus = ['APPROVED', 'PUBLISHED', 'REVISION_REQUESTED', 'REJECTED'].includes(req.body.status.toUpperCase());
+            const isAdminUser = adminRoles.includes(req.user.role);
+            
+            if (isTargetAdminStatus && !isAdminUser) {
+                return res.status(403).json({ error: 'Permission Denied: Only editors or administrators can approve, publish, reject, or request revisions.' });
+            }
+        }
+
+        console.log(`[UPDATE ARTICLE] ID: ${req.params.id} | Payload:`, JSON.stringify(req.body, null, 2));
+
+        const oldStatus = article.status;
+        Object.assign(article, req.body);
+        article.updatedAt = new Date();
+        await article.save();
+
+        // Notification logic for editorial workflow
+        if (article.status === 'PENDING_REVIEW') {
+            if (oldStatus === 'DRAFT') {
+                await createAdminNotification(
+                    'Article Submitted for Review',
+                    `${req.user.name} submitted an article for review.`
+                );
+            } else if (oldStatus === 'PENDING_REVIEW') {
+                await createAdminNotification(
+                    'Submitted Article Updated',
+                    `${req.user.name} updated an article awaiting approval.`
+                );
+            } else if (oldStatus === 'REJECTED' || oldStatus === 'REVISION_REQUESTED') {
+                await createAdminNotification(
+                    'Article Resubmitted',
+                    `${req.user.name} resubmitted an article after revisions.`
+                );
+            }
+        }
+
+        // Email notification trigger for review submissions
+        if (isReviewStatus(article.status) && !isReviewStatus(oldStatus)) {
+            try {
+                await emailService.sendArticleReviewNotification(article);
+            } catch (emailErr) {
+                console.error('[ARTICLE REVIEW] Error sending notification email on update:', emailErr);
+            }
+        }
+
+        // Trigger status email notification asynchronously (do not block client/response)
+        emailService.checkAndSendArticleStatusEmail(
+            article,
+            oldStatus,
+            article.status,
+            req.user.name,
+            req.body.revisionMessage || req.body.reviewComments
+        ).catch(err => console.error('[SMTP] Failed in checkAndSendArticleStatusEmail:', err));
+
+        res.json(article);
+    } catch (err) {
+        handleError(res, err, 'Update Article Generic Error');
+    }
+});
+
+app.post('/api/articles', verifyToken, async (req, res) => {
+    try {
+        console.log(`[CREATE ARTICLE] Request Body:`, JSON.stringify(req.body, null, 2));
+        if (!['author', 'admin', 'super_admin'].includes(req.user.role)) {
+            return res.status(403).json({ error: 'Permission Denied: Insufficient clearance to create articles.' });
+        }
+
+        // Backend Authorization check for creating articles with administrative status (preventing privilege escalation)
+        if (req.body.status) {
+            const adminRoles = ['admin', 'super_admin', 'editor', 'reviewer'];
+            const isTargetAdminStatus = ['APPROVED', 'PUBLISHED', 'REVISION_REQUESTED', 'REJECTED'].includes(req.body.status.toUpperCase());
+            const isAdminUser = adminRoles.includes(req.user.role);
+            
+            if (isTargetAdminStatus && !isAdminUser) {
+                return res.status(403).json({ error: 'Permission Denied: Only editors or administrators can create articles with an approved or published status.' });
+            }
+        }
+
+        const newArticle = await Article.create({
+            ...req.body,
+            authorId: req.user._id,
+            authorName: req.user.name,
+            createdAt: new Date(),
+            updatedAt: new Date()
+        });
+
+        if (newArticle.status === 'PUBLISHED') {
+            await creditService.processArticlePublish(newArticle);
+        }
+
+        // Notification logic for editorial workflow
+        if (newArticle.status === 'PENDING_REVIEW') {
+            await createAdminNotification(
+                'New Article Submitted',
+                `${req.user.name} submitted an article for review.`
+            );
+        }
+
+        // Email notification trigger for review submissions
+        if (isReviewStatus(newArticle.status)) {
+            try {
+                await emailService.sendArticleReviewNotification(newArticle);
+            } catch (emailErr) {
+                console.error('[ARTICLE REVIEW] Error sending notification email on create:', emailErr);
+            }
+        }
+
+        res.status(201).json(newArticle);
+    } catch (err) {
+        handleError(res, err, 'Create Article Error');
+    }
+});
+
+// Storage API
+const storage = multer.memoryStorage();
+const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
+
+app.post('/api/upload', verifyToken, upload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+        
+        const uploadType = req.query.type || 'article';
+        let result;
+        
+        if (uploadType === 'admin') {
+            result = await uploadProfileImage(req.file.buffer, 'newspercent/profiles/admins');
+        } else if (uploadType === 'author') {
+            result = await uploadProfileImage(req.file.buffer, 'newspercent/profiles/authors');
+        } else if (uploadType === 'breaking-news') {
+            result = await uploadArticleImage(req.file.buffer, 'newspercent/breaking-news');
+        } else if (uploadType === 'flash-news') {
+            result = await uploadArticleImage(req.file.buffer, 'newspercent/flash-news');
+        } else {
+            // default to article/content
+            result = await uploadArticleImage(req.file.buffer, 'newspercent/articles');
+        }
+        
+        res.json({ success: true, imageUrl: result.secure_url, publicId: result.public_id });
+    } catch (err) {
+        handleError(res, err, 'Upload Error');
+    }
+});
+
+// --- CREDIT SYSTEM API ---
+
+app.get('/api/credits/me', verifyToken, async (req, res) => {
+    try {
+        const stats = await User.aggregate([
+            { $match: { _id: new mongoose.Types.ObjectId(req.user._id) } },
+            {
+                $addFields: { userIdString: { $toString: "$_id" } }
+            },
+            {
+                $lookup: {
+                    from: 'articles',
+                    localField: 'userIdString',
+                    foreignField: 'authorId',
+                    as: 'userArticles'
+                }
+            },
+            {
+                $addFields: {
+                    publishedArticles: {
+                        $filter: {
+                            input: "$userArticles",
+                            as: "art",
+                            cond: { $eq: ["$$art.status", "PUBLISHED"] }
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    name: 1, email: 1, role: 1, profileImage: 1,
+                    totalCredits: 1, monthlyCredits: 1, yearlyCredits: 1,
+                    badges: 1, achievements: 1,
+                    articlesPublished: { $size: "$publishedArticles" },
+                    totalViews: { $sum: "$publishedArticles.views" }
+                }
+            }
+        ]);
+
+        if (!stats.length) return res.status(404).json({ error: 'User not found' });
+        
+        const user = stats[0];
+        const rankingScore = creditService.calculateRankingScore(user);
+        res.json({ ...user, rankingScore });
+    } catch (err) {
+        handleError(res, err, 'Fetch My Credits Error');
+    }
+});
+
+app.get('/api/credits/leaderboard', async (req, res) => {
+    try {
+        const leaderboard = await User.aggregate([
+            { $match: { totalCredits: { $gt: 0 } } },
+            {
+                $addFields: { userIdString: { $toString: "$_id" } }
+            },
+            {
+                $lookup: {
+                    from: 'articles',
+                    localField: 'userIdString',
+                    foreignField: 'authorId',
+                    as: 'userArticles'
+                }
+            },
+            {
+                $addFields: {
+                    publishedArticles: {
+                        $filter: {
+                            input: "$userArticles",
+                            as: "art",
+                            cond: { $eq: ["$$art.status", "PUBLISHED"] }
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    name: 1, role: 1, totalCredits: 1, badges: 1,
+                    articlesPublished: { $size: "$publishedArticles" },
+                    totalViews: { $sum: "$publishedArticles.views" }
+                }
+            },
+            { $sort: { totalCredits: -1 } },
+            { $limit: 50 }
+        ]);
+        
+        const enriched = leaderboard.map(u => ({
+            ...u,
+            rankingScore: creditService.calculateRankingScore(u)
+        }));
+
+        res.json(enriched);
+    } catch (err) {
+        handleError(res, err, 'Leaderboard Error');
+    }
+});
+
+app.get('/api/credits/history/:userId', verifyToken, async (req, res) => {
+    try {
+        const history = await CreditTransaction.find({ userId: req.params.userId })
+            .sort({ createdAt: -1 })
+            .limit(100);
+        res.json(history);
+    } catch (err) {
+        handleError(res, err, 'Credit History Error');
+    }
+});
+
+// --- EXPORT API (ADMIN ONLY) ---
+
+app.get('/api/admin/export/article/:id', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const settings = await settingsService.getSettings();
+        if (!settings.documentExportEnabled) {
+            return res.status(403).json({ error: 'Document export is currently disabled by the administrator.' });
+        }
+
+        const article = await Article.findById(req.params.id);
+        if (!article) return res.status(404).json({ error: 'Article not found' });
+
+        const buffer = await exportService.generateArticleDoc(article, req.user);
+        
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        res.setHeader('Content-Disposition', `attachment; filename="${article.title.replace(/[^a-z0-9]/gi, '_')}.docx"`);
+        res.send(buffer);
+    } catch (err) {
+        handleError(res, err, 'Article Export Error');
+    }
+});
+
+// --- SYSTEM SETTINGS API ---
+
+app.get('/api/settings/public', async (req, res) => {
+    try {
+        const settings = await settingsService.getSettings();
+        // Return safe public flags
+        res.json({
+            // Legacy mapping
+            creditSystemEnabled: settings.performanceCreditsEnabled,
+            exportSystemEnabled: settings.documentExportEnabled,
+            externalApisEnabled: settings.externalApisEnabled,
+            analyticsEnabled: settings.analyticsEnabled,
+
+            // New settings
+            performanceCreditsEnabled: settings.performanceCreditsEnabled,
+            documentExportEnabled: settings.documentExportEnabled,
+            weatherApiEnabled: settings.weatherApiEnabled,
+            marketApiEnabled: settings.marketApiEnabled,
+            populationApiEnabled: settings.populationApiEnabled,
+            emailServiceEnabled: settings.emailServiceEnabled,
+            emergencyMode: settings.emergencyMode
+        });
+    } catch (err) {
+        handleError(res, err, 'Fetch Public Settings Error');
+    }
+});
+
+app.get('/api/admin/settings', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const settings = await settingsService.getSettings();
+        res.json(settings);
+    } catch (err) {
+        handleError(res, err, 'Fetch Admin Settings Error');
+    }
+});
+
+app.patch('/api/admin/settings', verifyToken, requireSuperAdmin, async (req, res) => {
+    try {
+        const settings = await settingsService.updateSettings(req.body, req.user._id);
+        
+        await creditService.awardCredits(req.user._id, 'ADMIN_COMMUNITY_MGMT', {
+            description: 'Updated system-wide credit and operational parameters'
+        });
+        await creditService.awardCredits(req.user._id, 'ADMIN_SUPPORT_RESOLUTION', {
+            description: 'Resolved configuration and system parameters update requests'
+        });
+
+        res.json(settings);
+    } catch (err) {
+        handleError(res, err, 'Update Settings Error');
+    }
+});
+
+// --- EXTERNAL API CONFIGURATION ENDPOINTS ---
+const ExternalApiConfig = require('./models/ExternalApiConfig');
+
+// Get active external API configurations and lists
+app.get('/api/admin/external-apis', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const weatherConfig = await ExternalApiConfig.findOne({ serviceName: 'Weather API', status: 'ACTIVE' }).sort({ startDate: -1 });
+        const stockConfig = await ExternalApiConfig.findOne({ serviceName: 'Stock Market API', status: 'ACTIVE' }).sort({ startDate: -1 });
+
+        const settings = await settingsService.getSettings();
+
+        // Helper to format/mask keys and include diagnostics
+        const formatConfig = (config, defaultEnabled, defaultProvider, service) => {
+            if (!config) {
+                const isWeather = service === 'Weather API';
+                const hasEnv = isWeather && (process.env.WEATHER_API_KEY || process.env.VITE_WEATHER_API_KEY);
+                return {
+                    provider: defaultProvider,
+                    apiKeyMasked: isWeather ? (hasEnv ? 'Env Variable Set' : 'Default Preset') : 'N/A',
+                    status: defaultEnabled ? 'CONNECTED' : 'DISCONNECTED',
+                    enabled: defaultEnabled,
+                    registered: null,
+                    lastTested: null,
+                    lastHttpStatus: null,
+                    lastResponseMsg: null,
+                    source: isWeather ? (hasEnv ? 'Environment Variable' : 'Default Preset') : 'Library Integrated'
+                };
+            }
+
+            let apiKeyMasked = 'N/A';
+            let source = 'Library Integrated';
+            if (service === 'Weather API') {
+                if (config.apiKey) {
+                    const dec = decrypt(config.apiKey);
+                    if (dec) {
+                        if (dec.length > 8) {
+                            apiKeyMasked = dec.substring(0, 4) + '*'.repeat(12) + dec.substring(dec.length - 3);
+                        } else {
+                            apiKeyMasked = dec.substring(0, 2) + '*'.repeat(6) + dec.substring(dec.length - 1);
+                        }
+                    }
+                    source = 'Database (Encrypted)';
+                } else {
+                    const hasEnv = process.env.WEATHER_API_KEY || process.env.VITE_WEATHER_API_KEY;
+                    apiKeyMasked = hasEnv ? 'Env Variable Set' : 'Default Preset';
+                    source = hasEnv ? 'Environment Variable' : 'Default Preset';
+                }
+            }
+
+            return {
+                _id: config._id,
+                provider: config.provider,
+                apiKeyMasked,
+                status: config.status === 'ACTIVE' ? 'CONNECTED' : 'DISCONNECTED',
+                enabled: config.enabled,
+                registered: config.startDate,
+                lastTested: config.lastTested || config.updatedAt,
+                lastHttpStatus: config.lastHttpStatus || null,
+                lastResponseMsg: config.lastResponseMsg || null,
+                source
+            };
+        };
+
+        const weatherActive = formatConfig(weatherConfig, settings.weatherApiEnabled, 'WeatherAPI', 'Weather API');
+        const stockActive = formatConfig(stockConfig, settings.marketApiEnabled, 'Yahoo Finance', 'Stock Market API');
+
+        const allConfigs = await ExternalApiConfig.find().sort({ startDate: -1 });
+
+        res.json({
+            weatherActive,
+            stockActive,
+            allConfigs
+        });
+    } catch (err) {
+        handleError(res, err, 'Fetch External APIs Error');
+    }
+});
+
+// Test proposed API Key connection
+app.post('/api/admin/external-apis/verify', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const { serviceName, provider, apiKey } = req.body;
+        if (!serviceName || !provider) {
+            return res.status(400).json({ error: 'Service name and provider are required.' });
+        }
+
+        if (serviceName === 'Weather API') {
+            let keyToTest = apiKey;
+
+            // Resolve actual key if it's masked or N/A or empty
+            const isMaskedOrNa = !keyToTest || keyToTest === 'N/A' || keyToTest.includes('*');
+            let activeConfig = null;
+            
+            if (isMaskedOrNa) {
+                activeConfig = await ExternalApiConfig.findOne({ serviceName: 'Weather API', status: 'ACTIVE' });
+                if (activeConfig && activeConfig.apiKey) {
+                    const dec = decrypt(activeConfig.apiKey);
+                    if (dec) {
+                        keyToTest = dec;
+                    }
+                }
+            }
+
+            if (!keyToTest || keyToTest === 'N/A' || keyToTest.includes('*')) {
+                // Fallback to env key
+                keyToTest = process.env.WEATHER_API_KEY || process.env.VITE_WEATHER_API_KEY || '71e7436123ba4731a9b191053261906';
+            }
+
+            const axios = require('axios');
+            const url = `https://api.weatherapi.com/v1/forecast.json?key=${keyToTest}&q=London&days=1`;
+            const redactedUrl = url.replace(keyToTest, '***REDACTED***');
+            
+            console.log('--- WEATHER API CONNECTION TEST ---');
+            console.log(`Provider: ${provider}`);
+            console.log(`Endpoint URL: ${redactedUrl}`);
+
+            try {
+                const apiRes = await axios.get(url, { timeout: 6000 });
+                console.log(`HTTP Status Code: ${apiRes.status}`);
+                console.log(`Response Body:`, JSON.stringify(apiRes.data).substring(0, 1000));
+                
+                // If we are testing the current active key, update DB diagnostics
+                if (isMaskedOrNa) {
+                    const activeDoc = await ExternalApiConfig.findOne({ serviceName: 'Weather API', status: 'ACTIVE' });
+                    if (activeDoc) {
+                        activeDoc.lastTested = Date.now();
+                        activeDoc.lastHttpStatus = apiRes.status;
+                        activeDoc.lastResponseMsg = 'OK - Weather verified';
+                        await activeDoc.save();
+                    }
+                }
+
+                res.json({ success: true, message: 'Weather API connection verified successfully.' });
+            } catch (apiErr) {
+                const status = apiErr.response ? apiErr.response.status : null;
+                const responseBody = apiErr.response ? apiErr.response.data : null;
+                
+                console.log(`HTTP Status Code: ${status || 'Network Error/No Status'}`);
+                console.log(`Response Body:`, responseBody ? JSON.stringify(responseBody) : apiErr.message);
+
+                // Map status codes to custom errors
+                let errorMsg = 'Connection test failed.';
+                if (status === 401) {
+                    errorMsg = 'Invalid API Key';
+                } else if (status === 403) {
+                    errorMsg = 'API quota exceeded';
+                } else if (status === 429) {
+                    errorMsg = 'Rate limit exceeded';
+                } else if (status && status >= 500) {
+                    errorMsg = 'Provider temporarily unavailable';
+                } else {
+                    errorMsg = apiErr.message || 'Connection test failed.';
+                }
+
+                // If we are testing the current active key, update DB diagnostics
+                if (isMaskedOrNa) {
+                    const activeDoc = await ExternalApiConfig.findOne({ serviceName: 'Weather API', status: 'ACTIVE' });
+                    if (activeDoc) {
+                        activeDoc.lastTested = Date.now();
+                        activeDoc.lastHttpStatus = status || 500;
+                        activeDoc.lastResponseMsg = errorMsg;
+                        await activeDoc.save();
+                    }
+                }
+
+                return res.status(400).json({ error: errorMsg });
+            }
+        } else if (serviceName === 'Stock Market API') {
+            const activeConfig = await ExternalApiConfig.findOne({ serviceName: 'Stock Market API', status: 'ACTIVE' });
+            
+            console.log('--- STOCK MARKET API CONNECTION TEST ---');
+            console.log(`Provider: ${provider}`);
+            console.log(`Endpoint URL: Yahoo Finance API (yahoo-finance2 library wrapper)`);
+            
+            try {
+                const YahooFinance = require('yahoo-finance2').default;
+                const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
+                const quoteRes = await yahooFinance.quote(['AAPL']);
+                
+                console.log(`HTTP Status Code: 200`);
+                console.log(`Response Body:`, JSON.stringify(quoteRes).substring(0, 1000));
+                
+                if (activeConfig) {
+                    activeConfig.lastTested = Date.now();
+                    activeConfig.lastHttpStatus = 200;
+                    activeConfig.lastResponseMsg = 'OK - Stock verified';
+                    await activeConfig.save();
+                }
+                
+                res.json({ success: true, message: 'Stock Market API connection verified successfully.' });
+            } catch (apiErr) {
+                console.log(`HTTP Status Code: 500`);
+                console.log(`Response Body:`, apiErr.message);
+                
+                if (activeConfig) {
+                    activeConfig.lastTested = Date.now();
+                    activeConfig.lastHttpStatus = 500;
+                    activeConfig.lastResponseMsg = apiErr.message || 'Connection test failed.';
+                    await activeConfig.save();
+                }
+                
+                return res.status(400).json({ error: `Connection test failed: ${apiErr.message}` });
+            }
+        } else {
+            return res.status(400).json({ error: 'Unsupported service name.' });
+        }
+    } catch (err) {
+        handleError(res, err, 'Verify External API Error');
+    }
+});
+
+// Rotate API Key / Activate new credentials
+app.post('/api/admin/external-apis/rotate', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const { serviceName, provider, apiKey, reason } = req.body;
+        if (!serviceName || !provider) {
+            return res.status(400).json({ error: 'Service name and provider are required.' });
+        }
+
+        // 1. Verify before save if Weather API (require key)
+        let lastHttpStatus = 200;
+        let lastResponseMsg = 'Newly activated credentials';
+
+        if (serviceName === 'Weather API') {
+            if (!apiKey) {
+                return res.status(400).json({ error: 'API key is required to rotate Weather API.' });
+            }
+            const axios = require('axios');
+            try {
+                const url = `https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=London&days=1`;
+                await axios.get(url, { timeout: 6000 });
+                lastHttpStatus = 200;
+                lastResponseMsg = 'OK - Weather verified';
+            } catch (apiErr) {
+                const status = apiErr.response ? apiErr.response.status : null;
+                let errorMsg = 'Cannot activate key. Connection test failed.';
+                if (status === 401) {
+                    errorMsg = 'Invalid API Key';
+                } else if (status === 403) {
+                    errorMsg = 'API quota exceeded';
+                } else if (status === 429) {
+                    errorMsg = 'Rate limit exceeded';
+                } else if (status && status >= 500) {
+                    errorMsg = 'Provider temporarily unavailable';
+                }
+                return res.status(400).json({ error: errorMsg });
+            }
+        }
+
+        // 2. Encrypt the key
+        const encryptedKey = apiKey ? encrypt(apiKey) : undefined;
+
+        // 3. Retire previous active configurations
+        const oldConfigs = await ExternalApiConfig.find({ serviceName, status: 'ACTIVE' });
+        for (const oldConfig of oldConfigs) {
+            oldConfig.status = 'RETIRED';
+            oldConfig.endDate = Date.now();
+            oldConfig.reason = reason || 'API Key rotated by administrator';
+            oldConfig.updatedAt = Date.now();
+            await oldConfig.save();
+        }
+
+        // 4. Create new ACTIVE config
+        const newConfig = await ExternalApiConfig.create({
+            serviceName,
+            provider,
+            apiKey: encryptedKey,
+            status: 'ACTIVE',
+            enabled: true,
+            startDate: Date.now(),
+            reason: reason || 'Newly activated credentials',
+            lastTested: Date.now(),
+            lastHttpStatus,
+            lastResponseMsg,
+            updatedBy: req.user.name || 'Admin',
+            updatedAt: Date.now()
+        });
+
+        // 5. Update settingsService config flags to enabled so it's in sync
+        const settingsUpdates = {};
+        if (serviceName === 'Weather API') settingsUpdates.weatherApiEnabled = true;
+        if (serviceName === 'Stock Market API') settingsUpdates.marketApiEnabled = true;
+        await settingsService.updateSettings(settingsUpdates, req.user._id);
+
+        res.json({ success: true, message: `${serviceName} rotated and activated successfully.`, config: newConfig });
+    } catch (err) {
+        handleError(res, err, 'Rotate External API Error');
+    }
+});
+
+// Toggle API enabled/disabled status
+app.patch('/api/admin/external-apis/toggle', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const { serviceName, enabled } = req.body;
+        if (!serviceName || enabled === undefined) {
+            return res.status(400).json({ error: 'Service name and enabled status are required.' });
+        }
+
+        // Find active or create placeholder
+        let config = await ExternalApiConfig.findOne({ serviceName, status: 'ACTIVE' });
+        if (!config) {
+            // Create a default ACTIVE placeholder config
+            const provider = serviceName === 'Weather API' ? 'WeatherAPI' : 'Yahoo Finance';
+            config = await ExternalApiConfig.create({
+                serviceName,
+                provider,
+                status: 'ACTIVE',
+                enabled: enabled,
+                startDate: Date.now(),
+                reason: 'Auto-initialized config on toggle',
+                updatedBy: req.user.name || 'Admin',
+                updatedAt: Date.now()
+            });
+        } else {
+            config.enabled = enabled;
+            config.updatedAt = Date.now();
+            config.updatedBy = req.user.name || 'Admin';
+            await config.save();
+        }
+
+        // Sync to SystemSettings
+        const settingsUpdates = {};
+        if (serviceName === 'Weather API') settingsUpdates.weatherApiEnabled = enabled;
+        if (serviceName === 'Stock Market API') settingsUpdates.marketApiEnabled = enabled;
+        await settingsService.updateSettings(settingsUpdates, req.user._id);
+
+        res.json({ success: true, message: `${serviceName} has been ${enabled ? 'enabled' : 'disabled'}.`, config });
+    } catch (err) {
+        handleError(res, err, 'Toggle External API Error');
+    }
+});
+
+// Get health/status of APIs
+app.get('/api/admin/external-apis/health', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const weatherConfig = await ExternalApiConfig.findOne({ serviceName: 'Weather API', status: 'ACTIVE' });
+        const stockConfig = await ExternalApiConfig.findOne({ serviceName: 'Stock Market API', status: 'ACTIVE' });
+        
+        const settings = await settingsService.getSettings();
+
+        const isWeatherEnabled = weatherConfig ? weatherConfig.enabled : settings.weatherApiEnabled;
+        const isStockEnabled = stockConfig ? stockConfig.enabled : settings.marketApiEnabled;
+
+        // Perform brief health check calls
+        let weatherStatus = 'Disconnected';
+        if (isWeatherEnabled) {
+            try {
+                let key = process.env.WEATHER_API_KEY || process.env.VITE_WEATHER_API_KEY || '71e7436123ba4731a9b191053261906';
+                if (weatherConfig && weatherConfig.apiKey) {
+                    const dec = decrypt(weatherConfig.apiKey);
+                    if (dec) key = dec;
+                }
+                const axios = require('axios');
+                await axios.get(`https://api.weatherapi.com/v1/forecast.json?key=${key}&q=London&days=1`, { timeout: 3000 });
+                weatherStatus = 'Connected';
+            } catch (err) {
+                weatherStatus = 'Disconnected';
+            }
+        } else {
+            weatherStatus = 'Disabled';
+        }
+
+        let stockStatus = 'Disconnected';
+        if (isStockEnabled) {
+            try {
+                const YahooFinance = require('yahoo-finance2').default;
+                const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
+                await yahooFinance.quote(['AAPL']);
+                stockStatus = 'Connected';
+            } catch (err) {
+                stockStatus = 'Disconnected';
+            }
+        } else {
+            stockStatus = 'Disabled';
+        }
+
+        res.json({
+            weatherStatus,
+            stockStatus,
+            timestamp: new Date()
+        });
+    } catch (err) {
+        handleError(res, err, 'External APIs Health Check Error');
+    }
+});
+
+// --- NOTIFICATION APIS ---
+app.get('/api/notifications', verifyToken, async (req, res) => {
+    try {
+        const notifications = await Notification.find({ userId: req.user._id.toString() }).sort({ createdAt: -1 });
+        res.json(notifications);
+    } catch (err) {
+        handleError(res, err, 'Fetch Notifications Error');
+    }
+});
+
+app.patch('/api/notifications/:id/read', verifyToken, async (req, res) => {
+    try {
+        const notification = await Notification.findOneAndUpdate(
+            { _id: req.params.id, userId: req.user._id.toString() },
+            { isRead: true },
+            { new: true }
+        );
+        if (!notification) {
+            return res.status(404).json({ success: false, error: 'Notification not found' });
+        }
+        res.json(notification);
+    } catch (err) {
+        handleError(res, err, 'Mark Notification Read Error');
+    }
+});
+
+app.post('/api/notifications/read-all', verifyToken, async (req, res) => {
+    try {
+        await Notification.updateMany(
+            { userId: req.user._id.toString(), isRead: false },
+            { isRead: true }
+        );
+        res.json({ success: true, message: 'All notifications marked as read' });
+    } catch (err) {
+        handleError(res, err, 'Mark All Notifications Read Error');
+    }
+});
+
+// --- AUTHOR PERFORMANCE API ---
+app.get('/api/author/performance', verifyToken, async (req, res) => {
+    try {
+        const authorId = req.user._id.toString();
+        const { period = '7d' } = req.query;
+
+        const now = new Date();
+        let startDate;
+        if (period === '30d') startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        else startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+        // 1. Basic Stats
+        const articles = await Article.find({ authorId }).sort({ createdAt: -1 });
+        const totalArticles = articles.length;
+        const totalViews = articles.reduce((sum, a) => sum + (a.views || 0), 0);
+        const totalLikes = articles.reduce((sum, a) => sum + (a.likes || 0), 0);
+        const totalShares = articles.reduce((sum, a) => sum + (a.shares || 0), 0);
+        const averageViews = totalArticles > 0 ? totalViews / totalArticles : 0;
+
+        // 2. Top Articles
+        const topArticles = [...articles]
+            .sort((a, b) => (b.views || 0) - (a.views || 0))
+            .slice(0, 5)
+            .map(a => ({ title: a.title, views: a.views || 0, category: a.category, likes: a.likes || 0 }));
+
+        const mostViewedArticle = topArticles[0] || null;
+
+        // 3. Performance Trend (Aggregating from logs)
+        const AnalyticsLogV1 = require('./models/AnalyticsLogV1');
+        const growthChart = await AnalyticsLogV1.aggregate([
+            { $match: { 
+                articleId: { $in: articles.map(a => a._id.toString()) },
+                timestamp: { $gte: startDate },
+                type: 'PAGE_VIEW'
+            }},
+            { $group: {
+                _id: { $dateToString: { format: "%Y-%m-%d", date: "$timestamp" } },
+                views: { $sum: 1 }
+            }},
+            { $sort: { _id: 1 } },
+            { $project: { date: "$_id", views: 1, _id: 0 } }
+        ]);
+
+        res.json({
+            totalArticles,
+            totalViews,
+            totalLikes,
+            totalShares,
+            averageViews,
+            mostViewedArticle,
+            topArticles,
+            recentArticles: articles.slice(0, 5).map(a => ({ title: a.title, views: a.views || 0, category: a.category, createdAt: a.createdAt })),
+            growthChart
+        });
+    } catch (err) {
+        handleError(res, err, 'Author Performance Error');
+    }
+});
+
+// --- FLASH NEWS API ---
+app.get('/api/flash', async (req, res) => {
+    try {
+        const flash = await FlashNews.find({ active: true })
+            .sort({ createdAt: -1 })
+            .limit(20);
+        res.json(flash);
+    } catch (err) {
+        handleError(res, err, 'Fetch Flash News Error');
+    }
+});
+
+app.get('/api/admin/flash', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const flash = await FlashNews.find().sort({ createdAt: -1 });
+        res.json(flash);
+    } catch (err) {
+        handleError(res, err, 'Admin Fetch Flash Error');
+    }
+});
+
+app.post('/api/admin/flash', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const { headline } = req.body;
+        const newFlash = await FlashNews.create({ headline, active: true });
+        res.status(201).json(newFlash);
+    } catch (err) {
+        handleError(res, err, 'Create Flash News Error');
+    }
+});
+
+app.patch('/api/admin/flash/:id', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const flash = await FlashNews.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        res.json(flash);
+    } catch (err) {
+        handleError(res, err, 'Update Flash News Error');
+    }
+});
+
+app.delete('/api/admin/flash/:id', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        await FlashNews.findByIdAndDelete(req.params.id);
+        res.json({ success: true });
+    } catch (err) {
+        handleError(res, err, 'Delete Flash News Error');
+    }
+});
+
+// --- STORAGE CONFIGURATION ENDPOINTS ---
+
+app.get('/api/admin/storage/config', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const articleConfig = await StorageConfig.findOne({ purpose: { $in: ['Article Content Images', 'article'] }, status: 'ACTIVE' }).sort({ startDate: -1 });
+        const profileConfig = await StorageConfig.findOne({ purpose: { $in: ['Profile Images', 'profile'] }, status: 'ACTIVE' }).sort({ startDate: -1 });
+        
+        const allConnections = await StorageConfig.find().sort({ startDate: -1 });
+
+        const currentActive = articleConfig ? {
+            cloudName: articleConfig.cloudName,
+            apiKey: articleConfig.apiKey,
+            status: articleConfig.status,
+            updatedAt: articleConfig.updatedAt,
+            updatedBy: articleConfig.updatedBy,
+            folderPrefix: articleConfig.folderPrefix,
+            purpose: articleConfig.purpose,
+            startDate: articleConfig.startDate
+        } : {
+            cloudName: process.env.ARTICLE_CLOUD_NAME || process.env.CLOUDINARY_CLOUD_NAME || 'Default (.env)',
+            apiKey: process.env.ARTICLE_API_KEY || process.env.CLOUDINARY_API_KEY || 'N/A',
+            status: 'ACTIVE',
+            updatedAt: null,
+            updatedBy: 'System Default (.env)',
+            folderPrefix: 'newspercent',
+            purpose: 'Article Content Images',
+            startDate: new Date('2026-06-01')
+        };
+
+        const profileActive = profileConfig ? {
+            cloudName: profileConfig.cloudName,
+            apiKey: profileConfig.apiKey,
+            status: profileConfig.status,
+            updatedAt: profileConfig.updatedAt,
+            updatedBy: profileConfig.updatedBy,
+            folderPrefix: profileConfig.folderPrefix,
+            purpose: profileConfig.purpose,
+            startDate: profileConfig.startDate
+        } : {
+            cloudName: process.env.PROFILE_CLOUDINARY_CLOUD_NAME || process.env.PROFILE_CLOUD_NAME || process.env.CLOUDINARY_CLOUD_NAME || 'Default (.env)',
+            apiKey: process.env.PROFILE_CLOUDINARY_API_KEY || process.env.PROFILE_API_KEY || process.env.CLOUDINARY_API_KEY || 'N/A',
+            status: 'ACTIVE',
+            updatedAt: null,
+            updatedBy: 'System Default (.env)',
+            folderPrefix: 'newspercent/profiles',
+            purpose: 'Profile Images',
+            startDate: new Date('2026-06-01')
+        };
+
+        res.json({
+            currentActive,
+            profileActive,
+            allConnections,
+            history: allConnections
+        });
+    } catch (err) {
+        handleError(res, err, 'Fetch Storage Config Error');
+    }
+});
+
+app.post('/api/admin/storage/verify', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const { cloudName, apiKey, apiSecret, folderPrefix, purpose } = req.body;
+        if (!cloudName || !apiKey || !apiSecret || !purpose) {
+            return res.status(400).json({ error: 'Missing required credentials or purpose' });
+        }
+
+        const testImageBuffer = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
+        const testUpload = () => {
+            return new Promise((resolve, reject) => {
+                const stream = cloudinary.uploader.upload_stream(
+                    {
+                        cloud_name: cloudName,
+                        api_key: apiKey,
+                        api_secret: apiSecret,
+                        folder: folderPrefix || 'newspercent/test-connection',
+                        resource_type: 'auto'
+                    },
+                    (error, result) => {
+                        if (error) reject(error);
+                        else resolve(result);
+                    }
+                );
+                stream.end(testImageBuffer);
+            });
+        };
+
+        console.log('--- STORAGE VERIFICATION LOG ---');
+        console.log('Purpose:', purpose);
+        console.log('Testing Cloud Name:', cloudName);
+        await testUpload();
+        console.log('Verification successful.');
+        res.json({ success: true, message: 'Connection verified successfully' });
+    } catch (err) {
+        console.error('Validation test upload failed:', err);
+        res.status(400).json({ error: err.message || 'Validation failed' });
+    }
+});
+
+app.post('/api/admin/storage/config', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const { cloudName, apiKey, apiSecret, folderPrefix, purpose, reason } = req.body;
+        if (!cloudName || !apiKey || !apiSecret || !purpose) {
+            return res.status(400).json({ error: 'Missing required credentials or purpose' });
+        }
+
+        if (!['Profile Images', 'Article Content Images', 'profile', 'article'].includes(purpose)) {
+            return res.status(400).json({ error: 'Invalid purpose selected' });
+        }
+
+        const testImageBuffer = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
+        const testUpload = () => {
+            return new Promise((resolve, reject) => {
+                const stream = cloudinary.uploader.upload_stream(
+                    {
+                        cloud_name: cloudName,
+                        api_key: apiKey,
+                        api_secret: apiSecret,
+                        folder: folderPrefix || 'newspercent/test-connection',
+                        resource_type: 'auto'
+                    },
+                    (error, result) => {
+                        if (error) reject(error);
+                        else resolve(result);
+                    }
+                );
+                stream.end(testImageBuffer);
+            });
+        };
+
+        console.log('--- STORAGE CONFIG SAVE LOG ---');
+        console.log('Saving and activating new storage connection');
+        console.log('Purpose:', purpose);
+        console.log('Cloud Name:', cloudName);
+        
+        await testUpload();
+
+        const encryptedSecret = encrypt(apiSecret);
+
+        // Find existing active config for this purpose and retire them
+        const matchedPurposes = ['profile', 'Profile Images'].includes(purpose)
+            ? ['profile', 'Profile Images']
+            : ['article', 'Article Content Images'];
+        const oldConfigs = await StorageConfig.find({ purpose: { $in: matchedPurposes }, status: 'ACTIVE' });
+        for (const oldConfig of oldConfigs) {
+            oldConfig.status = 'RETIRED';
+            oldConfig.endDate = Date.now();
+            oldConfig.reason = reason || 'Storage rotated by administrator';
+            oldConfig.updatedAt = Date.now();
+            await oldConfig.save();
+            console.log(`[STORAGE ROTATION] Retired previous active storage for purpose "${purpose}": ${oldConfig.cloudName}`);
+        }
+
+        // Create new active config
+        const newConfig = await StorageConfig.create({
+            cloudName,
+            apiKey,
+            apiSecret: encryptedSecret,
+            folderPrefix: folderPrefix || 'newspercent',
+            purpose,
+            status: 'ACTIVE',
+            startDate: Date.now(),
+            updatedBy: req.user.name || 'Admin',
+            updatedAt: Date.now()
+        });
+
+        // Also write to audit history table
+        await StorageHistory.create({
+            date: Date.now(),
+            adminName: req.user.name || 'Admin',
+            oldCloudName: oldConfigs.length > 0 ? oldConfigs[0].cloudName : 'Default (.env)',
+            newCloudName: cloudName,
+            reason: `${purpose} rotation: ${reason || 'Credentials updated'}`
+        });
+
+        console.log(`[STORAGE ROTATION] Activated new storage for purpose "${purpose}": ${cloudName}`);
+        res.json({ success: true, message: `New ${purpose} storage activated successfully.` });
+    } catch (err) {
+        console.error('Failed to update storage configuration:', err);
+        res.status(400).json({ error: err.message || 'Validation failed. Configuration not saved.' });
+    }
+});
+
+// --- MONGODB CONNECTION API ---
+
+app.get('/api/admin/database/status', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const { getRegisteredClustersList } = require('./config/database');
+        const clusters = await getRegisteredClustersList();
+        const activeCluster = clusters.find(c => c.isActive) || clusters[0];
+        
+        res.json({
+            success: true,
+            activeCluster,
+            registeredClusters: clusters
+        });
+    } catch (err) {
+        console.error('Fetch database status failed:', err);
+        res.status(500).json({ error: err.message || 'Failed to fetch database status' });
+    }
+});
+
+app.post('/api/admin/database/test', verifyToken, requireAdmin, async (req, res) => {
+    const { uri } = req.body;
+    try {
+        const { testClusterConnection } = require('./config/database');
+        const result = await testClusterConnection(uri);
+        res.json(result);
+    } catch (err) {
+        res.status(400).json({ success: false, error: err.message });
+    }
+});
+
+app.post('/api/admin/database/register', verifyToken, requireAdmin, async (req, res) => {
+    const { uri, notes } = req.body;
+    try {
+        const { registerNewCluster } = require('./config/database');
+        const result = await registerNewCluster(uri, notes);
+        res.json(result);
+    } catch (err) {
+        res.status(400).json({ success: false, error: err.message });
+    }
+});
+
+app.post('/api/admin/database/activate', verifyToken, requireAdmin, async (req, res) => {
+    const { clusterId } = req.body;
+    try {
+        const { makeClusterActive } = require('./config/database');
+        const result = await makeClusterActive(clusterId);
+        res.json(result);
+    } catch (err) {
+        res.status(400).json({ success: false, error: err.message });
+    }
+});
+
+app.post('/api/admin/database/remove', verifyToken, requireAdmin, async (req, res) => {
+    const { clusterId } = req.body;
+    try {
+        const { removeCluster } = require('./config/database');
+        const ActivityLog = require('./models/ActivityLog');
+        
+        const result = await removeCluster(clusterId);
+        
+        // Audit log
+        await ActivityLog.create({
+            userId: req.user._id,
+            userName: req.user.name,
+            action: 'DATABASE_CLUSTER_REMOVAL',
+            ipAddress: req.ip || req.connection.remoteAddress,
+            userAgent: req.headers['user-agent'],
+            details: {
+                adminName: req.user.name || 'Admin',
+                action: 'Removed Cluster',
+                clusterName: result.clusterName,
+                date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+            }
+        });
+
+        res.json(result);
+    } catch (err) {
+        res.status(400).json({ success: false, error: err.message });
+    }
+});
+
+// Serve static files from the React frontend build folder
+app.use(express.static(path.join(__dirname, 'newspercent', 'dist')));
+
+// SPA fallback route for React frontend routes (excludes API calls)
+app.get(/.*/, (req, res, next) => {
+    if (req.path.startsWith('/api/')) {
+        return next();
+    }
+    res.sendFile(path.join(__dirname, 'newspercent', 'dist', 'index.html'));
+});
+
+// --- GLOBAL ERROR & 404 HANDLER MIDDLEWARE ---
+// 404 Handler for API route failures
+app.use((req, res, next) => {
+    const err = new Error(`API Route not found: ${req.method} ${req.originalUrl}`);
+    err.status = 404;
+    next(err);
+});
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+    const statusCode = err.status || 500;
+    
+    console.error('=================================');
+    console.error('🚨 BACKEND EXCEPTION ENCOUNTERED:');
+    console.error(`Route: ${req.method} ${req.originalUrl}`);
+    console.error(`Status Code: ${statusCode}`);
+    console.error(`Message: ${err.message}`);
+    if (err.stack) {
+        console.error(`Stack: ${err.stack}`);
+    }
+    console.error('=================================');
+
+    const isMongoError = err.name === 'MongoError' || 
+                         err.name === 'ValidationError' || 
+                         err.name === 'MongooseError' ||
+                         err.message.toLowerCase().includes('mongo') || 
+                         err.message.toLowerCase().includes('mongoose') ||
+                         err.message.toLowerCase().includes('connection') ||
+                         err.message.toLowerCase().includes('topology');
+
+    res.status(statusCode).json({
+        success: false,
+        error: err.message || 'Internal Server Error',
+        route: req.originalUrl,
+        statusCode: statusCode,
+        databaseState: mongoose.connection.readyState === 1 ? 'CONNECTED' : 'DISCONNECTED',
+        isMongoError,
+        timestamp: new Date().toISOString(),
+        stack: err.stack
+    });
+});
+
+// --- STARTUP SEQUENCE ---
+const startServer = async () => {
+    try {
+        console.log('=================================');
+        console.log('🔄 Initializing System Startup...');
+        
+        // 1. Connect to Database (wait for it)
+        await connectDB();
+
+        // Load settings during application startup
+        console.log('[SYS] Loading system settings...');
+        await settingsService.getSettings();
+        
+        // 2. Initialize Super Admin
+        await initializeSuperAdmin();
+
+        // 3. Analytics Archival Check (Run once on startup)
+        console.log('[SYS] Checking for analytics archival...');
+        const analyticsService = require('./services/analyticsService');
+        await analyticsService.archiveMonthlyData();
+        
+        // 4. Start Express Server
+        app.listen(PORT, () => {
+            const fs = require('fs');
+            const path = require('path');
+            const hasDist = fs.existsSync(path.join(__dirname, 'newspercent', 'dist', 'index.html'));
+            const isDev = process.env.NODE_ENV !== 'production';
+
+            console.log('=================================');
+            console.log('🚀 NewsPercent Backend Started');
+            console.log('==============================\n');
+            console.log('🌐 Backend URL:');
+            console.log(`http://localhost:${PORT}\n`);
+            
+            if (hasDist) {
+                console.log('📰 Frontend (if served by Express):');
+                console.log(`http://localhost:${PORT}\n`);
+            }
+            
+            console.log('⚙️ API Base URL:');
+            console.log(`http://localhost:${PORT}/api\n`);
+            
+            console.log('❤️ Health Check:');
+            console.log(`http://localhost:${PORT}/api/health\n`);
+            
+            console.log('📁 MongoDB:');
+            console.log(mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected');
+            console.log('');
+            
+            console.log('📧 Email Service:');
+            console.log(process.env.EMAIL_USER && process.env.EMAIL_PASS ? 'Active' : 'Missing Credentials');
+            console.log('');
+            
+            console.log('🔐 JWT:');
+            console.log(process.env.JWT_SECRET ? 'Enabled' : 'Missing Secret');
+            console.log('=======');
+            
+            if (!hasDist || isDev) {
+                console.log('\nFrontend Dev Server:');
+                console.log('http://localhost:5173');
+            }
+        });
+    } catch (err) {
+        console.error('❌ CRITICAL STARTUP FAILURE:', err.message);
+        process.exit(1);
+    }
+};
+
+startServer();
