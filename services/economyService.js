@@ -238,7 +238,7 @@ const economyService = {
     },
     
     getGeoLocation: async (userIp) => {
-        const isLoopbackIp = !userIp || userIp === '127.0.0.1' || userIp === '::1' || userIp === '::ffff:127.0.0.1';
+        const isLoopbackIp = !userIp || userIp === '::1';
         if (isLoopbackIp) {
             return { city: 'Visakhapatnam', state: 'Andhra Pradesh', country: 'India' };
         }

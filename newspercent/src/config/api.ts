@@ -1,7 +1,6 @@
 import axios from 'axios';
 
-export const API_URL = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' ? window.location.origin : '');
-
+export const API_URL = import.meta.env.VITE_API_URL || '';
 
 // Normalize baseURL: if it ends with /api or /api/, strip it since frontend paths explicitly start with /api
 let normalizedBaseURL = API_URL;
@@ -37,7 +36,9 @@ api.interceptors.response.use(
             localStorage.removeItem('user');
             window.location.href = '/'; // Force redirect to login
         } else if (!error.response) {
-            console.error('SERVER OFFLINE:', error.message);
+            console.error('SERVER OFFLINE or Network Error:', error.message);
+            // Return a safe dummy response to prevent UI from crashing completely
+            return Promise.resolve({ data: null });
         }
         return Promise.reject(error);
     }

@@ -214,7 +214,7 @@ app.use(cors({
     if (allowedOrigins.length > 0 && allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
-    if (process.env.NODE_ENV !== 'production' && (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+    if (process.env.NODE_ENV !== 'production') {
       return callback(null, true);
     }
     if (allowedOrigins.length === 0) {
@@ -3126,7 +3126,7 @@ const startServer = async () => {
             const hasDist = fs.existsSync(path.join(__dirname, 'newspercent', 'dist', 'index.html'));
             const isDev = process.env.NODE_ENV !== 'production';
 
-            const appUrl = process.env.APP_URL || `http://localhost:${PORT}`;
+            const appUrl = process.env.APP_URL;
             console.log('=================================');
             console.log('🚀 NewsPercent Backend Started');
             console.log('==============================\n');
