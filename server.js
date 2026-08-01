@@ -3002,9 +3002,9 @@ app.get('/article/:slugOrId', async (req, res, next) => {
     }
 });
 
-// SPA fallback route for React frontend routes (excludes API calls)
-app.get(/.*/, (req, res, next) => {
-    if (req.path.startsWith('/api/')) {
+// SPA fallback route for React frontend routes (excludes /api/*)
+app.use((req, res, next) => {
+    if (req.method !== 'GET' || req.path.startsWith('/api')) {
         return next();
     }
     const fs = require('fs');
@@ -3012,7 +3012,10 @@ app.get(/.*/, (req, res, next) => {
     if (fs.existsSync(indexPath)) {
         return res.sendFile(indexPath);
     }
-    res.status(503).send('Application build files not found. Please run frontend build.');
+    return res.status(500).json({
+        success: false,
+        error: 'Frontend build not found'
+    });
 });
 
 // --- GLOBAL ERROR & 404 HANDLER MIDDLEWARE ---
