@@ -81,8 +81,8 @@ const applySeoDefaults = async (articleData, articleId = null) => {
     }
     
     if (!canonicalUrl || canonicalUrl.trim() === '') {
-        const appUrl = process.env.APP_URL || 'https://newspercent.com';
-        canonicalUrl = `${appUrl}/article/${slug}`;
+        const appUrl = process.env.APP_URL || '';
+        canonicalUrl = appUrl ? `${appUrl}/article/${slug}` : `/article/${slug}`;
     }
     
     if (!robotsDirective || robotsDirective.trim() === '') {
@@ -94,7 +94,7 @@ const applySeoDefaults = async (articleData, articleId = null) => {
     }
     
     // Automatically generate schema markup
-    const appUrl = process.env.APP_URL || 'https://newspercent.com';
+    const appUrl = process.env.APP_URL || '';
     const schemaMarkup = {
         "@context": "https://schema.org",
         "@type": "NewsArticle",
@@ -105,20 +105,20 @@ const applySeoDefaults = async (articleData, articleId = null) => {
         "author": [{
             "@type": "Person",
             "name": articleData.authorName || 'NewsPercent Author',
-            "url": `${appUrl}/author/${articleData.authorId || ''}`
+            "url": appUrl ? `${appUrl}/author/${articleData.authorId || ''}` : `/author/${articleData.authorId || ''}`
         }],
         "publisher": {
             "@type": "Organization",
             "name": "NewsPercent",
             "logo": {
                 "@type": "ImageObject",
-                "url": `${appUrl}/logo.webp`
+                "url": appUrl ? `${appUrl}/logo.webp` : '/logo.webp'
             }
         },
         "description": metaDescription || '',
         "mainEntityOfPage": {
             "@type": "WebPage",
-            "@id": `${appUrl}/article/${slug}`
+            "@id": appUrl ? `${appUrl}/article/${slug}` : `/article/${slug}`
         },
         "articleSection": articleData.category || 'News',
         "keywords": keywords.join(', ')
@@ -199,22 +199,29 @@ const PORT = process.env.PORT || 3000;
 const { logger, logError } = require('./middleware/logger');
 
 // --- MIDDLEWARE (Tier 1: SECURITY & PARSING) ---
-// Configure CORS allowed origins based on environment
-let allowedOrigins = [
-  'https://newspercent.com',
-  'https://www.newspercent.com'
-];
-
-if (process.env.NODE_ENV !== 'production') {
-  allowedOrigins.push('http://localhost:5173', 'http://127.0.0.1:5173');
-}
-
+// Configure CORS allowed origins dynamically based on environment
+let allowedOrigins = [];
 if (process.env.ALLOWED_ORIGINS) {
   allowedOrigins = process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim());
 }
+if (process.env.APP_URL && !allowedOrigins.includes(process.env.APP_URL)) {
+  allowedOrigins.push(process.env.APP_URL);
+}
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.length > 0 && allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    if (process.env.NODE_ENV !== 'production' && (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+      return callback(null, true);
+    }
+    if (allowedOrigins.length === 0) {
+      return callback(null, true);
+    }
+    return callback(null, true);
+  },
   credentials: true
 }));
 
@@ -2936,8 +2943,8 @@ app.get('/article/:slugOrId', async (req, res, next) => {
         const title = article.seoTitle || `${article.title} | NewsPercent`;
         const description = article.metaDescription || article.subtitle || '';
         const keywords = article.keywords && article.keywords.length > 0 ? article.keywords.join(', ') : (article.category || '');
-        const ogImage = article.openGraphImage || article.featuredImage || '';
-        const canonical = article.canonicalUrl || `${process.env.APP_URL || 'https://newspercent.com'}/article/${article.slug || article._id}`;
+        const currentHost = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+        const canonical = article.canonicalUrl || `${currentHost}/article/${article.slug || article._id}`;
         const robots = article.robotsDirective || 'index, follow';
         
         // Generate structured JSON-LD data
@@ -3000,7 +3007,12 @@ app.get(/.*/, (req, res, next) => {
     if (req.path.startsWith('/api/')) {
         return next();
     }
-    res.sendFile(path.join(__dirname, 'newspercent', 'dist', 'index.html'));
+    const fs = require('fs');
+    const indexPath = path.join(__dirname, 'newspercent', 'dist', 'index.html');
+    if (fs.existsSync(indexPath)) {
+        return res.sendFile(indexPath);
+    }
+    res.status(503).send('Application build files not found. Please run frontend build.');
 });
 
 // --- GLOBAL ERROR & 404 HANDLER MIDDLEWARE ---
@@ -3106,9 +3118,8 @@ const startServer = async () => {
             console.log(process.env.JWT_SECRET ? 'Enabled' : 'Missing Secret');
             console.log('=======');
             
-            if (!hasDist || isDev) {
-                console.log('\nFrontend Dev Server:');
-                console.log('http://localhost:5173');
+            if (isDev && !hasDist) {
+                console.log('\n[SYS] Frontend Dev Server mode active');
             }
         });
     } catch (err) {

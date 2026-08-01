@@ -711,7 +711,7 @@ const getRegisteredClustersList = async () => {
             clusterId: entry.clusterId,
             clusterName: entry.clusterName || getClusterNameFromUri(entry.uri || ''),
             databaseName: liveDb || 'test',
-            host: liveHost || 'localhost',
+            host: liveHost || 'Database Host',
             status: isOnline ? 'Connected' : 'Disconnected',
             createdAt: entry.createdAt,
             isActive: entry.isActive,

@@ -46,7 +46,7 @@ const emailService = {
                 <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 500px; margin: auto; padding: 40px 30px; border: 1px solid #E5E7EB; border-radius: 16px; background-color: #FFFFFF; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
                     <!-- Logo -->
                     <div style="text-align: center; margin-bottom: 24px;">
-                        <img src="https://newspercent.com/logo.webp" height="50" style="display: inline-block; border-radius: 8px;" alt="NewsPercent Logo" onerror="this.style.display='none'; document.getElementById('logo-text').style.display='block';" />
+                        <img src="${process.env.APP_URL || ''}/logo.webp" height="50" style="display: inline-block; border-radius: 8px;" alt="NewsPercent Logo" onerror="this.style.display='none'; document.getElementById('logo-text').style.display='block';" />
                         <div id="logo-text" style="display: none; font-size: 24px; font-weight: bold; color: #111111; letter-spacing: -0.5px;">NEWS<span style="color: #FFD84D;">PERCENT</span></div>
                     </div>
                     
@@ -150,7 +150,7 @@ const emailService = {
                     <p>Your account has been created on the N% News Platform.</p>
                     <p><strong>Clearance Role:</strong> ${role}</p>
                     <p>You can now sign in using your email address via OTP authentication.</p>
-                    <a href="https://newspercent.com" style="display: inline-block; padding: 10px 20px; background: #FF453A; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px;">Go to Portal</a>
+                    <a href="${process.env.APP_URL || '/'}" style="display: inline-block; padding: 10px 20px; background: #FF453A; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px;">Go to Portal</a>
                 </div>
             `
         };
