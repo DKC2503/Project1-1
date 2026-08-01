@@ -2928,8 +2928,21 @@ app.post('/api/admin/database/remove', verifyToken, requireAdmin, async (req, re
     }
 });
 
-// Serve static files from the React frontend build folder
-app.use(express.static(path.join(__dirname, 'newspercent', 'dist')));
+// Helper to resolve build dist directory across Hostinger / PM2 environment structures
+const getDistPath = () => {
+    const fs = require('fs');
+    const path = require('path');
+    const candidates = [
+        path.join(__dirname, 'newspercent', 'dist'),
+        path.join(__dirname, 'dist'),
+        path.join(process.cwd(), 'newspercent', 'dist'),
+        path.join(process.cwd(), 'dist')
+    ];
+    return candidates.find(p => fs.existsSync(path.join(p, 'index.html'))) || candidates[0];
+};
+
+const activeDistDir = getDistPath();
+app.use(express.static(activeDistDir));
 
 // Serve article views with server-side SEO meta injection
 app.get('/article/:slugOrId', async (req, res, next) => {
@@ -2953,7 +2966,7 @@ app.get('/article/:slugOrId', async (req, res, next) => {
             return next(); // Article not found or not published -> Pass to SPA fallback
         }
 
-        const indexPath = path.join(__dirname, 'newspercent', 'dist', 'index.html');
+        const indexPath = path.join(activeDistDir, 'index.html');
         if (!fs.existsSync(indexPath)) {
             return next(); // Fallback to SPA routing
         }
@@ -2966,6 +2979,7 @@ app.get('/article/:slugOrId', async (req, res, next) => {
         const currentHost = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
         const canonical = article.canonicalUrl || `${currentHost}/article/${article.slug || article._id}`;
         const robots = article.robotsDirective || 'index, follow';
+        const ogImage = article.openGraphImage || article.featuredImage || '';
         
         // Generate structured JSON-LD data
         const schema = article.schemaMarkup || {
@@ -3028,13 +3042,14 @@ app.use((req, res, next) => {
         return next();
     }
     const fs = require('fs');
-    const indexPath = path.join(__dirname, 'newspercent', 'dist', 'index.html');
+    const path = require('path');
+    const indexPath = path.join(activeDistDir, 'index.html');
     if (fs.existsSync(indexPath)) {
         return res.sendFile(indexPath);
     }
     return res.status(500).json({
         success: false,
-        error: 'Frontend build not found'
+        error: 'Frontend build not found (index.html missing). Please run npm run build.'
     });
 });
 
