@@ -783,15 +783,36 @@ app.get('/api/news', async (req, res) => {
 
 app.get('/api/articles/:id', async (req, res) => {
     try {
-        const article = await Article.findById(req.params.id);
-        if (!article) return res.status(404).json({ error: 'Article not found' });
-        
-        article.opens += 1;
-        await article.save();
-        
-        res.json(article);
+        const idOrSlug = req.params.id;
+        let article = null;
+
+        if (mongoose.Types.ObjectId.isValid(idOrSlug)) {
+            article = await Article.findById(idOrSlug);
+        }
+
+        if (!article) {
+            article = await Article.findOne({ slug: idOrSlug });
+        }
+
+        if (!article) {
+            return res.status(404).json({ success: false, error: 'Article not found' });
+        }
+
+        // Safely increment opens count in background without triggering validation on legacy un-updated schema fields
+        Article.updateOne({ _id: article._id }, { $inc: { opens: 1 } }).catch(err => {
+            console.error('[ARTICLE OPENS INC ERROR]:', err.message);
+        });
+
+        return res.json(article);
     } catch (err) {
-        handleError(res, err, 'Fetch Article Error');
+        console.error('[FETCH ARTICLE ERROR]:', err);
+        if (err.stack) {
+            console.error(err.stack);
+        }
+        if (err.name === 'CastError') {
+            return res.status(400).json({ success: false, error: 'Invalid article identifier format' });
+        }
+        return res.status(500).json({ success: false, error: err.message || 'Internal Server Error' });
     }
 });
 
