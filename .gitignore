@@ -1,1 +1,37 @@
-node_modules
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Build
+dist/
+build/
+
+# Logs
+logs/
+*.log
+
+# Cache
+.cache/
+
+# Coverage
+coverage/
+
+# Uploads
+uploads/
+
+# Temporary
+scratch/
+analytics_archive/
+backups/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
