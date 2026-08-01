@@ -1,18 +1,7 @@
-import Swal from 'sweetalert2';
-
-export const toast = Swal.mixin({
-  toast: true,
-  position: 'top-end',
-  showConfirmButton: false,
-  timer: 3000,
-  timerProgressBar: true,
-  background: 'var(--background-deep)',
-  color: 'var(--text-primary)',
-  didOpen: (toast) => {
-    toast.addEventListener('mouseenter', Swal.stopTimer);
-    toast.addEventListener('mouseleave', Swal.resumeTimer);
-  }
-});
+const getSwal = async () => {
+  const { default: Swal } = await import('sweetalert2');
+  return Swal;
+};
 
 export const confirmDelete = async (
   title: string, 
@@ -20,6 +9,7 @@ export const confirmDelete = async (
   confirmButtonText: string = 'DELETE ARTICLE',
   cancelButtonText: string = 'CANCEL'
 ) => {
+  const Swal = await getSwal();
   return Swal.fire({
     title: title.toUpperCase(),
     text: text,
@@ -47,6 +37,7 @@ export const npConfirm = async (
   confirmButtonText: string = 'CONFIRM', 
   cancelButtonText: string = 'CANCEL'
 ) => {
+  const Swal = await getSwal();
   return Swal.fire({
     title: title.toUpperCase(),
     text: text,
@@ -67,7 +58,8 @@ export const npConfirm = async (
   });
 };
 
-export const npAlert = (title: string, text: string, icon: 'success' | 'error' | 'info' | 'warning' = 'info') => {
+export const npAlert = async (title: string, text: string, icon: 'success' | 'error' | 'info' | 'warning' = 'info') => {
+  const Swal = await getSwal();
   return Swal.fire({
     title: title.toUpperCase(),
     text: text,
@@ -85,6 +77,7 @@ export const npAlert = (title: string, text: string, icon: 'success' | 'error' |
 };
 
 export const npPrompt = async (title: string, text: string, placeholder: string = '', defaultValue: string = '') => {
+  const Swal = await getSwal();
   return Swal.fire({
     title: title.toUpperCase(),
     text: text,

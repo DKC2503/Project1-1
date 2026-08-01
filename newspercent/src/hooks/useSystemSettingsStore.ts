@@ -13,6 +13,8 @@ interface SystemSettingsState {
     marketApiEnabled: boolean;
     populationApiEnabled: boolean;
     emailServiceEnabled: boolean;
+    preciousMetalsApiEnabled: boolean;
+    fuelApiEnabled: boolean;
   } | null;
   loading: boolean;
   fetchSettings: () => Promise<void>;

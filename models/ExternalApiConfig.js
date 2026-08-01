@@ -3,8 +3,7 @@ const mongoose = require('mongoose');
 const externalApiConfigSchema = new mongoose.Schema({
     serviceName: { 
         type: String, 
-        required: true, 
-        enum: ['Weather API', 'Stock Market API'] 
+        required: true
     },
     provider: { type: String, required: true },
     apiKey: { type: String }, // Encrypted

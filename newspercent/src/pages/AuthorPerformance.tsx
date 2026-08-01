@@ -7,7 +7,9 @@ import {
     ThumbsUp, 
     Award,
     RefreshCw,
-    Loader2
+    Loader2,
+    ChevronDown,
+    ChevronUp
 } from 'lucide-react';
 import { 
     XAxis, 
@@ -26,6 +28,7 @@ const AuthorPerformance: React.FC = () => {
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [period, setPeriod] = useState('7d');
+    const [expandedArticleId, setExpandedArticleId] = useState<string | null>(null);
     const { addToast } = useToastStore();
 
     const fetchData = async () => {
@@ -232,21 +235,112 @@ const AuthorPerformance: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
-                            {data?.recentArticles?.map((art: any, i: number) => (
-                                <tr key={i} className="hover:bg-white/2 transition-colors">
-                                    <td className="px-8 py-6 text-[10px] font-bold text-[var(--text-secondary)]">{new Date(art.createdAt).toLocaleDateString()}</td>
-                                    <td className="px-8 py-6 text-sm font-bold text-white uppercase">{art.title}</td>
-                                    <td className="px-8 py-6">
-                                        <span className={cn(
-                                            "px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border transition-all duration-300",
-                                            getCategoryBadgeClass(art.category)
-                                        )}>
-                                            {art.category}
-                                        </span>
-                                    </td>
-                                    <td className="px-8 py-6 text-right font-black text-primary tabular-nums">{art.views || 0}</td>
-                                </tr>
-                            ))}
+                            {data?.recentArticles?.map((art: any, i: number) => {
+                                const isExpanded = expandedArticleId === art._id;
+                                const isApproved = ['APPROVED', 'PUBLISHED'].includes(art.status);
+
+                                return (
+                                    <React.Fragment key={art._id || i}>
+                                        <tr 
+                                            onClick={() => setExpandedArticleId(isExpanded ? null : art._id)}
+                                            className="hover:bg-white/2 transition-colors cursor-pointer"
+                                        >
+                                            <td className="px-8 py-6 text-[10px] font-bold text-[var(--text-secondary)]">{new Date(art.createdAt).toLocaleDateString()}</td>
+                                            <td className="px-8 py-6 text-sm font-bold text-white uppercase">{art.title}</td>
+                                            <td className="px-8 py-6">
+                                                <span className={cn(
+                                                    "px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border transition-all duration-300",
+                                                    getCategoryBadgeClass(art.category)
+                                                )}>
+                                                    {art.category}
+                                                </span>
+                                            </td>
+                                            <td className="px-8 py-6 text-right font-black text-primary tabular-nums">
+                                                <div className="flex items-center justify-end gap-3">
+                                                    <span>{art.views || 0}</span>
+                                                    {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {isExpanded && (
+                                            <tr>
+                                                <td colSpan={4} className="px-8 py-8 bg-white/1">
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                                                        
+                                                        {/* SEO Metadata Card */}
+                                                        <div className="bg-white/2 border border-white/5 p-6 rounded-[2rem] space-y-4">
+                                                            <h4 className="text-xs font-black text-white uppercase tracking-wider">Search Engine Optimization</h4>
+                                                            <div className="space-y-4 border-t border-white/5 pt-4">
+                                                                <div className="space-y-1">
+                                                                    <span className="text-[8px] font-bold text-primary uppercase tracking-widest">SEO Title</span>
+                                                                    <div className="bg-white/2 border border-white/5 rounded-xl p-3 text-xs text-white font-bold break-words">
+                                                                        {art.seoTitle || art.title || <span className="italic opacity-40">None (Defaults to Article Title)</span>}
+                                                                    </div>
+                                                                </div>
+                                                                <div className="space-y-1">
+                                                                    <span className="text-[8px] font-bold text-primary uppercase tracking-widest">Focus Keyword</span>
+                                                                    <div className="bg-white/2 border border-white/5 rounded-xl p-3 text-xs text-white font-bold">
+                                                                        {art.focusKeyword || <span className="italic opacity-40">Not provided</span>}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Credit breakdown */}
+                                                        <div className="bg-white/2 border border-white/5 p-6 rounded-[2rem] space-y-4">
+                                                            <h4 className="text-xs font-black text-white uppercase tracking-wider">Merit Breakdown</h4>
+                                                            
+                                                            <div className="space-y-2 text-[10px] text-white uppercase">
+                                                                {isApproved ? (
+                                                                    <>
+                                                                        <div className="flex justify-between py-1 border-b border-white/5">
+                                                                            <span className="text-[var(--text-secondary)] font-bold">SEO Credits Awarded</span>
+                                                                            <span className="font-mono text-green-500 font-bold">+{art.awardedSeoCredits || 0}</span>
+                                                                        </div>
+                                                                        <div className="flex justify-between py-1 border-b border-white/5">
+                                                                            <span className="text-[var(--text-secondary)] font-bold">Content Quality</span>
+                                                                            <span className="font-mono">+{art.creditBreakdown?.contentQuality || 0}</span>
+                                                                        </div>
+                                                                        <div className="flex justify-between py-1 border-b border-white/5">
+                                                                            <span className="text-[var(--text-secondary)] font-bold">Originality</span>
+                                                                            <span className="font-mono">+{art.creditBreakdown?.originality || 0}</span>
+                                                                        </div>
+                                                                        <div className="flex justify-between py-1 border-b border-white/5">
+                                                                            <span className="text-[var(--text-secondary)] font-bold">Research Quality</span>
+                                                                            <span className="font-mono">+{art.creditBreakdown?.researchQuality || 0}</span>
+                                                                        </div>
+                                                                        <div className="flex justify-between py-1 border-b border-white/5">
+                                                                            <span className="text-[var(--text-secondary)] font-bold">Images & Assets</span>
+                                                                            <span className="font-mono">+{art.creditBreakdown?.images || 0}</span>
+                                                                        </div>
+                                                                        <div className="flex justify-between py-1 border-b border-white/5">
+                                                                            <span className="text-[var(--text-secondary)] font-bold">Headline Quality</span>
+                                                                            <span className="font-mono">+{art.creditBreakdown?.headline || 0}</span>
+                                                                        </div>
+                                                                        <div className="flex justify-between py-1 border-b border-white/5">
+                                                                            <span className="text-[var(--text-secondary)] font-bold">Publishing Bonus</span>
+                                                                            <span className="font-mono">+{art.creditBreakdown?.publishingBonus || 0}</span>
+                                                                        </div>
+                                                                        <div className="flex justify-between py-2 border-t border-primary/20 text-xs font-black pt-3">
+                                                                            <span className="text-white">Total Credits Earned</span>
+                                                                            <span className="font-mono text-primary text-sm font-black">+{art.totalCredits || 0}</span>
+                                                                        </div>
+                                                                    </>
+                                                                ) : (
+                                                                    <div className="py-12 text-center text-[var(--text-secondary)] font-bold tracking-widest uppercase italic border border-white/5 rounded-xl bg-white/2">
+                                                                        Credits will be awarded upon approval
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </React.Fragment>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>

@@ -7,7 +7,8 @@ import {
   Plus, 
   Trash2, 
   Save, 
-  RefreshCw
+  RefreshCw,
+  Sliders
 } from 'lucide-react';
 import api from '../config/api';
 import { useAuthStore } from '../hooks/useAuthStore';
@@ -15,6 +16,7 @@ import { useToastStore } from '../hooks/useToastStore';
 
 const CreditSettings: React.FC = () => {
   const [settings, setSettings] = useState<any>(null);
+  const [creditConfig, setCreditConfig] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { user } = useAuthStore();
@@ -23,8 +25,12 @@ const CreditSettings: React.FC = () => {
   const fetchSettings = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/api/admin/settings');
-      setSettings(res.data);
+      const [resSettings, resCredits] = await Promise.all([
+        api.get('/api/admin/settings'),
+        api.get('/api/admin/settings/credits')
+      ]);
+      setSettings(resSettings.data);
+      setCreditConfig(resCredits.data.data);
     } catch (err: any) {
       addToast('error', 'FETCH FAILED', 'Could not load credit configurations');
     } finally {
@@ -33,14 +39,19 @@ const CreditSettings: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchSettings();
-  }, []);
+    if (user?.role === 'super_admin' || user?.role === 'admin') {
+      fetchSettings();
+    }
+  }, [user]);
 
   const handleUpdate = async () => {
-    if (user?.role !== 'super_admin') return;
+    if (user?.role !== 'super_admin' && user?.role !== 'admin') return;
     try {
       setSaving(true);
-      await api.patch('/api/admin/settings', settings);
+      await Promise.all([
+        api.patch('/api/admin/settings', settings),
+        api.put('/api/admin/settings/credits', creditConfig)
+      ]);
       addToast('success', 'CONFIG SAVED', 'Credit rules updated across all nodes');
     } catch (err: any) {
       addToast('error', 'SAVE FAILED', 'Failed to update credit configuration');
@@ -122,6 +133,35 @@ const CreditSettings: React.FC = () => {
                   type="number" 
                   value={settings.credits[item.path.split('.')[1]]}
                   onChange={(e) => updateNestedSetting(item.path, parseInt(e.target.value))}
+                  className="w-full bg-[var(--surface-hover)] border border-[var(--border-color)] rounded-xl p-4 text-sm font-black text-primary outline-none focus:border-primary/50 transition-all"
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Credit Configuration Panel */}
+        <section className="bg-[var(--card-bg)] border border-[var(--border-color)] p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] space-y-8 mx-4 sm:mx-0">
+          <h2 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight flex items-center gap-4">
+            <Sliders className="w-6 h-6 text-red-500" /> Credit Configuration
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {[
+              { label: 'Maximum Content Credits', key: 'maxContentCredits' },
+              { label: 'Maximum Research Credits', key: 'maxResearchCredits' },
+              { label: 'Maximum SEO Credits', key: 'maxSeoCredits' },
+              { label: 'Maximum Headline Credits', key: 'maxHeadlineCredits' },
+              { label: 'Maximum Image Credits', key: 'maxImageCredits' },
+              { label: 'Maximum Publishing Credits', key: 'maxPublishingCredits' },
+              { label: 'Default Publishing Credits', key: 'defaultPublishingCredits' },
+              { label: 'Maximum Total Credits', key: 'maxTotalCredits' },
+            ].map(item => (
+              <div key={item.key} className="space-y-2">
+                <label className="text-[9px] font-black text-[var(--text-secondary)] uppercase tracking-widest">{item.label}</label>
+                <input 
+                  type="number" 
+                  value={creditConfig ? creditConfig[item.key] : 0}
+                  onChange={(e) => setCreditConfig((prev: any) => ({ ...prev, [item.key]: parseInt(e.target.value) || 0 }))}
                   className="w-full bg-[var(--surface-hover)] border border-[var(--border-color)] rounded-xl p-4 text-sm font-black text-primary outline-none focus:border-primary/50 transition-all"
                 />
               </div>

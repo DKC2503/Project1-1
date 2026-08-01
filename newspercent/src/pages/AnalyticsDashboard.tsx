@@ -13,7 +13,9 @@ import {
     ArrowUpRight,
     ArrowDownRight,
     Target,
-    Award
+    Award,
+    FileSpreadsheet,
+    FileText
 } from 'lucide-react';
 import { 
     XAxis, 
@@ -98,6 +100,31 @@ const AnalyticsDashboard: React.FC = () => {
         }
     };
 
+    const downloadReport = async (format: 'excel' | 'csv') => {
+        try {
+            addToast('success', 'GENERATING REPORT', `Generating monthly performance ${format.toUpperCase()} report...`);
+            const blobData = await analyticsService.downloadReport(format);
+
+            const now = new Date();
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const yy = String(now.getFullYear()).substring(2);
+            const extension = format === 'excel' ? 'xlsx' : 'csv';
+            const filename = `NP_${mm}_${yy}.${extension}`;
+
+            const url = window.URL.createObjectURL(blobData);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', filename);
+            document.body.appendChild(link);
+            link.click();
+            link.parentNode?.removeChild(link);
+            addToast('success', 'DOWNLOAD READY', `Report saved as ${filename}`);
+        } catch (err) {
+            console.error('Report download failed:', err);
+            addToast('error', 'DOWNLOAD FAILED', 'Failed to compile or download monthly performance report.');
+        }
+    };
+
     // Process Chart Data with Fallback
     const chartData = useMemo(() => {
         const raw = data?.traffic?.growthChart || [];
@@ -114,9 +141,9 @@ const AnalyticsDashboard: React.FC = () => {
                 date.setDate(date.getDate() - i);
                 fallback.push({
                     date: date.toISOString().split('T')[0],
-                    uniqueVisitors: Math.floor(Math.random() * 15) + 5,
-                    returningVisitors: Math.floor(Math.random() * 10) + 2,
-                    isDemo: true
+                    uniqueVisitors: 0,
+                    returningVisitors: 0,
+                    isDemo: false
                 });
             }
             return fallback;
@@ -209,6 +236,18 @@ const AnalyticsDashboard: React.FC = () => {
                             className="flex items-center gap-3 px-6 py-3 bg-white/5 border border-[var(--glass-border)] text-[var(--text-primary)] text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-white/10 transition-all disabled:opacity-50"
                         >
                             <Archive className="w-4 h-4 text-primary" /> {archiving ? 'Purging...' : 'Archive Month'}
+                        </button>
+                        <button 
+                            onClick={() => downloadReport('excel')}
+                            className="flex items-center gap-3 px-6 py-3 bg-emerald-600 border border-emerald-500/30 text-white text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-emerald-700 transition-all"
+                        >
+                            <FileSpreadsheet className="w-4 h-4" /> Excel Report
+                        </button>
+                        <button 
+                            onClick={() => downloadReport('csv')}
+                            className="flex items-center gap-3 px-6 py-3 bg-blue-600 border border-blue-500/30 text-white text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-blue-700 transition-all"
+                        >
+                            <FileText className="w-4 h-4" /> CSV Report
                         </button>
                     </div>
                 </div>

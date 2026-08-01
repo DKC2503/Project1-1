@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LayoutDashboard, 
   Newspaper, 
+  Briefcase,
   Users, 
   User,
   LogOut, 
@@ -21,7 +22,8 @@ import {
   Moon,
   Bell,
   Menu,
-  X
+  X,
+  Loader2
 } from 'lucide-react';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useDialogStore } from '../hooks/useDialogStore';
@@ -207,6 +209,7 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({ role }) => {
     { name: 'Storage Management', href: '/admin/settings/storage', icon: Database, color: 'text-green-500', roles: ['super_admin', 'admin'] },
     { name: 'Database Settings', href: '/admin/settings/database', icon: Database, color: 'text-blue-500', roles: ['super_admin', 'admin'] },
     { name: 'External API Manager', href: '/admin/settings/external-apis', icon: Settings, color: 'text-orange-500', roles: ['super_admin', 'admin'] },
+    { name: 'Recruitment', href: '/admin/settings/recruitment', icon: Briefcase, color: 'text-amber-500', roles: ['super_admin', 'admin'] },
   ];
 
   const authorLinks = [
@@ -638,7 +641,14 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({ role }) => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
           >
-            <Outlet />
+            <Suspense fallback={
+              <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4">
+                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary italic">Syncing Segment...</p>
+              </div>
+            }>
+              <Outlet />
+            </Suspense>
           </motion.div>
         </main>
       </div>

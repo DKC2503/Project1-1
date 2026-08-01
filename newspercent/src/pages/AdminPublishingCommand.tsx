@@ -23,6 +23,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../config/api';
 import RichTextEditor from '../components/RichTextEditor';
 import FeaturedImageUpload from '../components/FeaturedImageUpload';
+import SeoSettingsPanel from '../components/SeoSettingsPanel';
 import { useToastStore } from '../hooks/useToastStore';
 import CyberSelect from '../components/CyberSelect';
 import { cn } from '../lib/utils';
@@ -65,7 +66,16 @@ const AdminPublishingCommand: React.FC = () => {
     category: 'National',
     featuredImage: '',
     isBreakingNews: false,
-    status: 'PUBLISHED'
+    status: 'PUBLISHED',
+    seoTitle: '',
+    metaDescription: '',
+    focusKeyword: '',
+    slug: '',
+    canonicalUrl: '',
+    keywords: [] as string[],
+    robotsDirective: 'index, follow',
+    openGraphImage: '',
+    seoScore: 0
   });
 
   useEffect(() => {
@@ -74,8 +84,42 @@ const AdminPublishingCommand: React.FC = () => {
         try {
           setFetching(true);
           const res = await api.get(`/api/articles/${editId}`);
-          const { title, subtitle, content, category, featuredImage, isBreakingNews, status } = res.data;
-          setFormData({ title, subtitle, content, category, featuredImage, isBreakingNews: !!isBreakingNews, status });
+          const { 
+            title, 
+            subtitle, 
+            content, 
+            category, 
+            featuredImage, 
+            isBreakingNews, 
+            status,
+            seoTitle,
+            metaDescription,
+            focusKeyword,
+            slug,
+            canonicalUrl,
+            keywords,
+            robotsDirective,
+            openGraphImage,
+            seoScore
+          } = res.data;
+          setFormData({ 
+            title, 
+            subtitle: subtitle || '', 
+            content, 
+            category, 
+            featuredImage, 
+            isBreakingNews: !!isBreakingNews, 
+            status,
+            seoTitle: seoTitle || '',
+            metaDescription: metaDescription || '',
+            focusKeyword: focusKeyword || '',
+            slug: slug || '',
+            canonicalUrl: canonicalUrl || '',
+            keywords: keywords || [],
+            robotsDirective: robotsDirective || 'index, follow',
+            openGraphImage: openGraphImage || '',
+            seoScore: seoScore || 0
+          });
         } catch (err) {
           console.error('Error fetching article for edit:', err);
           addToast('error', 'FETCH FAILED', 'ARTICLE NOT FOUND');
@@ -211,6 +255,9 @@ const AdminPublishingCommand: React.FC = () => {
                />
             </div>
           </div>
+
+          {/* SEO Settings Panel Card */}
+          <SeoSettingsPanel formData={formData} setFormData={setFormData} />
         </div>
 
         <div className="space-y-8 sm:space-y-10">

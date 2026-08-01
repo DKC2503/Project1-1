@@ -37,4 +37,29 @@ router.post('/archive', verifyToken, requireAdmin, async (req, res) => {
     }
 });
 
+// Download monthly performance report
+router.get('/report', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const { format } = req.query;
+        const report = await analyticsService.generateMonthlyReport(format);
+        
+        const now = new Date();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const yy = String(now.getFullYear()).substring(2);
+        
+        if (format === 'csv') {
+            res.setHeader('Content-Type', 'text/csv');
+            res.setHeader('Content-Disposition', `attachment; filename=NP_${mm}_${yy}.csv`);
+            res.send(report);
+        } else {
+            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            res.setHeader('Content-Disposition', `attachment; filename=NP_${mm}_${yy}.xlsx`);
+            res.send(report);
+        }
+    } catch (err) {
+        console.error('[Analytics Routes] Report Error:', err);
+        res.status(500).json({ error: 'Failed to generate report.' });
+    }
+});
+
 module.exports = router;

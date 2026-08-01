@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { Share2 } from 'lucide-react';
 import { shareArticle } from '../services/newsService';
-import ShareModal from './ShareModal';
+const ShareModal = lazy(() => import('./ShareModal'));
 import { cn } from '../lib/utils';
 import { useToastStore } from '../hooks/useToastStore';
 
@@ -82,12 +82,14 @@ const ShareButton: React.FC<ShareButtonProps> = ({
         )}
       </button>
 
-      <ShareModal 
-        isOpen={isModalOpen}
-        onClose={onModalClose}
-        url={shareUrl}
-        title={title}
-      />
+      <Suspense fallback={null}>
+        <ShareModal 
+          isOpen={isModalOpen}
+          onClose={onModalClose}
+          url={shareUrl}
+          title={title}
+        />
+      </Suspense>
     </>
   );
 };

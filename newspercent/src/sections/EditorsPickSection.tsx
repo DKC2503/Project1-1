@@ -61,9 +61,6 @@ const EditorsPickSection: React.FC = () => {
                  <div className="flex items-center gap-2 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-primary">
                     <MessageSquare className="w-4 h-4" /> 12 Comments
                  </div>
-                 <div className="text-[9px] sm:text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">
-                    {featured.readingTime}
-                  </div>
                </div>
             </div>
          </Link>

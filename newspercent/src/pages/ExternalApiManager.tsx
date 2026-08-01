@@ -10,7 +10,8 @@ import {
   Eye,
   EyeOff,
   ToggleLeft,
-  ToggleRight
+  ToggleRight,
+  Plus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../config/api';
@@ -27,6 +28,7 @@ interface APIConfig {
   lastHttpStatus?: number | null;
   lastResponseMsg?: string | null;
   source?: string;
+  serviceName?: string;
 }
 
 interface HistoryLog {
@@ -44,6 +46,9 @@ interface HistoryLog {
 const ExternalApiManager: React.FC = () => {
   const [weatherConfig, setWeatherConfig] = useState<APIConfig | null>(null);
   const [stockConfig, setStockConfig] = useState<APIConfig | null>(null);
+  const [preciousMetalsConfig, setPreciousMetalsConfig] = useState<APIConfig | null>(null);
+  const [fuelConfig, setFuelConfig] = useState<APIConfig | null>(null);
+  
   const [historyLogs, setHistoryLogs] = useState<HistoryLog[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -51,16 +56,21 @@ const ExternalApiManager: React.FC = () => {
   const [healthStatus, setHealthStatus] = useState<{
     weatherStatus: string;
     stockStatus: string;
+    preciousMetalsStatus: string;
+    fuelStatus: string;
     timestamp: string | null;
   }>({
     weatherStatus: 'Loading...',
     stockStatus: 'Loading...',
+    preciousMetalsStatus: 'Loading...',
+    fuelStatus: 'Loading...',
     timestamp: null
   });
   const [healthChecking, setHealthChecking] = useState(false);
 
   // Rotation Modals / State
   const [modalOpen, setModalOpen] = useState(false);
+  const [isCustomService, setIsCustomService] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [saving, setSaving] = useState(false);
   const { addToast } = useToastStore();
@@ -82,6 +92,8 @@ const ExternalApiManager: React.FC = () => {
       const res = await api.get('/api/admin/external-apis');
       setWeatherConfig(res.data.weatherActive);
       setStockConfig(res.data.stockActive);
+      setPreciousMetalsConfig(res.data.preciousMetalsActive);
+      setFuelConfig(res.data.fuelActive);
       setHistoryLogs(res.data.allConfigs || []);
     } catch (err: any) {
       addToast('error', 'FETCH FAILED', err.response?.data?.error || 'Failed to load external APIs');
@@ -97,6 +109,8 @@ const ExternalApiManager: React.FC = () => {
       setHealthStatus({
         weatherStatus: res.data.weatherStatus,
         stockStatus: res.data.stockStatus,
+        preciousMetalsStatus: res.data.preciousMetalsStatus,
+        fuelStatus: res.data.fuelStatus,
         timestamp: res.data.timestamp
       });
     } catch (err: any) {
@@ -117,11 +131,17 @@ const ExternalApiManager: React.FC = () => {
         serviceName,
         enabled: !currentStatus
       });
+      
       if (serviceName === 'Weather API') {
         setWeatherConfig(prev => prev ? { ...prev, enabled: res.data.config.enabled } : null);
-      } else {
+      } else if (serviceName === 'Stock Market API') {
         setStockConfig(prev => prev ? { ...prev, enabled: res.data.config.enabled } : null);
+      } else if (serviceName === 'Precious Metals API') {
+        setPreciousMetalsConfig(prev => prev ? { ...prev, enabled: res.data.config.enabled } : null);
+      } else if (serviceName === 'Fuel API') {
+        setFuelConfig(prev => prev ? { ...prev, enabled: res.data.config.enabled } : null);
       }
+      
       addToast('success', 'STATUS UPDATED', `${serviceName} toggle updated to ${!currentStatus ? 'ENABLED' : 'DISABLED'}`);
       checkHealth();
       fetchData();
@@ -136,7 +156,7 @@ const ExternalApiManager: React.FC = () => {
       const res = await api.post('/api/admin/external-apis/verify', {
         serviceName,
         provider,
-        apiKey: apiKeyCurrent || 'N/A' // placeholder for stock API
+        apiKey: apiKeyCurrent || 'N/A'
       });
       addToast('success', 'CONNECTED', res.data.message);
       checkHealth();
@@ -146,13 +166,14 @@ const ExternalApiManager: React.FC = () => {
     }
   };
 
-  const openRotationModal = (serviceName: string, provider: string) => {
+  const openRotationModal = (serviceName: string, provider: string, isCustom = false) => {
     setFormData({
       serviceName,
       provider,
       apiKey: '',
       reason: ''
     });
+    setIsCustomService(isCustom);
     setVerificationStatus('idle');
     setVerificationError('');
     setShowKey(false);
@@ -160,7 +181,7 @@ const ExternalApiManager: React.FC = () => {
   };
 
   const handleVerifyNewKey = async () => {
-    if (formData.serviceName === 'Weather API' && !formData.apiKey.trim()) {
+    if (!formData.apiKey.trim()) {
       addToast('error', 'INPUT REQUIRED', 'Please provide a valid API key.');
       return;
     }
@@ -222,6 +243,144 @@ const ExternalApiManager: React.FC = () => {
     );
   }
 
+  // Helper template to render an API config card
+  const renderApiCard = (config: APIConfig | null, serviceName: string, defaultProvider: string, apiType: 'key' | 'library') => {
+    if (!config) return null;
+    return (
+      <div className="bg-[var(--card-bg)] border border-[var(--border-color)] p-8 sm:p-10 rounded-[3rem] space-y-6 flex flex-col justify-between relative">
+        <div className="space-y-6">
+          <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-4">
+            <div>
+              <h3 className="text-xl font-extrabold uppercase tracking-tight text-white font-lemon">{serviceName}</h3>
+              <p className="text-[9px] text-[var(--text-secondary)] uppercase tracking-wider mt-1">Provider: {config.provider || defaultProvider}</p>
+            </div>
+            {/* ON/OFF toggle switch */}
+            <button
+              onClick={() => handleToggle(serviceName, config.enabled)}
+              className="flex items-center gap-2"
+            >
+              {config.enabled ? (
+                <ToggleRight className="w-12 h-12 text-green-500 hover:scale-105 transition-transform" />
+              ) : (
+                <ToggleLeft className="w-12 h-12 text-[var(--text-secondary)] hover:scale-105 transition-transform" />
+              )}
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 text-xs">
+            <div className="space-y-1">
+              <span className="text-[9px] text-[var(--text-secondary)] uppercase font-bold">Connection Status</span>
+              <div className="flex items-center gap-2">
+                <div className={cn("w-2.5 h-2.5 rounded-full animate-pulse", config.enabled ? "bg-green-500" : "bg-red-500")} />
+                <span className="font-extrabold text-[10px] uppercase tracking-wider">{config.enabled ? 'Enabled' : 'Disabled'}</span>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <span className="text-[9px] text-[var(--text-secondary)] uppercase font-bold">Registered Date</span>
+              <p className="font-semibold">{config.registered ? new Date(config.registered).toLocaleDateString() : 'N/A'}</p>
+            </div>
+            <div className="col-span-2 space-y-1">
+              <span className="text-[9px] text-[var(--text-secondary)] uppercase font-bold">API Credentials</span>
+              {apiType === 'key' ? (
+                <p className="font-mono bg-[var(--background-deep)] border border-[var(--border-color)] py-2.5 px-4 rounded-xl text-xs select-all text-white font-bold">{config.apiKeyMasked}</p>
+              ) : (
+                <div className="bg-[#111111]/40 border border-[#E5E7EB]/10 py-3 px-4 rounded-xl text-[10px] font-bold text-[#FF9500] uppercase tracking-wider leading-relaxed">
+                  Provider handles queries directly. API Credentials are handled internally.
+                </div>
+              )}
+            </div>
+            <div className="col-span-2 space-y-1">
+              <span className="text-[9px] text-[var(--text-secondary)] uppercase font-bold">Last Tested</span>
+              <p className="font-semibold text-white/95">{config.lastTested ? new Date(config.lastTested).toLocaleString() : 'N/A'}</p>
+            </div>
+
+            {serviceName === 'Precious Metals API' && (
+              <div className="col-span-2 space-y-2 mt-2">
+                <span className="text-[9px] text-[var(--text-secondary)] uppercase font-bold block">Supported Assets</span>
+                <div className="flex items-center gap-6 bg-[#111111]/30 border border-white/5 py-2.5 px-4 rounded-xl">
+                  <span className="flex items-center gap-1.5 text-xs text-green-400 font-semibold">
+                    ✔ Gold (XAU)
+                  </span>
+                  <span className="flex items-center gap-1.5 text-xs text-green-400 font-semibold">
+                    ✔ Silver (XAG)
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Diagnostic Panel */}
+            {apiType === 'key' && (
+              <div className="col-span-2 mt-4 bg-[#111111]/40 border border-[#E5E7EB]/10 p-5 rounded-2xl space-y-3">
+                <span className="text-[10px] font-black uppercase text-primary tracking-widest block border-b border-[#E5E7EB]/10 pb-2 mb-2">
+                  🔍 DIAGNOSTIC PANEL
+                </span>
+                <div className="grid grid-cols-2 gap-y-3 text-[11px] text-white">
+                  <div>
+                    <span className="text-[9px] text-[var(--text-secondary)] uppercase font-bold block mb-0.5">Provider</span>
+                    <span className="font-semibold">{config.provider}</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] text-[var(--text-secondary)] uppercase font-bold block mb-0.5">Active Key Source</span>
+                    <span className="font-semibold text-yellow-400">{config.source || 'N/A'}</span>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="text-[9px] text-[var(--text-secondary)] uppercase font-bold block mb-0.5">Masked Key</span>
+                    <span className="font-mono text-white/95 bg-[#111111] px-2 py-1 rounded border border-white/5 select-all font-bold block tracking-wider">{config.apiKeyMasked}</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] text-[var(--text-secondary)] uppercase font-bold block mb-0.5">Last Test Run</span>
+                    <span className="font-semibold">{config.lastTested ? new Date(config.lastTested).toLocaleString() : 'Never'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] text-[var(--text-secondary)] uppercase font-bold block mb-0.5">Last HTTP Status</span>
+                    <span className={cn(
+                      "font-mono font-bold px-2 py-0.5 rounded text-[10px]",
+                      config.lastHttpStatus === 200 ? "text-green-400 bg-green-400/10" :
+                      config.lastHttpStatus ? "text-red-400 bg-red-400/10" : "text-[var(--text-secondary)] bg-white/5"
+                    )}>
+                      {config.lastHttpStatus || 'N/A'}
+                    </span>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="text-[9px] text-[var(--text-secondary)] uppercase font-bold block mb-0.5">Last Response Message</span>
+                    <span className={cn(
+                      "font-semibold block break-words text-xs leading-relaxed",
+                      config.lastHttpStatus === 200 ? "text-green-400" :
+                      config.lastHttpStatus ? "text-red-400" : "text-white/80"
+                    )}>
+                      {config.lastResponseMsg || 'No connection test executed'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 pt-6 border-t border-[var(--border-color)] mt-6">
+          <button
+            onClick={() => handleTestConnection(serviceName, config.provider || defaultProvider)}
+            className="py-3 px-4 bg-white/5 border border-[var(--border-color)] hover:bg-white/10 text-white font-bold rounded-xl transition-all uppercase text-[9px] tracking-widest flex items-center justify-center gap-1.5"
+          >
+            Test Connection
+          </button>
+          {apiType === 'key' ? (
+            <button
+              onClick={() => openRotationModal(serviceName, config.provider || defaultProvider)}
+              className="py-3 px-4 bg-primary text-white font-black rounded-xl hover:bg-primary/95 transition-all shadow-md shadow-primary/20 uppercase text-[9px] tracking-widest flex items-center justify-center gap-1.5"
+            >
+              Replace Key
+            </button>
+          ) : (
+            <div className="py-3 px-4 text-center font-bold text-[8px] text-[var(--text-secondary)] uppercase tracking-wider flex items-center justify-center border border-dashed border-[var(--border-color)] rounded-xl bg-white/5 select-none">
+              Configured Internally
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="max-w-6xl mx-auto space-y-12 pb-20 font-manrope text-white">
       
@@ -236,12 +395,21 @@ const ExternalApiManager: React.FC = () => {
             Credential Rotation, Fallback States & Outbound Routing Controls
           </p>
         </div>
+        
+        {/* Register Future API Key Button */}
+        <button
+          onClick={() => openRotationModal('', '', true)}
+          className="py-3 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl transition-all shadow-lg shadow-emerald-600/20 uppercase text-[10px] tracking-widest flex items-center gap-2"
+        >
+          <Plus className="w-4 h-4" />
+          Register Future API Key
+        </button>
       </div>
 
       {/* HEALTH MONITORING WIDGET */}
       <div className="bg-[var(--card-bg)] border border-[var(--border-color)] p-8 rounded-[2.5rem] relative overflow-hidden group">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[80px] -mr-32 -mt-32" />
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
           <div className="space-y-2">
             <span className="text-[10px] font-black uppercase text-primary tracking-widest">Outbound Health Summary</span>
             <h2 className="text-2xl font-extrabold uppercase tracking-tight font-lemon">EXTERNAL API STATUS</h2>
@@ -252,12 +420,13 @@ const ExternalApiManager: React.FC = () => {
               </span>
             </div>
           </div>
-          <div className="flex flex-wrap gap-4 items-center">
+          
+          <div className="flex flex-wrap gap-3 items-center">
             {/* Weather status */}
-            <div className="bg-[var(--background-deep)] border border-[var(--border-color)] py-4 px-6 rounded-2xl flex items-center gap-4">
-              <span className="text-[10px] font-bold text-[var(--text-secondary)] uppercase">Weather API:</span>
+            <div className="bg-[var(--background-deep)] border border-[var(--border-color)] py-3 px-4 rounded-xl flex items-center gap-3">
+              <span className="text-[9px] font-bold text-[var(--text-secondary)] uppercase">Weather:</span>
               <span className={cn(
-                "px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-md border",
+                "px-2 py-0.5 text-[8px] font-black uppercase tracking-widest rounded border",
                 healthStatus.weatherStatus === 'Connected' ? "bg-green-500/10 border-green-500/20 text-green-500" :
                 healthStatus.weatherStatus === 'Disabled' ? "bg-white/5 border-white/10 text-white/50" :
                 "bg-red-500/10 border-red-500/20 text-red-500"
@@ -267,10 +436,10 @@ const ExternalApiManager: React.FC = () => {
             </div>
             
             {/* Stock status */}
-            <div className="bg-[var(--background-deep)] border border-[var(--border-color)] py-4 px-6 rounded-2xl flex items-center gap-4">
-              <span className="text-[10px] font-bold text-[var(--text-secondary)] uppercase">Stock API:</span>
+            <div className="bg-[var(--background-deep)] border border-[var(--border-color)] py-3 px-4 rounded-xl flex items-center gap-3">
+              <span className="text-[9px] font-bold text-[var(--text-secondary)] uppercase">Stocks:</span>
               <span className={cn(
-                "px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-md border",
+                "px-2 py-0.5 text-[8px] font-black uppercase tracking-widest rounded border",
                 healthStatus.stockStatus === 'Connected' ? "bg-green-500/10 border-green-500/20 text-green-500" :
                 healthStatus.stockStatus === 'Disabled' ? "bg-white/5 border-white/10 text-white/50" :
                 "bg-red-500/10 border-red-500/20 text-red-500"
@@ -279,12 +448,38 @@ const ExternalApiManager: React.FC = () => {
               </span>
             </div>
 
+            {/* Precious Metals status */}
+            <div className="bg-[var(--background-deep)] border border-[var(--border-color)] py-3 px-4 rounded-xl flex items-center gap-3">
+              <span className="text-[9px] font-bold text-[var(--text-secondary)] uppercase">Precious Metals:</span>
+              <span className={cn(
+                "px-2 py-0.5 text-[8px] font-black uppercase tracking-widest rounded border",
+                healthStatus.preciousMetalsStatus === 'Connected' ? "bg-green-500/10 border-green-500/20 text-green-500" :
+                healthStatus.preciousMetalsStatus === 'Disabled' ? "bg-white/5 border-white/10 text-white/50" :
+                "bg-red-500/10 border-red-500/20 text-red-500"
+              )}>
+                {healthStatus.preciousMetalsStatus}
+              </span>
+            </div>
+
+            {/* Fuel status */}
+            <div className="bg-[var(--background-deep)] border border-[var(--border-color)] py-3 px-4 rounded-xl flex items-center gap-3">
+              <span className="text-[9px] font-bold text-[var(--text-secondary)] uppercase">Fuel:</span>
+              <span className={cn(
+                "px-2 py-0.5 text-[8px] font-black uppercase tracking-widest rounded border",
+                healthStatus.fuelStatus === 'Connected' ? "bg-green-500/10 border-green-500/20 text-green-500" :
+                healthStatus.fuelStatus === 'Disabled' ? "bg-white/5 border-white/10 text-white/50" :
+                "bg-red-500/10 border-red-500/20 text-red-500"
+              )}>
+                {healthStatus.fuelStatus}
+              </span>
+            </div>
+
             <button
               onClick={checkHealth}
               disabled={healthChecking}
-              className="p-4 bg-primary/10 border border-primary/20 hover:bg-primary/20 text-primary rounded-2xl transition-all"
+              className="p-3 bg-primary/10 border border-primary/20 hover:bg-primary/20 text-primary rounded-xl transition-all"
             >
-              <RefreshCw className={cn("w-5 h-5", healthChecking && "animate-spin")} />
+              <RefreshCw className={cn("w-4 h-4", healthChecking && "animate-spin")} />
             </button>
           </div>
         </div>
@@ -292,172 +487,10 @@ const ExternalApiManager: React.FC = () => {
 
       {/* API INVENTORY DASHBOARD */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        
-        {/* Weather API Card */}
-        {weatherConfig && (
-          <div className="bg-[var(--card-bg)] border border-[var(--border-color)] p-8 sm:p-10 rounded-[3rem] space-y-6 flex flex-col justify-between relative">
-            <div className="space-y-6">
-              <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-4">
-                <div>
-                  <h3 className="text-xl font-extrabold uppercase tracking-tight text-white font-lemon">WEATHER API</h3>
-                  <p className="text-[9px] text-[var(--text-secondary)] uppercase tracking-wider mt-1">Provider: {weatherConfig.provider}</p>
-                </div>
-                {/* ON/OFF toggle switch */}
-                <button
-                  onClick={() => handleToggle('Weather API', weatherConfig.enabled)}
-                  className="flex items-center gap-2"
-                >
-                  {weatherConfig.enabled ? (
-                    <ToggleRight className="w-12 h-12 text-green-500 hover:scale-105 transition-transform" />
-                  ) : (
-                    <ToggleLeft className="w-12 h-12 text-[var(--text-secondary)] hover:scale-105 transition-transform" />
-                  )}
-                </button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 text-xs">
-                <div className="space-y-1">
-                  <span className="text-[9px] text-[var(--text-secondary)] uppercase font-bold">Connection Status</span>
-                  <div className="flex items-center gap-2">
-                    <div className={cn("w-2.5 h-2.5 rounded-full animate-pulse", weatherConfig.enabled ? "bg-green-500" : "bg-red-500")} />
-                    <span className="font-extrabold text-[10px] uppercase tracking-wider">{weatherConfig.enabled ? 'Enabled' : 'Disabled'}</span>
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <span className="text-[9px] text-[var(--text-secondary)] uppercase font-bold">Registered Date</span>
-                  <p className="font-semibold">{weatherConfig.registered ? new Date(weatherConfig.registered).toLocaleDateString() : 'N/A'}</p>
-                </div>
-                <div className="col-span-2 space-y-1">
-                  <span className="text-[9px] text-[var(--text-secondary)] uppercase font-bold">Current Masked API Key</span>
-                  <p className="font-mono bg-[var(--background-deep)] border border-[var(--border-color)] py-2.5 px-4 rounded-xl text-xs select-all text-white font-bold">{weatherConfig.apiKeyMasked}</p>
-                </div>
-                <div className="col-span-2 space-y-1">
-                  <span className="text-[9px] text-[var(--text-secondary)] uppercase font-bold">Last Tested</span>
-                  <p className="font-semibold text-white/95">{weatherConfig.lastTested ? new Date(weatherConfig.lastTested).toLocaleString() : 'N/A'}</p>
-                </div>
-
-                {/* Weather API Diagnostic Panel */}
-                <div className="col-span-2 mt-4 bg-[#111111]/40 border border-[#E5E7EB]/10 p-5 rounded-2xl space-y-3">
-                  <span className="text-[10px] font-black uppercase text-primary tracking-widest block border-b border-[#E5E7EB]/10 pb-2 mb-2">
-                    🔍 WEATHER API DIAGNOSTIC PANEL
-                  </span>
-                  <div className="grid grid-cols-2 gap-y-3 text-[11px] text-white">
-                    <div>
-                      <span className="text-[9px] text-[var(--text-secondary)] uppercase font-bold block mb-0.5">Provider</span>
-                      <span className="font-semibold">{weatherConfig.provider}</span>
-                    </div>
-                    <div>
-                      <span className="text-[9px] text-[var(--text-secondary)] uppercase font-bold block mb-0.5">Active Key Source</span>
-                      <span className="font-semibold text-yellow-400">{weatherConfig.source || 'N/A'}</span>
-                    </div>
-                    <div className="col-span-2">
-                      <span className="text-[9px] text-[var(--text-secondary)] uppercase font-bold block mb-0.5">Masked Key</span>
-                      <span className="font-mono text-white/95 bg-[#111111] px-2 py-1 rounded border border-white/5 select-all font-bold block tracking-wider">{weatherConfig.apiKeyMasked}</span>
-                    </div>
-                    <div>
-                      <span className="text-[9px] text-[var(--text-secondary)] uppercase font-bold block mb-0.5">Last Test Run</span>
-                      <span className="font-semibold">{weatherConfig.lastTested ? new Date(weatherConfig.lastTested).toLocaleString() : 'Never'}</span>
-                    </div>
-                    <div>
-                      <span className="text-[9px] text-[var(--text-secondary)] uppercase font-bold block mb-0.5">Last HTTP Status</span>
-                      <span className={cn(
-                        "font-mono font-bold px-2 py-0.5 rounded text-[10px]",
-                        weatherConfig.lastHttpStatus === 200 ? "text-green-400 bg-green-400/10" :
-                        weatherConfig.lastHttpStatus ? "text-red-400 bg-red-400/10" : "text-[var(--text-secondary)] bg-white/5"
-                      )}>
-                        {weatherConfig.lastHttpStatus || 'N/A'}
-                      </span>
-                    </div>
-                    <div className="col-span-2">
-                      <span className="text-[9px] text-[var(--text-secondary)] uppercase font-bold block mb-0.5">Last Response Message</span>
-                      <span className={cn(
-                        "font-semibold block break-words text-xs leading-relaxed",
-                        weatherConfig.lastHttpStatus === 200 ? "text-green-400" :
-                        weatherConfig.lastHttpStatus ? "text-red-400" : "text-white/80"
-                      )}>
-                        {weatherConfig.lastResponseMsg || 'No connection test executed'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 pt-6 border-t border-[var(--border-color)]">
-              <button
-                onClick={() => handleTestConnection('Weather API', weatherConfig.provider)}
-                className="py-3 px-4 bg-white/5 border border-[var(--border-color)] hover:bg-white/10 text-white font-bold rounded-xl transition-all uppercase text-[9px] tracking-widest flex items-center justify-center gap-1.5"
-              >
-                Test Connection
-              </button>
-              <button
-                onClick={() => openRotationModal('Weather API', weatherConfig.provider)}
-                className="py-3 px-4 bg-primary text-white font-black rounded-xl hover:bg-primary/95 transition-all shadow-md shadow-primary/20 uppercase text-[9px] tracking-widest flex items-center justify-center gap-1.5"
-              >
-                Replace Key
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Stock Market API Card */}
-        {stockConfig && (
-          <div className="bg-[var(--card-bg)] border border-[var(--border-color)] p-8 sm:p-10 rounded-[3rem] space-y-6 flex flex-col justify-between relative">
-            <div className="space-y-6">
-              <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-4">
-                <div>
-                  <h3 className="text-xl font-extrabold uppercase tracking-tight text-white font-lemon">STOCK MARKET API</h3>
-                  <p className="text-[9px] text-[var(--text-secondary)] uppercase tracking-wider mt-1">Provider: {stockConfig.provider}</p>
-                </div>
-                {/* ON/OFF toggle switch */}
-                <button
-                  onClick={() => handleToggle('Stock Market API', stockConfig.enabled)}
-                  className="flex items-center gap-2"
-                >
-                  {stockConfig.enabled ? (
-                    <ToggleRight className="w-12 h-12 text-green-500 hover:scale-105 transition-transform" />
-                  ) : (
-                    <ToggleLeft className="w-12 h-12 text-[var(--text-secondary)] hover:scale-105 transition-transform" />
-                  )}
-                </button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 text-xs">
-                <div className="space-y-1">
-                  <span className="text-[9px] text-[var(--text-secondary)] uppercase font-bold">Connection Status</span>
-                  <div className="flex items-center gap-2">
-                    <div className={cn("w-2.5 h-2.5 rounded-full animate-pulse", stockConfig.enabled ? "bg-green-500" : "bg-red-500")} />
-                    <span className="font-extrabold text-[10px] uppercase tracking-wider">{stockConfig.enabled ? 'Enabled' : 'Disabled'}</span>
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <span className="text-[9px] text-[var(--text-secondary)] uppercase font-bold">Registered Date</span>
-                  <p className="font-semibold">{stockConfig.registered ? new Date(stockConfig.registered).toLocaleDateString() : 'N/A'}</p>
-                </div>
-                <div className="col-span-2 space-y-1">
-                  <span className="text-[9px] text-[var(--text-secondary)] uppercase font-bold">API Credentials</span>
-                  <div className="bg-[#111111]/40 border border-[#E5E7EB]/10 py-3 px-4 rounded-xl text-[10px] font-bold text-[#FF9500] uppercase tracking-wider leading-relaxed">
-                    Provider handles queries via yahoo-finance2 library directly. API Credentials are not required.
-                  </div>
-                </div>
-                <div className="col-span-2 space-y-1">
-                  <span className="text-[9px] text-[var(--text-secondary)] uppercase font-bold">Last Tested</span>
-                  <p className="font-semibold text-white/95">{stockConfig.lastTested ? new Date(stockConfig.lastTested).toLocaleString() : 'N/A'}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 pt-6 border-t border-[var(--border-color)]">
-              <button
-                onClick={() => handleTestConnection('Stock Market API', stockConfig.provider)}
-                className="py-3 px-4 bg-white/5 border border-[var(--border-color)] hover:bg-white/10 text-white font-bold rounded-xl transition-all uppercase text-[9px] tracking-widest flex items-center justify-center gap-1.5"
-              >
-                Test Connection
-              </button>
-            </div>
-          </div>
-        )}
+        {renderApiCard(weatherConfig, 'Weather API', 'WeatherAPI', 'key')}
+        {renderApiCard(stockConfig, 'Stock Market API', 'Yahoo Finance', 'library')}
+        {renderApiCard(preciousMetalsConfig, 'Precious Metals API', 'GoldAPI.io', 'key')}
+        {renderApiCard(fuelConfig, 'Fuel API', 'm2c Fuel API', 'key')}
       </div>
 
       {/* API HISTORY LOG */}
@@ -497,7 +530,7 @@ const ExternalApiManager: React.FC = () => {
                       <td className="py-4 px-4 font-black uppercase text-white tracking-wide">{log.serviceName}</td>
                       <td className="py-4 px-4 font-semibold text-[var(--text-secondary)] uppercase">{log.provider}</td>
                       <td className="py-4 px-4 font-mono text-[var(--text-secondary)] text-[10px]">
-                        {log.serviceName === 'Weather API' ? 'Weather API Key' : 'N/A'}
+                        {log.serviceName.includes('API') ? `${log.serviceName} Key` : 'N/A'}
                       </td>
                       <td className="py-4 px-4 text-[var(--text-secondary)]">
                         <div className="flex items-center gap-1.5 whitespace-nowrap">
@@ -533,7 +566,7 @@ const ExternalApiManager: React.FC = () => {
         </div>
       </div>
 
-      {/* ROTATION MODAL */}
+      {/* ROTATION / REGISTRATION MODAL */}
       <AnimatePresence>
         {modalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -553,14 +586,45 @@ const ExternalApiManager: React.FC = () => {
               className="relative w-full max-w-xl bg-[var(--background-deep)] border border-[var(--glass-border)] p-8 sm:p-10 rounded-[2.5rem] shadow-2xl flex flex-col gap-6"
             >
               <div className="space-y-2">
-                <span className="text-[10px] font-black uppercase text-primary tracking-widest">Rotation Pipeline</span>
-                <h3 className="text-2xl font-extrabold uppercase text-white font-lemon">Replace API Key</h3>
-                <p className="text-xs text-[var(--text-secondary)] uppercase tracking-wider">
-                  Service: {formData.serviceName} ({formData.provider})
-                </p>
+                <span className="text-[10px] font-black uppercase text-primary tracking-widest">Rotation & Registration</span>
+                <h3 className="text-2xl font-extrabold uppercase text-white font-lemon">
+                  {isCustomService ? 'Register Future API Key' : 'Replace API Key'}
+                </h3>
+                {!isCustomService && (
+                  <p className="text-xs text-[var(--text-secondary)] uppercase tracking-wider">
+                    Service: {formData.serviceName} ({formData.provider})
+                  </p>
+                )}
               </div>
 
               <div className="space-y-5 py-4 border-y border-[var(--border-color)]">
+                {/* Editable Fields if Custom/Future API */}
+                {isCustomService && (
+                  <>
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black uppercase text-[var(--text-secondary)] tracking-widest block">Service Name</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Mapbox API, OpenAI API..."
+                        value={formData.serviceName}
+                        onChange={(e) => setFormData(prev => ({ ...prev, serviceName: e.target.value }))}
+                        className="w-full bg-[#111111]/60 border border-[var(--border-color)] rounded-xl py-3 px-4 text-sm text-white placeholder-[var(--text-muted)] focus:outline-none focus:border-primary transition-all font-semibold"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black uppercase text-[var(--text-secondary)] tracking-widest block">Provider Name</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Mapbox, OpenAI..."
+                        value={formData.provider}
+                        onChange={(e) => setFormData(prev => ({ ...prev, provider: e.target.value }))}
+                        className="w-full bg-[#111111]/60 border border-[var(--border-color)] rounded-xl py-3 px-4 text-sm text-white placeholder-[var(--text-muted)] focus:outline-none focus:border-primary transition-all font-semibold"
+                      />
+                    </div>
+                  </>
+                )}
+
                 {/* Proposed API Key */}
                 <div className="space-y-2 relative">
                   <label className="text-[9px] font-black uppercase text-[var(--text-secondary)] tracking-widest block">Proposed API Key</label>
@@ -583,10 +647,10 @@ const ExternalApiManager: React.FC = () => {
 
                 {/* Reason for rotation */}
                 <div className="space-y-2">
-                  <label className="text-[9px] font-black uppercase text-[var(--text-secondary)] tracking-widest block">Reason for Rotation</label>
+                  <label className="text-[9px] font-black uppercase text-[var(--text-secondary)] tracking-widest block">Reason for Rotation / Registration</label>
                   <input
                     type="text"
-                    placeholder="e.g., Quota Exhausted / Security Compromise / Monthly Rotation"
+                    placeholder="e.g., Quota Exhausted / Security Compromise / Custom Registration"
                     value={formData.reason}
                     onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
                     className="w-full bg-[#111111]/60 border border-[var(--border-color)] rounded-xl py-3.5 px-4 text-sm text-white placeholder-[var(--text-muted)] focus:outline-none focus:border-primary transition-all"
@@ -598,13 +662,13 @@ const ExternalApiManager: React.FC = () => {
                   {verificationStatus === 'idle' && (
                     <div className="bg-white/5 border border-white/10 py-3 px-4 rounded-xl text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-2">
                       <PlayCircle className="w-4 h-4 text-primary animate-pulse" />
-                      Verification pending. Key must pass active connection verification.
+                      Verification pending. Key must pass connection verification.
                     </div>
                   )}
                   {verificationStatus === 'success' && (
                     <div className="bg-green-500/10 border border-green-500/20 py-3 px-4 rounded-xl text-[10px] font-bold text-green-500 uppercase tracking-wider flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
-                      Active Ping Connection Successful. Credentials verified.
+                      Verification Successful. Credentials verified.
                     </div>
                   )}
                   {verificationStatus === 'failed' && (
@@ -627,7 +691,7 @@ const ExternalApiManager: React.FC = () => {
                 </button>
                 <button
                   onClick={handleVerifyNewKey}
-                  disabled={verifying || !formData.apiKey.trim()}
+                  disabled={verifying || !formData.apiKey.trim() || (isCustomService && (!formData.serviceName.trim() || !formData.provider.trim()))}
                   className="py-3 px-6 bg-[#FF9500] hover:bg-[#E08300] text-white font-black rounded-xl transition-all uppercase text-[9px] tracking-widest flex items-center gap-2"
                 >
                   {verifying && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}

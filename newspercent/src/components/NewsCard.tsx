@@ -1,17 +1,20 @@
 import React from 'react';
 import { Clock, User, ArrowUpRight } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import type { NewsArticle } from '../services/newsService';
 import { cn } from '../lib/utils';
 import ShareButton from './ShareButton';
-
+ 
 interface NewsCardProps {
   article: NewsArticle;
   variant?: 'large' | 'compact' | 'minimal';
 }
-
+ 
 const NewsCard: React.FC<NewsCardProps> = ({ article, variant = 'compact' }) => {
+  const { slug } = useParams<{ slug: string }>();
+  const isBreakingCategory = slug?.toLowerCase() === 'breaking';
+
   return (
     <Link to={`/article/${article.id}`} className="block group">
       <motion.div
@@ -36,14 +39,20 @@ const NewsCard: React.FC<NewsCardProps> = ({ article, variant = 'compact' }) => 
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[var(--background-deep)]/70 via-transparent to-transparent opacity-60 light:from-black/40" />
         {variant !== 'minimal' && (
-          <div className="absolute top-6 left-6">
+          <div className="absolute top-6 left-6 flex items-center gap-2">
             <span className="px-4 py-1.5 bg-primary text-white text-[9px] font-black tracking-widest uppercase rounded-full shadow-lg">
               {article.category}
             </span>
+            {!isBreakingCategory && (article.isBreakingNews || article.isMainBreaking || article.isBigBreaking) && (
+              <span className="px-3 py-1.5 bg-red-600 text-white text-[9px] font-black tracking-widest uppercase rounded-full shadow-lg flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+                Breaking
+              </span>
+            )}
           </div>
         )}
       </div>
-
+ 
       {/* Content */}
       <div className={cn(
         "flex flex-col flex-1",
@@ -51,7 +60,14 @@ const NewsCard: React.FC<NewsCardProps> = ({ article, variant = 'compact' }) => 
         variant === 'minimal' ? "justify-center py-1" : "p-6 sm:p-8"
       )}>
         {variant === 'minimal' && (
-          <span className="text-[9px] font-black text-primary uppercase tracking-widest mb-2 block">{article.category}</span>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-[9px] font-black text-primary uppercase tracking-widest block">{article.category}</span>
+            {!isBreakingCategory && (article.isBreakingNews || article.isMainBreaking || article.isBigBreaking) && (
+              <span className="text-[8px] font-black bg-red-600/10 border border-red-500/20 text-red-500 uppercase tracking-widest px-1.5 py-0.5 rounded">
+                Breaking
+              </span>
+            )}
+          </div>
         )}
 
         <div className={cn(
@@ -91,9 +107,6 @@ const NewsCard: React.FC<NewsCardProps> = ({ article, variant = 'compact' }) => 
           variant === 'minimal' && "hidden"
         )}>
           <div className="flex items-center gap-6">
-            <span className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest">
-              {article.readingTime}
-            </span>
             <ShareButton 
               articleId={article.id} 
               title={article.title} 

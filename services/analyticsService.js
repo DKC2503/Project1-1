@@ -25,7 +25,41 @@ const analyticsService = {
                 await visitor.save();
             }
 
-            // 2. Create Log Entry
+            // 2. If it's a Page View for an Article, update article-wise and summary statistics in DB
+            if (type === 'PAGE_VIEW' && articleId) {
+                // Check if this visitor has viewed this article before (unique check)
+                const previousLog = await AnalyticsLogV1.findOne({
+                    visitorId,
+                    type: 'PAGE_VIEW',
+                    articleId
+                });
+
+                if (previousLog) {
+                    // Revisit
+                    await Article.findByIdAndUpdate(articleId, {
+                        $inc: { revisits: 1, opens: 1 }
+                    });
+                    const Analytics = require('../models/Analytics');
+                    await Analytics.findOneAndUpdate(
+                        { articleId },
+                        { $inc: { revisits: 1, views: 1 }, updatedAt: new Date() },
+                        { upsert: true }
+                    );
+                } else {
+                    // Unique View
+                    await Article.findByIdAndUpdate(articleId, {
+                        $inc: { views: 1, opens: 1 } // Article.views stores Unique Views
+                    });
+                    const Analytics = require('../models/Analytics');
+                    await Analytics.findOneAndUpdate(
+                        { articleId },
+                        { $inc: { uniqueVisitors: 1, views: 1 }, updatedAt: new Date() },
+                        { upsert: true }
+                    );
+                }
+            }
+
+            // 3. Create Log Entry
             const log = await AnalyticsLogV1.create({
                 visitorId,
                 type,
@@ -115,7 +149,7 @@ const analyticsService = {
                                     as: 'visitor'
                                 }
                             },
-                            { $unwind: "$visitor" },
+                            { $unwind: { path: "$visitor", preserveNullAndEmptyArrays: true } },
                             {
                                 $group: {
                                     _id: "$_id.date",
@@ -144,7 +178,7 @@ const analyticsService = {
                                     as: 'visitor'
                                 }
                             },
-                            { $unwind: "$visitor" },
+                            { $unwind: { path: "$visitor", preserveNullAndEmptyArrays: true } },
                             {
                                 $group: {
                                     _id: null,
@@ -385,6 +419,177 @@ const analyticsService = {
             return { success: true, fileName, count: logs.length };
         } catch (err) {
             console.error('[AnalyticsService] Archival Error:', err);
+            throw err;
+        }
+    },
+
+    /**
+     * Generate Monthly Performance Report
+     */
+    generateMonthlyReport: async (format = 'excel') => {
+        try {
+            const Article = require('../models/Article');
+            const AnalyticsLogV1 = require('../models/AnalyticsLogV1');
+            const XLSX = require('xlsx');
+
+            // 1. Fetch live published articles
+            const articles = await Article.find({ status: 'PUBLISHED' }).sort({ views: -1 });
+
+            // 2. Compute overall totals
+            let totalUniqueViews = 0;
+            let totalRevisits = 0;
+            let totalLikes = 0;
+            let totalShares = 0;
+
+            articles.forEach(a => {
+                totalUniqueViews += (a.views || 0);
+                totalRevisits += (a.revisits || 0);
+                totalLikes += (a.likes || 0);
+                totalShares += (a.shares || 0);
+            });
+
+            // 3. Top performing articles (top 15)
+            const topArticles = articles.slice(0, 15);
+
+            // 4. Monthly trend data (last 30 days of traffic)
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            const trend = await AnalyticsLogV1.aggregate([
+                { $match: { timestamp: { $gte: thirtyDaysAgo }, type: 'PAGE_VIEW' } },
+                {
+                    $group: {
+                        _id: { $dateToString: { format: "%Y-%m-%d", date: "$timestamp" } },
+                        totalViews: { $sum: 1 },
+                        unique: { $addToSet: "$visitorId" }
+                    }
+                },
+                {
+                    $project: {
+                        date: "$_id",
+                        totalViews: 1,
+                        uniqueViews: { $size: "$unique" },
+                        _id: 0
+                    }
+                },
+                { $sort: { date: 1 } }
+            ]);
+
+            if (format === 'excel') {
+                // Build Workbook
+                const wb = XLSX.utils.book_new();
+
+                // Setup summary sheet data grid
+                const summaryData = [
+                    ['NEWS_PERCENT WEB PLATFORM'],
+                    ['MONTHLY PERFORMANCE INTEL REPORT'],
+                    [],
+                    ['SYSTEM-WIDE STATS OVERVIEW'],
+                    ['KPI Parameter', 'Aggregated Metrics', 'System Status'],
+                    ['Total Unique Views (Visitors)', totalUniqueViews, 'VERIFIED'],
+                    ['Total User Revisits', totalRevisits, 'VERIFIED'],
+                    ['Total Article Likes', totalLikes, 'VERIFIED'],
+                    ['Total Article Shares', totalShares, 'VERIFIED'],
+                    [],
+                    ['TOP PERFORMING ARTICLES'],
+                    ['Article Title', 'Author Uploaded By', 'Published Date', 'Unique Views', 'Revisits', 'Likes', 'Shares']
+                ];
+
+                topArticles.forEach(a => {
+                    summaryData.push([
+                        a.title,
+                        a.authorName,
+                        a.publishedAt ? new Date(a.publishedAt).toLocaleDateString() : 'N/A',
+                        a.views || 0,
+                        a.revisits || 0,
+                        a.likes || 0,
+                        a.shares || 0
+                    ]);
+                });
+
+                summaryData.push([], ['DAILY GROWTH TRENDS'], ['Log Date', 'Total Raw Hits', 'Unique Visitors']);
+                if (trend.length === 0) {
+                    summaryData.push(['No logs recorded yet', 0, 0]);
+                } else {
+                    trend.forEach(t => {
+                        summaryData.push([t.date, t.totalViews, t.uniqueViews]);
+                    });
+                }
+
+                const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+
+                // Auto-fit column widths
+                const autofitCols = (dataGrid) => {
+                    const maxLens = [];
+                    dataGrid.forEach(row => {
+                        if (!row) return;
+                        row.forEach((cell, idx) => {
+                            const val = String(cell || '');
+                            maxLens[idx] = Math.max(maxLens[idx] || 10, val.length + 3);
+                        });
+                    });
+                    return maxLens.map(w => ({ wch: w }));
+                };
+
+                wsSummary['!cols'] = autofitCols(summaryData);
+                XLSX.utils.book_append_sheet(wb, wsSummary, 'Overall Site Summary');
+
+                // Build Article-wise sheet
+                const articleSheetData = [
+                    ['Article TitleName', 'Author Uploaded By', 'Published Date', 'Unique Views', 'Revisits', 'Likes', 'Shares', 'Total Article Opens']
+                ];
+
+                articles.forEach(a => {
+                    articleSheetData.push([
+                        a.title,
+                        a.authorName,
+                        a.publishedAt ? new Date(a.publishedAt).toLocaleDateString() : 'N/A',
+                        a.views || 0,
+                        a.revisits || 0,
+                        a.likes || 0,
+                        a.shares || 0,
+                        a.opens || 0
+                    ]);
+                });
+
+                const wsArticles = XLSX.utils.aoa_to_sheet(articleSheetData);
+                wsArticles['!cols'] = autofitCols(articleSheetData);
+                XLSX.utils.book_append_sheet(wb, wsArticles, 'Article Performance Data');
+
+                // Write workbook
+                const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+                return buffer;
+            } else {
+                // CSV raw data
+                const csvLines = [];
+                csvLines.push('NEWS_PERCENT MONTHLY PERFORMANCE REPORT');
+                csvLines.push('');
+                csvLines.push('OVERALL SITE SUMMARY');
+                csvLines.push(`Total Unique Views,${totalUniqueViews}`);
+                csvLines.push(`Total Revisits,${totalRevisits}`);
+                csvLines.push(`Total Likes,${totalLikes}`);
+                csvLines.push(`Total Shares,${totalShares}`);
+                csvLines.push('');
+                csvLines.push('ARTICLE PERFORMANCE DATA');
+                csvLines.push('Article TitleName,Uploaded By,Published Date,Unique Views,Revisits,Likes,Shares,Total Opens');
+                
+                articles.forEach(a => {
+                    const cleanTitle = a.title.replace(/"/g, '""');
+                    const cleanAuthor = a.authorName.replace(/"/g, '""');
+                    const pubDate = a.publishedAt ? new Date(a.publishedAt).toISOString() : 'N/A';
+                    csvLines.push(`"${cleanTitle}","${cleanAuthor}",${pubDate},${a.views || 0},${a.revisits || 0},${a.likes || 0},${a.shares || 0},${a.opens || 0}`);
+                });
+
+                csvLines.push('');
+                csvLines.push('DAILY GROWTH TRENDS');
+                csvLines.push('Date,Total Raw Hits,Unique Visitors');
+                trend.forEach(t => {
+                    csvLines.push(`${t.date},${t.totalViews},${t.uniqueViews}`);
+                });
+
+                return Buffer.from(csvLines.join('\n'), 'utf-8');
+            }
+        } catch (err) {
+            console.error('[AnalyticsService] Report Compile Error:', err);
             throw err;
         }
     }

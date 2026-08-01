@@ -19,6 +19,16 @@ const userSchema = new mongoose.Schema({
     achievements: [{ type: String }]
 });
 
+// Hide super_admin in API responses
+userSchema.set('toJSON', {
+    transform: (doc, ret) => {
+        if (ret.role === 'super_admin') {
+            ret.role = 'admin';
+        }
+        return ret;
+    }
+});
+
 userSchema.index({ role: 1 });
 userSchema.index({ totalCredits: -1 });
 userSchema.index({ monthlyCredits: -1 });

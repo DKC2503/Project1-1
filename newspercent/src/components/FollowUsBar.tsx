@@ -7,7 +7,7 @@ const SOCIAL_LINKS = {
   youtube: "https://youtube.com/@newspercent?si=MSijbFoZuTzZ_UfA",
   twitter: "https://x.com/NewspercentNews?s=20",
   whatsapp: "https://whatsapp.com/channel/0029VayEkt9BKfhrtE3ncR2H",
-  telegram: "PASTE_TELEGRAM_URL_HERE",
+  telegram: "https://t.me/newspercent",
 };
 
 const FollowUsBar: React.FC = () => {
@@ -19,25 +19,25 @@ const FollowUsBar: React.FC = () => {
           <span className="text-[#FFD84D] font-lemon-milk">PERCENT</span>
         </span>
         <div className="flex flex-wrap items-center justify-center gap-4">
-          <a href={SOCIAL_LINKS.instagram} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--surface-hover)] border border-[var(--glass-border)] hover:border-primary/40 hover:bg-primary/5 transition-all group">
-            <FaInstagram className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-primary" />
-            <span className="text-[10px] font-bold text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] uppercase tracking-widest">Instagram</span>
+          <a href={SOCIAL_LINKS.instagram} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--surface-hover)] border border-[var(--glass-border)] hover:border-[#E1306C]/40 hover:bg-[#E1306C]/5 transition-all group">
+            <FaInstagram className="w-5 h-5 text-[var(--text-secondary)] group-hover:text-[#E1306C]" />
+            <span className="text-[10px] font-bold text-[var(--text-secondary)] group-hover:text-[#E1306C] uppercase tracking-widest">Instagram</span>
           </a>
-          <a href={SOCIAL_LINKS.youtube} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--surface-hover)] border border-[var(--glass-border)] hover:border-primary/40 hover:bg-primary/5 transition-all group">
-            <FaYoutube className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-primary" />
-            <span className="text-[10px] font-bold text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] uppercase tracking-widest">YouTube</span>
+          <a href={SOCIAL_LINKS.youtube} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--surface-hover)] border border-[var(--glass-border)] hover:border-[#FF0000]/40 hover:bg-[#FF0000]/5 transition-all group">
+            <FaYoutube className="w-5 h-5 text-[var(--text-secondary)] group-hover:text-[#FF0000]" />
+            <span className="text-[10px] font-bold text-[var(--text-secondary)] group-hover:text-[#FF0000] uppercase tracking-widest">YouTube</span>
           </a>
-          <a href={SOCIAL_LINKS.twitter} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--surface-hover)] border border-[var(--glass-border)] hover:border-primary/40 hover:bg-primary/5 transition-all group">
-            <FaXTwitter className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-primary" />
-            <span className="text-[10px] font-bold text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] uppercase tracking-widest">X</span>
+          <a href={SOCIAL_LINKS.twitter} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--surface-hover)] border border-[var(--glass-border)] hover:border-[#1DA1F2]/40 hover:bg-[#1DA1F2]/5 transition-all group">
+            <FaXTwitter className="w-5 h-5 text-[var(--text-secondary)] group-hover:text-[#1DA1F2]" />
+            <span className="text-[10px] font-bold text-[var(--text-secondary)] group-hover:text-[#1DA1F2] uppercase tracking-widest">X</span>
           </a>
-          <a href={SOCIAL_LINKS.whatsapp} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--surface-hover)] border border-[var(--glass-border)] hover:border-primary/40 hover:bg-primary/5 transition-all group">
-            <FaWhatsapp className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-primary" />
-            <span className="text-[10px] font-bold text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] uppercase tracking-widest">WhatsApp</span>
+          <a href={SOCIAL_LINKS.whatsapp} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--surface-hover)] border border-[var(--glass-border)] hover:border-[#25D366]/40 hover:bg-[#25D366]/5 transition-all group">
+            <FaWhatsapp className="w-5 h-5 text-[var(--text-secondary)] group-hover:text-[#25D366]" />
+            <span className="text-[10px] font-bold text-[var(--text-secondary)] group-hover:text-[#25D366] uppercase tracking-widest">WhatsApp</span>
           </a>
-          <a href={SOCIAL_LINKS.telegram} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--surface-hover)] border border-[var(--glass-border)] hover:border-primary/40 hover:bg-primary/5 transition-all group">
-            <FaTelegram className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-primary" />
-            <span className="text-[10px] font-bold text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] uppercase tracking-widest">Telegram</span>
+          <a href={SOCIAL_LINKS.telegram} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--surface-hover)] border border-[var(--glass-border)] hover:border-[#229ED9]/40 hover:bg-[#229ED9]/5 transition-all group">
+            <FaTelegram className="w-5 h-5 text-[var(--text-secondary)] group-hover:text-[#229ED9]" />
+            <span className="text-[10px] font-bold text-[var(--text-secondary)] group-hover:text-[#229ED9] uppercase tracking-widest">Telegram</span>
           </a>
         </div>
       </div>

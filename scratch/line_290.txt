@@ -1,0 +1,345 @@
+﻿IMPLEMENT COMPLETE ABOUT US & CONTACT PAGE
+
+Replace the current About Us page with the following official NewsPercent content.
+
+---
+
+# About NewsPercent
+
+## South India's First Youth-Led Digital News Network
+
+### A Movement Against Noisy Media
+
+NewsPercent (N%) is a modern digital news platform founded by young creators who believe journalism should be clear, meaningful, and accessible to everyone. In a world flooded with endless headlines, misinformation, and sensationalism, our mission is to deliver news that informs, explains, and inspires.
+
+We combine responsible journalism, modern storytelling, technology, and community-driven reporting to help readers understand not only what is happening, but also why it matters.
+
+Our goal is simple: to create a trusted digital platform where facts matter, young voices are heard, and meaningful conversations thrive.
+
+---
+
+# Our Mission
+
+To make reliable information accessible to the next generation through:
+
+* Clear reporting
+* Responsible journalism
+* Meaningful storytelling
+* Youth-driven perspectives
+* Digital-first innovation
+* Community engagement
+* Technology-enabled media
+
+---
+
+# What Makes Us Different
+
+### Youth-Led Perspective
+
+NewsPercent is built and operated by a new generation of creators, analysts, editors, researchers, and innovators who understand the interests, challenges, and aspirations of today's youth.
+
+### Clarity Over Noise
+
+We focus on facts, context, and understanding rather than sensationalism, misinformation, and clickbait.
+
+### Multi-Category Coverage
+
+We cover:
+
+* India
+* World
+* Technology
+* Business
+* Sports
+* Automobiles
+* Lifestyle
+* Movies
+* Startups
+* Studies
+* Case Studies
+
+allowing readers to stay informed across multiple aspects of modern life.
+
+### Modern Storytelling
+
+We make complex topics easier to understand through structured, reader-friendly, mobile-first content designed for today's digital audience.
+
+---
+
+# N% Insights
+
+At NewsPercent, we continuously monitor and analyze:
+
+* Emerging trends
+* Public conversations
+* Technology shifts
+* Startup ecosystems
+* Youth interests
+* Educational developments
+* Global events
+* Policy discussions
+* Innovation landscapes
+
+Our objective is not simply to report the news but to understand the larger conversations shaping the future.
+
+---
+
+# Our Community
+
+NewsPercent is more than a news platform.
+
+We are building a growing community of:
+
+* Students
+* Professionals
+* Entrepreneurs
+* Creators
+* Researchers
+* Future Leaders
+
+who value understanding over outrage and facts over noise.
+
+Every article, discussion, and collaboration contributes to a stronger, more informed community.
+
+---
+
+# Collaborate With Us
+
+We welcome collaborations with:
+
+* Influencers
+* Content Creators
+* Startups
+* Educational Institutions
+* Student Communities
+* Industry Experts
+* Organizations
+
+If you have ideas, stories, opportunities, or initiatives that align with our vision, we would love to hear from you.
+
+---
+
+# Our Vision 2030
+
+Our long-term vision is to establish NewsPercent as one of India's most trusted youth-led digital media platforms.
+
+Our goals include:
+
+* Building a strong national readership
+* Expanding into video journalism
+* Launching original documentaries
+* Developing AI-assisted newsroom systems
+* Creating educational content initiatives
+* Supporting young journalists and storytellers
+* Building creator partnerships
+* Growing a global audience
+* Becoming a recognized digital media brand
+
+---
+
+# Our Core Values
+
+### Truth Before Trends
+
+Accuracy always comes before attention.
+
+### Clarity Over Noise
+
+We prioritize understanding over sensationalism.
+
+### Editorial Integrity
+
+Professionalism guides every story we publish.
+
+### Innovation In Media
+
+We embrace technology and modern storytelling.
+
+### Community First
+
+Readers remain at the center of everything we do.
+
+### Consistency Builds Trust
+
+Trust is earned through responsible journalism.
+
+### Learning Through Analysis
+
+Knowledge grows when information is paired with understanding and context.
+
+---
+
+# Contact & Connect With Us
+
+We value meaningful conversations, collaboration opportunities, story ideas, partnerships, and community engagement.
+
+### Website
+
+newspercent.com
+
+### Email
+
+[adminnewspercent@gmail.com](mailto:adminnewspercent@gmail.com)
+
+### Phone / WhatsApp
+
++91 8179323368
+
+---
+
+# Follow NewsPercent
+
+Display clickable social media icons for:
+
+* Instagram
+* YouTube
+* X (Twitter)
+* Facebook
+* LinkedIn
+* Reddit
+* Discord
+* Quora
+* Telegram
+* WhatsApp Channel
+
+Use configured social links from Admin Settings.
+
+---
+
+# Have A Story To Share?
+
+If you have:
+
+* News tips
+* Story ideas
+* Community issues
+* Startup journeys
+* Event updates
+* Public-interest concerns
+
+Reach out to the NewsPercent team.
+
+Your voice matters.
+
+---
+
+# Final Statement
+
+We are not just building a news website.
+
+We are building a platform where journalism meets technology, where young voices matter, and where meaningful conversations take priority over noise.
+
+### N%
+
+South India's First Youth-Led Digital News Network
+
+newspercent.com
+
+A movement against noisy media.
+
+====================================================
+
+CONTACT PAGE REQUIREMENTS
+
+Create a dedicated Contact Us page.
+
+Include:
+
+* Contact Email
+* WhatsApp Number
+* Website
+* Contact Form
+
+Form Fields:
+
+* Full Name
+* Email Address
+* Subject
+* Message
+
+Submit Button:
+
+Send Message
+
+====================================================
+
+DESIGN REQUIREMENTS
+
+* Public Website Light Theme Only
+* Mobile Responsive
+* Professional News Brand Appearance
+* Use NewsPercent Colors
+* Clean Typography
+* Proper Section Spacing
+* Smooth Scroll Animations
+* SEO Friendly Headings
+* Fast Loading
+
+Do not use placeholder text.
+Use the content above as the official NewsPercent About Us information.
+LOADING SCREEN REFINEMENT
+
+The current NewsPercent loading animation is visually good, but several elements are too faint and difficult to read.
+
+Required changes:
+
+1. LOGO GLOW RING
+
+* Increase visibility of the circular glow/ring around the N% logo.
+* Keep the elegant premium effect.
+* Make the ring approximately 30â€“40% more visible.
+* Use a subtle gold (#F5D76E) glow matching the NewsPercent branding.
+* Do NOT make it look neon or flashy.
+
+2. MAIN TITLE
+
+* Keep:
+  NEWSPERCENT
+* Keep current typography and animation.
+* No changes required.
+
+3. TAGLINE
+   Replace:
+
+"TRUSTED NEWS. REAL-TIME INSIGHTS."
+
+With:
+
+"SOUTH INDIA'S FIRST YOUTH-LED DIGITAL NEWS NETWORK"
+
+4. TAGLINE VISIBILITY
+
+* The current tagline is too light and almost invisible.
+* Increase opacity significantly.
+* Use a professional light grey or soft gold tone.
+* Ensure readability on both desktop and mobile.
+* Maintain premium appearance.
+* Do not use pure white.
+
+5. RESPONSIVE BEHAVIOR
+   Desktop:
+
+* Logo centered
+* Title centered
+* Tagline centered below title
+
+Mobile:
+
+* Maintain same hierarchy
+* Ensure tagline remains readable
+* Prevent text clipping or overflow
+
+6. ANIMATION
+   Keep existing:
+
+* Logo animation
+* Ring animation
+* Fade-in effect
+
+Only improve visibility and branding text.
+
+Final Loading Screen Text:
+
+NEWSPERCENT
+
+SOUTH INDIA'S FIRST YOUTH-LED DIGITAL NEWS NETWORK

@@ -17,9 +17,10 @@ import { useAuthStore } from '../../hooks/useAuthStore';
 import { useToastStore } from '../../hooks/useToastStore';
 
 // Mobile layout components
+import { lazy, Suspense } from 'react';
 import { MobileHeader } from './MobileHeader';
-import LoginModal from '../LoginModal';
-import WorldPopulationModal from '../WorldPopulationModal';
+const LoginModal = lazy(() => import('../LoginModal'));
+const WorldPopulationModal = lazy(() => import('../WorldPopulationModal'));
 
 interface MobileCategoryViewProps {
   categoryName: string;
@@ -71,7 +72,12 @@ export const MobileCategoryView: React.FC<MobileCategoryViewProps> = ({
     <div className="relative min-h-screen bg-[var(--background-deep)] text-[var(--text-primary)] font-manrope pb-6 select-none">
       
       {/* HEADER */}
-      <MobileHeader onMenuClick={() => setIsMenuOpen(true)} onLogoTripleClick={() => setIsLoginOpen(true)} />
+      <MobileHeader 
+        onMenuClick={() => setIsMenuOpen(true)} 
+        onLogoTripleClick={() => setIsLoginOpen(true)} 
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+      />
 
       <main className="px-4 py-6 space-y-6">
         
@@ -266,16 +272,20 @@ export const MobileCategoryView: React.FC<MobileCategoryViewProps> = ({
       </AnimatePresence>
 
       {/* World Population Portal Modal */}
-      <WorldPopulationModal 
-        isOpen={isPopModalOpen} 
-        onClose={() => setIsPopModalOpen(false)} 
-      />
-
+      <Suspense fallback={null}>
+        <WorldPopulationModal 
+          isOpen={isPopModalOpen} 
+          onClose={() => setIsPopModalOpen(false)} 
+        />
+      </Suspense>
+  
       {/* Login Access Portal Modal */}
-      <LoginModal 
-        isOpen={isLoginOpen} 
-        onClose={() => setIsLoginOpen(false)} 
-      />
+      <Suspense fallback={null}>
+        <LoginModal 
+          isOpen={isLoginOpen} 
+          onClose={() => setIsLoginOpen(false)} 
+        />
+      </Suspense>
 
       {/* FUNCTIONAL MODAL: ABOUT US */}
       <AnimatePresence>

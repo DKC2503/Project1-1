@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { Cloud } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { fetchWeather, type WeatherData } from '../services/weatherService';
+import WeatherIcon from './WeatherIcon';
 
 const TopHeader: React.FC = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -41,7 +42,11 @@ const TopHeader: React.FC = () => {
           >
             {weather ? (
               <>
-                <img src={weather.icon} alt="Weather" className="w-4 h-4 object-contain" />
+                <WeatherIcon 
+                  iconUrl={weather.icon} 
+                  condition={weather.condition} 
+                  className="w-5 h-5 text-primary shrink-0" 
+                />
                 <span className="text-[var(--text-primary)] font-bold">{weather.city}, {weather.temp}°C</span>
               </>
             ) : (

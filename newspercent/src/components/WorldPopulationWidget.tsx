@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Globe, Plus, Minus, ArrowUpRight } from 'lucide-react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
+import { Plus, Minus, ArrowUpRight } from 'lucide-react';
 import { cn } from '../lib/utils';
-import WorldPopulationModal from './WorldPopulationModal';
+const WorldPopulationModal = lazy(() => import('./WorldPopulationModal'));
 import { useSystemSettingsStore } from '../hooks/useSystemSettingsStore';
 
 // Constants for live counters
@@ -63,8 +63,8 @@ const WorldPopulationWidget: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
         
         {/* Icon with hover rotation */}
-        <div className="p-2 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 group-hover:border-primary/40 group-hover:scale-105 transition-all">
-          <Globe className="w-4 h-4 text-primary animate-spin-slow group-hover:text-primary" />
+        <div className="p-1 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 group-hover:border-primary/40 group-hover:scale-105 transition-all">
+          <img src="/globe.jpg" alt="Globe" className="w-9 h-9 rounded-full object-cover animate-spin-slow" />
         </div>
 
         {/* Text values */}
@@ -104,10 +104,12 @@ const WorldPopulationWidget: React.FC = () => {
       </div>
 
       {/* World Population Portal Modal */}
-      <WorldPopulationModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-      />
+      <Suspense fallback={null}>
+        <WorldPopulationModal 
+          isOpen={isModalOpen} 
+          onClose={() => setIsModalOpen(false)} 
+        />
+      </Suspense>
     </>
   );
 };

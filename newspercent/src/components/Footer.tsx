@@ -52,20 +52,20 @@ const Footer: React.FC = () => {
               global perspectives, and future-forward reporting.
             </p>
             <div className="flex gap-3">
-              <a href={SOCIAL_LINKS.instagram} target="_blank" rel="noreferrer" className="p-2.5 bg-[var(--surface-hover)] border border-[var(--glass-border)] rounded-xl hover:bg-primary/10 hover:border-primary/40 transition-all group">
-                <FaInstagram className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-primary" />
+              <a href={SOCIAL_LINKS.instagram} target="_blank" rel="noreferrer" className="p-2.5 bg-[var(--surface-hover)] border border-[var(--glass-border)] rounded-xl hover:bg-[#E1306C]/10 hover:border-[#E1306C]/40 transition-all group" title="Instagram">
+                <FaInstagram className="w-5 h-5 text-[var(--text-secondary)] group-hover:text-[#E1306C] transition-transform group-hover:scale-105" />
               </a>
-              <a href={SOCIAL_LINKS.youtube} target="_blank" rel="noreferrer" className="p-2.5 bg-[var(--surface-hover)] border border-[var(--glass-border)] rounded-xl hover:bg-primary/10 hover:border-primary/40 transition-all group">
-                <FaYoutube className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-primary" />
+              <a href={SOCIAL_LINKS.youtube} target="_blank" rel="noreferrer" className="p-2.5 bg-[var(--surface-hover)] border border-[var(--glass-border)] rounded-xl hover:bg-[#FF0000]/10 hover:border-[#FF0000]/40 transition-all group" title="YouTube">
+                <FaYoutube className="w-5 h-5 text-[var(--text-secondary)] group-hover:text-[#FF0000] transition-transform group-hover:scale-105" />
               </a>
-              <a href={SOCIAL_LINKS.twitter} target="_blank" rel="noreferrer" className="p-2.5 bg-[var(--surface-hover)] border border-[var(--glass-border)] rounded-xl hover:bg-primary/10 hover:border-primary/40 transition-all group">
-                <FaXTwitter className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-primary" />
+              <a href={SOCIAL_LINKS.twitter} target="_blank" rel="noreferrer" className="p-2.5 bg-[var(--surface-hover)] border border-[var(--glass-border)] rounded-xl hover:bg-[#1DA1F2]/10 hover:border-[#1DA1F2]/40 transition-all group" title="X">
+                <FaXTwitter className="w-5 h-5 text-[var(--text-secondary)] group-hover:text-[#1DA1F2] transition-transform group-hover:scale-105" />
               </a>
-              <a href={SOCIAL_LINKS.whatsapp} target="_blank" rel="noreferrer" className="p-2.5 bg-[var(--surface-hover)] border border-[var(--glass-border)] rounded-xl hover:bg-primary/10 hover:border-primary/40 transition-all group">
-                <FaWhatsapp className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-primary" />
+              <a href={SOCIAL_LINKS.whatsapp} target="_blank" rel="noreferrer" className="p-2.5 bg-[var(--surface-hover)] border border-[var(--glass-border)] rounded-xl hover:bg-[#25D366]/10 hover:border-[#25D366]/40 transition-all group" title="WhatsApp">
+                <FaWhatsapp className="w-5 h-5 text-[var(--text-secondary)] group-hover:text-[#25D366] transition-transform group-hover:scale-105" />
               </a>
-              <a href={SOCIAL_LINKS.telegram} target="_blank" rel="noreferrer" className="p-2.5 bg-[var(--surface-hover)] border border-[var(--glass-border)] rounded-xl hover:bg-primary/10 hover:border-primary/40 transition-all group">
-                <FaTelegram className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-primary" />
+              <a href={SOCIAL_LINKS.telegram} target="_blank" rel="noreferrer" className="p-2.5 bg-[var(--surface-hover)] border border-[var(--glass-border)] rounded-xl hover:bg-[#229ED9]/10 hover:border-[#229ED9]/40 transition-all group" title="Telegram">
+                <FaTelegram className="w-5 h-5 text-[var(--text-secondary)] group-hover:text-[#229ED9] transition-transform group-hover:scale-105" />
               </a>
             </div>
           </div>
@@ -75,22 +75,16 @@ const Footer: React.FC = () => {
             <h4 className="text-[var(--text-primary)] font-bold mb-4 text-xs uppercase tracking-widest">Quick Links</h4>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-3">
               {[
-                { name: 'About Us', href: '/about', isRoute: true },
-                { name: 'Contact', href: '/contact', isRoute: true },
-                { name: 'Careers', href: '#', isRoute: false },
-                { name: 'Advertise', href: '#', isRoute: false },
-                { name: 'Privacy Policy', href: '#', isRoute: false }
+                { name: 'About Us', href: '/about' },
+                { name: 'Contact', href: '/contact' },
+                { name: 'Careers', href: '/careers' },
+                { name: 'Advertise', href: '/advertise' },
+                { name: 'Privacy Policy', href: '/privacy' }
               ].map((link, idx, arr) => (
                 <React.Fragment key={link.name}>
-                  {link.isRoute ? (
-                    <Link to={link.href} className="text-[var(--text-secondary)] text-sm font-medium hover:text-primary transition-colors whitespace-nowrap">
-                      {link.name}
-                    </Link>
-                  ) : (
-                    <a href={link.href} className="text-[var(--text-secondary)] text-sm font-medium hover:text-primary transition-colors whitespace-nowrap">
-                      {link.name}
-                    </a>
-                  )}
+                  <Link to={link.href} className="text-[var(--text-secondary)] text-sm font-medium hover:text-primary transition-colors whitespace-nowrap">
+                    {link.name}
+                  </Link>
                   {idx < arr.length - 1 && <span className="text-[var(--glass-border)] hidden sm:inline">|</span>}
                 </React.Fragment>
               ))}
@@ -123,9 +117,9 @@ const Footer: React.FC = () => {
             © {currentYear} <span className="text-[var(--text-primary)] font-lemon-milk">NEWS</span><span className="text-[#FFD84D] font-lemon-milk">PERCENT</span>. ALL RIGHTS RESERVED.
           </p>
           <div className="flex gap-6 text-[10px] font-bold tracking-widest text-[var(--text-secondary)]">
-            <a href="#" className="hover:text-primary transition-colors">TERMS</a>
-            <a href="#" className="hover:text-primary transition-colors">PRIVACY</a>
-            <a href="#" className="hover:text-primary transition-colors">COOKIES</a>
+            <Link to="/terms" className="hover:text-primary transition-colors">TERMS</Link>
+            <Link to="/privacy" className="hover:text-primary transition-colors">PRIVACY</Link>
+            <Link to="/editorial" className="hover:text-primary transition-colors">EDITORIAL</Link>
           </div>
         </div>
       </div>

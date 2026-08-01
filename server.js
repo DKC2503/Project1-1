@@ -21,6 +21,121 @@ const getDeviceInfo = (userAgentString) => {
     };
 };
 
+const ensureUniqueSlug = async (slug, articleId = null) => {
+    let uniqueSlug = slug;
+    let counter = 1;
+    while (true) {
+        const query = { slug: uniqueSlug };
+        if (articleId) {
+            query._id = { $ne: articleId };
+        }
+        const existing = await Article.findOne(query);
+        if (!existing) {
+            break;
+        }
+        uniqueSlug = `${slug}-${counter}`;
+        counter++;
+    }
+    return uniqueSlug;
+};
+
+const applySeoDefaults = async (articleData, articleId = null) => {
+    let { title, content, seoTitle, metaDescription, slug, keywords, canonicalUrl, robotsDirective, openGraphImage } = articleData;
+    
+    // Default values if empty
+    if (!seoTitle || seoTitle.trim() === '') {
+        seoTitle = title || '';
+    }
+    
+    if (!metaDescription || metaDescription.trim() === '') {
+        let cleanText = (content || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+        if (cleanText.length > 157) {
+            cleanText = cleanText.substring(0, 157) + '...';
+        }
+        metaDescription = cleanText || title || '';
+    }
+    
+    let baseSlug = slug;
+    if (!baseSlug || baseSlug.trim() === '') {
+        baseSlug = title || '';
+    }
+    baseSlug = baseSlug
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-');
+    if (!baseSlug || baseSlug === '-') {
+        baseSlug = 'article-' + Math.floor(Math.random() * 10000);
+    }
+    
+    slug = await ensureUniqueSlug(baseSlug, articleId);
+    
+    if (!keywords || keywords.length === 0) {
+        const words = (title || '')
+            .toLowerCase()
+            .replace(/[^a-z0-9\s]/g, '')
+            .split(/\s+/)
+            .filter(w => w.length > 3 && !['with', 'this', 'that', 'from', 'your', 'about', 'their', 'there', 'news', 'percent'].includes(w));
+        keywords = [...new Set(words)].slice(0, 5);
+    }
+    
+    if (!canonicalUrl || canonicalUrl.trim() === '') {
+        const appUrl = process.env.APP_URL || 'https://newspercent.com';
+        canonicalUrl = `${appUrl}/article/${slug}`;
+    }
+    
+    if (!robotsDirective || robotsDirective.trim() === '') {
+        robotsDirective = 'index, follow';
+    }
+    
+    if (!openGraphImage || openGraphImage.trim() === '') {
+        openGraphImage = articleData.featuredImage || '';
+    }
+    
+    // Automatically generate schema markup
+    const appUrl = process.env.APP_URL || 'https://newspercent.com';
+    const schemaMarkup = {
+        "@context": "https://schema.org",
+        "@type": "NewsArticle",
+        "headline": title || '',
+        "image": [articleData.featuredImage || ''],
+        "datePublished": articleData.publishedAt || new Date().toISOString(),
+        "dateModified": new Date().toISOString(),
+        "author": [{
+            "@type": "Person",
+            "name": articleData.authorName || 'NewsPercent Author',
+            "url": `${appUrl}/author/${articleData.authorId || ''}`
+        }],
+        "publisher": {
+            "@type": "Organization",
+            "name": "NewsPercent",
+            "logo": {
+                "@type": "ImageObject",
+                "url": `${appUrl}/logo.webp`
+            }
+        },
+        "description": metaDescription || '',
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": `${appUrl}/article/${slug}`
+        },
+        "articleSection": articleData.category || 'News',
+        "keywords": keywords.join(', ')
+    };
+
+    return { 
+        seoTitle, 
+        metaDescription, 
+        slug, 
+        keywords, 
+        canonicalUrl, 
+        robotsDirective, 
+        openGraphImage,
+        schemaMarkup
+    };
+};
+
 // Import Models
 const User = require('./models/User');
 const Article = require('./models/Article');
@@ -80,21 +195,37 @@ require('./config/cloudinaryArticle');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Import Production Logging Middleware
+const { logger, logError } = require('./middleware/logger');
+
 // --- MIDDLEWARE (Tier 1: SECURITY & PARSING) ---
+// Configure CORS allowed origins based on environment
+let allowedOrigins = [
+  'https://newspercent.com',
+  'https://www.newspercent.com'
+];
+
+if (process.env.NODE_ENV !== 'production') {
+  allowedOrigins.push('http://localhost:5173', 'http://127.0.0.1:5173');
+}
+
+if (process.env.ALLOWED_ORIGINS) {
+  allowedOrigins = process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim());
+}
+
 app.use(cors({
-  origin: [
-    'http://localhost:5173', 
-    'http://127.0.0.1:5173', 
-    'https://newspercent.com', 
-    'https://www.newspercent.com'
-  ],
+  origin: allowedOrigins,
   credentials: true
 }));
+
+app.use(logger);
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 const handleError = (res, error, context = 'Server Error') => {
-    console.error(`[${context}]:`, error);
+    // Safely log the error to console/file
+    logError(error, null, context);
     
     const isMongoError = error.name === 'MongoError' || 
                          error.name === 'ValidationError' || 
@@ -104,15 +235,20 @@ const handleError = (res, error, context = 'Server Error') => {
                          error.message.toLowerCase().includes('connection') ||
                          error.message.toLowerCase().includes('topology');
                          
-    return res.status(500).json({
+    const errResponse = {
         success: false,
-        error: error.message || 'Internal Server Error',
+        error: process.env.NODE_ENV === 'production' ? 'Internal Server Error' : (error.message || 'Internal Server Error'),
         context,
         databaseState: mongoose.connection.readyState === 1 ? 'CONNECTED' : 'DISCONNECTED',
         isMongoError,
-        timestamp: new Date().toISOString(),
-        stack: error.stack
-    });
+        timestamp: new Date().toISOString()
+    };
+
+    if (process.env.NODE_ENV !== 'production') {
+        errResponse.stack = error.stack;
+    }
+                         
+    return res.status(500).json(errResponse);
 };
 
 // --- MARKET INTEL API ---
@@ -147,6 +283,32 @@ app.get('/api/population/intel', async (req, res) => {
         res.status(200).json(intel);
     } catch (err) {
         handleError(res, err, 'Population Intel Error');
+    }
+});
+
+// --- ECONOMY INTELLIGENCE API ---
+const economyService = require('./services/economyService');
+
+app.get('/api/economy/intel', async (req, res) => {
+    try {
+        const userIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip;
+        const cleanIp = userIp ? userIp.replace('::ffff:', '') : '::1';
+        const intel = await economyService.getEconomyIntel(cleanIp);
+        res.status(200).json(intel);
+    } catch (err) {
+        handleError(res, err, 'Economy Intel Error');
+    }
+});
+
+app.get('/api/economy/compare', async (req, res) => {
+    try {
+        const { state, city } = req.query;
+        const userIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip;
+        const cleanIp = userIp ? userIp.replace('::ffff:', '') : '::1';
+        const result = await economyService.getRegionalComparison(state || '', city || '', cleanIp);
+        res.status(200).json(result);
+    } catch (err) {
+        handleError(res, err, 'Economy Regional Compare Error');
     }
 });
 
@@ -617,7 +779,7 @@ app.get('/api/articles/:id', async (req, res) => {
         const article = await Article.findById(req.params.id);
         if (!article) return res.status(404).json({ error: 'Article not found' });
         
-        article.views += 1;
+        article.opens += 1;
         await article.save();
         
         res.json(article);
@@ -1052,6 +1214,11 @@ app.patch('/api/admin/articles/:id', verifyToken, requireEditor, async (req, res
         
         const oldStatus = article.status;
         Object.assign(article, req.body);
+        
+        // Generate and apply SEO defaults if empty
+        const seoData = await applySeoDefaults(article, article._id);
+        Object.assign(article, seoData);
+        
         article.updatedAt = new Date();
 
         if (req.body.status === 'PUBLISHED' && !article.publishedAt) {
@@ -1109,6 +1276,9 @@ app.delete('/api/admin/articles/:id', verifyToken, requireEditor, async (req, re
             console.log(`[DELETE] Failure: Article ${req.params.id} not found.`);
             return res.status(404).json({ success: false, error: 'Article not found' });
         }
+
+        // Negate credits associated with the article
+        await creditService.processArticleDelete(article._id);
 
         await Article.findByIdAndDelete(req.params.id);
         console.log(`[DELETE] Success: Article ${req.params.id} purged.`);
@@ -1201,6 +1371,11 @@ app.patch('/api/articles/:id', verifyToken, async (req, res) => {
 
         const oldStatus = article.status;
         Object.assign(article, req.body);
+        
+        // Generate and apply SEO defaults if empty
+        const seoData = await applySeoDefaults(article, article._id);
+        Object.assign(article, seoData);
+        
         article.updatedAt = new Date();
         await article.save();
 
@@ -1266,8 +1441,10 @@ app.post('/api/articles', verifyToken, async (req, res) => {
             }
         }
 
+        const seoData = await applySeoDefaults(req.body);
         const newArticle = await Article.create({
             ...req.body,
+            ...seoData,
             authorId: req.user._id,
             authorName: req.user.name,
             createdAt: new Date(),
@@ -1481,10 +1658,71 @@ app.get('/api/settings/public', async (req, res) => {
             marketApiEnabled: settings.marketApiEnabled,
             populationApiEnabled: settings.populationApiEnabled,
             emailServiceEnabled: settings.emailServiceEnabled,
+            preciousMetalsApiEnabled: settings.preciousMetalsApiEnabled,
+            fuelApiEnabled: settings.fuelApiEnabled,
             emergencyMode: settings.emergencyMode
         });
     } catch (err) {
         handleError(res, err, 'Fetch Public Settings Error');
+    }
+});
+
+// --- CREDIT CONFIGURATION APIs ---
+app.get('/api/admin/settings/credits', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const CreditConfig = require('./models/CreditConfig');
+        let config = await CreditConfig.findOne();
+        if (!config) {
+            config = new CreditConfig({
+                maxContentCredits: 40,
+                maxResearchCredits: 30,
+                maxSeoCredits: 10,
+                maxHeadlineCredits: 10,
+                maxImageCredits: 10,
+                maxPublishingCredits: 10,
+                defaultPublishingCredits: 5,
+                maxTotalCredits: 120
+            });
+            await config.save();
+        }
+        res.json({ success: true, data: config });
+    } catch (err) {
+        handleError(res, err, 'Fetch Credit Config Error');
+    }
+});
+
+app.put('/api/admin/settings/credits', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const CreditConfig = require('./models/CreditConfig');
+        let config = await CreditConfig.findOne();
+        if (!config) {
+            config = new CreditConfig();
+        }
+        
+        const { 
+            maxContentCredits, 
+            maxResearchCredits, 
+            maxSeoCredits, 
+            maxHeadlineCredits, 
+            maxImageCredits, 
+            maxPublishingCredits, 
+            defaultPublishingCredits, 
+            maxTotalCredits 
+        } = req.body;
+
+        config.maxContentCredits = maxContentCredits !== undefined ? Number(maxContentCredits) : config.maxContentCredits;
+        config.maxResearchCredits = maxResearchCredits !== undefined ? Number(maxResearchCredits) : config.maxResearchCredits;
+        config.maxSeoCredits = maxSeoCredits !== undefined ? Number(maxSeoCredits) : config.maxSeoCredits;
+        config.maxHeadlineCredits = maxHeadlineCredits !== undefined ? Number(maxHeadlineCredits) : config.maxHeadlineCredits;
+        config.maxImageCredits = maxImageCredits !== undefined ? Number(maxImageCredits) : config.maxImageCredits;
+        config.maxPublishingCredits = maxPublishingCredits !== undefined ? Number(maxPublishingCredits) : config.maxPublishingCredits;
+        config.defaultPublishingCredits = defaultPublishingCredits !== undefined ? Number(defaultPublishingCredits) : config.defaultPublishingCredits;
+        config.maxTotalCredits = maxTotalCredits !== undefined ? Number(maxTotalCredits) : config.maxTotalCredits;
+
+        await config.save();
+        res.json({ success: true, data: config });
+    } catch (err) {
+        handleError(res, err, 'Update Credit Config Error');
     }
 });
 
@@ -1522,30 +1760,40 @@ app.get('/api/admin/external-apis', verifyToken, requireAdmin, async (req, res) 
     try {
         const weatherConfig = await ExternalApiConfig.findOne({ serviceName: 'Weather API', status: 'ACTIVE' }).sort({ startDate: -1 });
         const stockConfig = await ExternalApiConfig.findOne({ serviceName: 'Stock Market API', status: 'ACTIVE' }).sort({ startDate: -1 });
+        const preciousMetalsConfig = await ExternalApiConfig.findOne({ serviceName: 'Precious Metals API', status: 'ACTIVE' }).sort({ startDate: -1 });
+        const fuelConfig = await ExternalApiConfig.findOne({ serviceName: 'Fuel API', status: 'ACTIVE' }).sort({ startDate: -1 });
 
         const settings = await settingsService.getSettings();
 
         // Helper to format/mask keys and include diagnostics
         const formatConfig = (config, defaultEnabled, defaultProvider, service) => {
+            const isWeather = service === 'Weather API';
+            const isPreciousMetals = service === 'Precious Metals API';
+            const isFuel = service === 'Fuel API';
+            const isMaskable = isWeather || isPreciousMetals || isFuel;
+
             if (!config) {
-                const isWeather = service === 'Weather API';
-                const hasEnv = isWeather && (process.env.WEATHER_API_KEY || process.env.VITE_WEATHER_API_KEY);
+                let hasEnv = false;
+                if (isWeather) hasEnv = !!(process.env.WEATHER_API_KEY || process.env.VITE_WEATHER_API_KEY);
+                if (isPreciousMetals) hasEnv = !!(process.env.PRECIOUS_METALS_API_KEY || process.env.VITE_PRECIOUS_METALS_API_KEY || process.env.GOLD_API_KEY || process.env.VITE_GOLD_API_KEY);
+                if (isFuel) hasEnv = !!(process.env.FUEL_API_KEY || process.env.VITE_FUEL_API_KEY);
+
                 return {
                     provider: defaultProvider,
-                    apiKeyMasked: isWeather ? (hasEnv ? 'Env Variable Set' : 'Default Preset') : 'N/A',
+                    apiKeyMasked: isMaskable ? (hasEnv ? 'Env Variable Set' : 'Default Preset') : 'N/A',
                     status: defaultEnabled ? 'CONNECTED' : 'DISCONNECTED',
                     enabled: defaultEnabled,
                     registered: null,
                     lastTested: null,
                     lastHttpStatus: null,
                     lastResponseMsg: null,
-                    source: isWeather ? (hasEnv ? 'Environment Variable' : 'Default Preset') : 'Library Integrated'
+                    source: isMaskable ? (hasEnv ? 'Environment Variable' : 'Default Preset') : 'Library Integrated'
                 };
             }
 
             let apiKeyMasked = 'N/A';
             let source = 'Library Integrated';
-            if (service === 'Weather API') {
+            if (isMaskable) {
                 if (config.apiKey) {
                     const dec = decrypt(config.apiKey);
                     if (dec) {
@@ -1557,7 +1805,11 @@ app.get('/api/admin/external-apis', verifyToken, requireAdmin, async (req, res) 
                     }
                     source = 'Database (Encrypted)';
                 } else {
-                    const hasEnv = process.env.WEATHER_API_KEY || process.env.VITE_WEATHER_API_KEY;
+                    let hasEnv = false;
+                    if (isWeather) hasEnv = !!(process.env.WEATHER_API_KEY || process.env.VITE_WEATHER_API_KEY);
+                    if (isPreciousMetals) hasEnv = !!(process.env.PRECIOUS_METALS_API_KEY || process.env.VITE_PRECIOUS_METALS_API_KEY || process.env.GOLD_API_KEY || process.env.VITE_GOLD_API_KEY);
+                    if (isFuel) hasEnv = !!(process.env.FUEL_API_KEY || process.env.VITE_FUEL_API_KEY);
+
                     apiKeyMasked = hasEnv ? 'Env Variable Set' : 'Default Preset';
                     source = hasEnv ? 'Environment Variable' : 'Default Preset';
                 }
@@ -1579,12 +1831,16 @@ app.get('/api/admin/external-apis', verifyToken, requireAdmin, async (req, res) 
 
         const weatherActive = formatConfig(weatherConfig, settings.weatherApiEnabled, 'WeatherAPI', 'Weather API');
         const stockActive = formatConfig(stockConfig, settings.marketApiEnabled, 'Yahoo Finance', 'Stock Market API');
+        const preciousMetalsActive = formatConfig(preciousMetalsConfig, settings.preciousMetalsApiEnabled, 'GoldAPI.io', 'Precious Metals API');
+        const fuelActive = formatConfig(fuelConfig, settings.fuelApiEnabled, 'm2c Fuel API', 'Fuel API');
 
         const allConfigs = await ExternalApiConfig.find().sort({ startDate: -1 });
 
         res.json({
             weatherActive,
             stockActive,
+            preciousMetalsActive,
+            fuelActive,
             allConfigs
         });
     } catch (err) {
@@ -1717,8 +1973,174 @@ app.post('/api/admin/external-apis/verify', verifyToken, requireAdmin, async (re
                 
                 return res.status(400).json({ error: `Connection test failed: ${apiErr.message}` });
             }
+        } else if (serviceName === 'Precious Metals API') {
+            let keyToTest = apiKey;
+            const isMaskedOrNa = !keyToTest || keyToTest === 'N/A' || keyToTest.includes('*');
+            let activeConfig = null;
+            
+            if (isMaskedOrNa) {
+                activeConfig = await ExternalApiConfig.findOne({ serviceName: 'Precious Metals API', status: 'ACTIVE' });
+                if (activeConfig && activeConfig.apiKey) {
+                    const dec = decrypt(activeConfig.apiKey);
+                    if (dec) {
+                        keyToTest = dec;
+                    }
+                }
+            }
+
+            if (!keyToTest || keyToTest === 'N/A' || keyToTest.includes('*')) {
+                keyToTest = process.env.PRECIOUS_METALS_API_KEY || process.env.GOLD_API_KEY || 'goldapi-e534f854ad9d063b91a413673b705ee7-io';
+            }
+
+            let maskedKeyLog = 'N/A';
+            if (keyToTest && keyToTest.length > 8) {
+                maskedKeyLog = keyToTest.substring(0, 4) + '*'.repeat(16) + keyToTest.substring(keyToTest.length - 4);
+            } else if (keyToTest) {
+                maskedKeyLog = keyToTest.substring(0, 2) + '*'.repeat(8) + keyToTest.substring(keyToTest.length - 1);
+            }
+
+            const axios = require('axios');
+            const url = `https://www.goldapi.io/api/XAU/USD`;
+            
+            console.log(`--- PRECIOUS METALS API CONNECTION TEST ---`);
+            console.log(`Provider: ${provider}`);
+            console.log(`API Key: ${maskedKeyLog}`);
+            console.log(`Endpoint URL: ${url}`);
+
+            try {
+                const apiRes = await axios.get(url, {
+                    headers: { 'x-access-token': keyToTest },
+                    timeout: 6000
+                });
+                console.log(`HTTP Status Code: ${apiRes.status}`);
+                
+                if (isMaskedOrNa) {
+                    const activeDoc = await ExternalApiConfig.findOne({ serviceName: 'Precious Metals API', status: 'ACTIVE' });
+                    if (activeDoc) {
+                        activeDoc.lastTested = Date.now();
+                        activeDoc.lastHttpStatus = apiRes.status;
+                        activeDoc.lastResponseMsg = `OK - Precious Metals verified`;
+                        await activeDoc.save();
+                    }
+                }
+
+                res.json({ success: true, message: `Precious Metals API connection verified successfully.` });
+            } catch (apiErr) {
+                const status = apiErr.response ? apiErr.response.status : null;
+                const responseBody = apiErr.response ? apiErr.response.data : null;
+                
+                console.log(`HTTP Status Code: ${status || 'Network Error/No Status'}`);
+                console.log(`Response Body:`, responseBody ? JSON.stringify(responseBody) : apiErr.message);
+
+                let actualError = '';
+                if (responseBody) {
+                    if (typeof responseBody === 'string') {
+                        actualError = responseBody;
+                    } else if (responseBody.error) {
+                        actualError = responseBody.error;
+                    } else if (responseBody.message) {
+                        actualError = responseBody.message;
+                    } else {
+                        actualError = JSON.stringify(responseBody);
+                    }
+                }
+
+                let errorMsg = 'Connection test failed.';
+                if (status === 401 || status === 403) {
+                    errorMsg = actualError || 'Invalid API Key / Access Denied';
+                } else if (status === 429) {
+                    errorMsg = actualError || 'Rate limit exceeded';
+                } else {
+                    errorMsg = actualError || apiErr.message || 'Connection test failed.';
+                }
+
+                if (isMaskedOrNa) {
+                    const activeDoc = await ExternalApiConfig.findOne({ serviceName: 'Precious Metals API', status: 'ACTIVE' });
+                    if (activeDoc) {
+                        activeDoc.lastTested = Date.now();
+                        activeDoc.lastHttpStatus = status || 500;
+                        activeDoc.lastResponseMsg = errorMsg;
+                        await activeDoc.save();
+                    }
+                }
+
+                return res.status(400).json({ error: errorMsg });
+            }
+        } else if (serviceName === 'Fuel API') {
+            let keyToTest = apiKey;
+            const isMaskedOrNa = !keyToTest || keyToTest === 'N/A' || keyToTest.includes('*');
+            let activeConfig = null;
+            
+            if (isMaskedOrNa) {
+                activeConfig = await ExternalApiConfig.findOne({ serviceName: 'Fuel API', status: 'ACTIVE' });
+                if (activeConfig && activeConfig.apiKey) {
+                    const dec = decrypt(activeConfig.apiKey);
+                    if (dec) {
+                        keyToTest = dec;
+                    }
+                }
+            }
+
+            if (!keyToTest || keyToTest === 'N/A' || keyToTest.includes('*')) {
+                keyToTest = process.env.FUEL_API_KEY || 'sk-live-kL3JzfGtjyqvUIYFxHDAHZuadiFiQjyTMt8nO0bG';
+            }
+
+            const axios = require('axios');
+            const url = `https://fuel.indianapi.in/live_fuel_price?fuel_type=petrol&location_type=state`;
+            
+            console.log(`--- FUEL API CONNECTION TEST ---`);
+            console.log(`Provider: ${provider}`);
+            console.log(`Endpoint URL: ${url}`);
+
+            try {
+                const apiRes = await axios.get(url, {
+                    headers: { 'x-api-key': keyToTest },
+                    timeout: 6000
+                });
+                console.log(`HTTP Status Code: ${apiRes.status}`);
+                
+                if (isMaskedOrNa) {
+                    const activeDoc = await ExternalApiConfig.findOne({ serviceName: 'Fuel API', status: 'ACTIVE' });
+                    if (activeDoc) {
+                        activeDoc.lastTested = Date.now();
+                        activeDoc.lastHttpStatus = apiRes.status;
+                        activeDoc.lastResponseMsg = `OK - Fuel verified`;
+                        await activeDoc.save();
+                    }
+                }
+
+                res.json({ success: true, message: `Fuel API connection verified successfully.` });
+            } catch (apiErr) {
+                const status = apiErr.response ? apiErr.response.status : null;
+                const responseBody = apiErr.response ? apiErr.response.data : null;
+                
+                console.log(`HTTP Status Code: ${status || 'Network Error/No Status'}`);
+                console.log(`Response Body:`, responseBody ? JSON.stringify(responseBody) : apiErr.message);
+
+                let errorMsg = 'Connection test failed.';
+                if (status === 401 || status === 403) {
+                    errorMsg = 'Invalid API Key / Access Denied';
+                } else if (status === 429) {
+                    errorMsg = 'Rate limit exceeded';
+                } else {
+                    errorMsg = apiErr.message || 'Connection test failed.';
+                }
+
+                if (isMaskedOrNa) {
+                    const activeDoc = await ExternalApiConfig.findOne({ serviceName: 'Fuel API', status: 'ACTIVE' });
+                    if (activeDoc) {
+                        activeDoc.lastTested = Date.now();
+                        activeDoc.lastHttpStatus = status || 500;
+                        activeDoc.lastResponseMsg = errorMsg;
+                        await activeDoc.save();
+                    }
+                }
+
+                return res.status(400).json({ error: errorMsg });
+            }
         } else {
-            return res.status(400).json({ error: 'Unsupported service name.' });
+            // Future / custom APIs
+            return res.json({ success: true, message: `${serviceName} connection verified successfully (custom verification bypassed).` });
         }
     } catch (err) {
         handleError(res, err, 'Verify External API Error');
@@ -1733,7 +2155,6 @@ app.post('/api/admin/external-apis/rotate', verifyToken, requireAdmin, async (re
             return res.status(400).json({ error: 'Service name and provider are required.' });
         }
 
-        // 1. Verify before save if Weather API (require key)
         let lastHttpStatus = 200;
         let lastResponseMsg = 'Newly activated credentials';
 
@@ -1760,6 +2181,36 @@ app.post('/api/admin/external-apis/rotate', verifyToken, requireAdmin, async (re
                     errorMsg = 'Provider temporarily unavailable';
                 }
                 return res.status(400).json({ error: errorMsg });
+            }
+        } else if (serviceName === 'Precious Metals API') {
+            if (!apiKey) {
+                return res.status(400).json({ error: `API key is required to rotate Precious Metals API.` });
+            }
+            const axios = require('axios');
+            try {
+                await axios.get(`https://www.goldapi.io/api/XAU/USD`, {
+                    headers: { 'x-access-token': apiKey },
+                    timeout: 6000
+                });
+                lastHttpStatus = 200;
+                lastResponseMsg = `OK - Precious Metals verified`;
+            } catch (apiErr) {
+                return res.status(400).json({ error: `Invalid Precious Metals API Key: Verification failed` });
+            }
+        } else if (serviceName === 'Fuel API') {
+            if (!apiKey) {
+                return res.status(400).json({ error: 'API key is required to rotate Fuel API.' });
+            }
+            const axios = require('axios');
+            try {
+                await axios.get('https://fuel.indianapi.in/live_fuel_price?fuel_type=petrol&location_type=state', {
+                    headers: { 'x-api-key': apiKey },
+                    timeout: 6000
+                });
+                lastHttpStatus = 200;
+                lastResponseMsg = 'OK - Fuel verified';
+            } catch (apiErr) {
+                return res.status(400).json({ error: 'Invalid Fuel API Key: Verification failed' });
             }
         }
 
@@ -1796,6 +2247,8 @@ app.post('/api/admin/external-apis/rotate', verifyToken, requireAdmin, async (re
         const settingsUpdates = {};
         if (serviceName === 'Weather API') settingsUpdates.weatherApiEnabled = true;
         if (serviceName === 'Stock Market API') settingsUpdates.marketApiEnabled = true;
+        if (serviceName === 'Precious Metals API') settingsUpdates.preciousMetalsApiEnabled = true;
+        if (serviceName === 'Fuel API') settingsUpdates.fuelApiEnabled = true;
         await settingsService.updateSettings(settingsUpdates, req.user._id);
 
         res.json({ success: true, message: `${serviceName} rotated and activated successfully.`, config: newConfig });
@@ -1815,8 +2268,12 @@ app.patch('/api/admin/external-apis/toggle', verifyToken, requireAdmin, async (r
         // Find active or create placeholder
         let config = await ExternalApiConfig.findOne({ serviceName, status: 'ACTIVE' });
         if (!config) {
-            // Create a default ACTIVE placeholder config
-            const provider = serviceName === 'Weather API' ? 'WeatherAPI' : 'Yahoo Finance';
+            let provider = 'Custom API';
+            if (serviceName === 'Weather API') provider = 'WeatherAPI';
+            if (serviceName === 'Stock Market API') provider = 'Yahoo Finance';
+            if (serviceName === 'Precious Metals API') provider = 'GoldAPI.io';
+            if (serviceName === 'Fuel API') provider = 'm2c Fuel API';
+
             config = await ExternalApiConfig.create({
                 serviceName,
                 provider,
@@ -1838,6 +2295,8 @@ app.patch('/api/admin/external-apis/toggle', verifyToken, requireAdmin, async (r
         const settingsUpdates = {};
         if (serviceName === 'Weather API') settingsUpdates.weatherApiEnabled = enabled;
         if (serviceName === 'Stock Market API') settingsUpdates.marketApiEnabled = enabled;
+        if (serviceName === 'Precious Metals API') settingsUpdates.preciousMetalsApiEnabled = enabled;
+        if (serviceName === 'Fuel API') settingsUpdates.fuelApiEnabled = enabled;
         await settingsService.updateSettings(settingsUpdates, req.user._id);
 
         res.json({ success: true, message: `${serviceName} has been ${enabled ? 'enabled' : 'disabled'}.`, config });
@@ -1851,11 +2310,15 @@ app.get('/api/admin/external-apis/health', verifyToken, requireAdmin, async (req
     try {
         const weatherConfig = await ExternalApiConfig.findOne({ serviceName: 'Weather API', status: 'ACTIVE' });
         const stockConfig = await ExternalApiConfig.findOne({ serviceName: 'Stock Market API', status: 'ACTIVE' });
+        const preciousMetalsConfig = await ExternalApiConfig.findOne({ serviceName: 'Precious Metals API', status: 'ACTIVE' });
+        const fuelConfig = await ExternalApiConfig.findOne({ serviceName: 'Fuel API', status: 'ACTIVE' });
         
         const settings = await settingsService.getSettings();
 
         const isWeatherEnabled = weatherConfig ? weatherConfig.enabled : settings.weatherApiEnabled;
         const isStockEnabled = stockConfig ? stockConfig.enabled : settings.marketApiEnabled;
+        const isPreciousMetalsEnabled = preciousMetalsConfig ? preciousMetalsConfig.enabled : settings.preciousMetalsApiEnabled;
+        const isFuelEnabled = fuelConfig ? fuelConfig.enabled : settings.fuelApiEnabled;
 
         // Perform brief health check calls
         let weatherStatus = 'Disconnected';
@@ -1890,9 +2353,53 @@ app.get('/api/admin/external-apis/health', verifyToken, requireAdmin, async (req
             stockStatus = 'Disabled';
         }
 
+        let preciousMetalsStatus = 'Disconnected';
+        if (isPreciousMetalsEnabled) {
+            try {
+                let key = 'goldapi-e534f854ad9d063b91a413673b705ee7-io';
+                if (preciousMetalsConfig && preciousMetalsConfig.apiKey) {
+                    const dec = decrypt(preciousMetalsConfig.apiKey);
+                    if (dec) key = dec;
+                }
+                const axios = require('axios');
+                await axios.get('https://www.goldapi.io/api/XAU/USD', {
+                    headers: { 'x-access-token': key },
+                    timeout: 3000
+                });
+                preciousMetalsStatus = 'Connected';
+            } catch (e) {
+                preciousMetalsStatus = 'Disconnected';
+            }
+        } else {
+            preciousMetalsStatus = 'Disabled';
+        }
+
+        let fuelStatus = 'Disconnected';
+        if (isFuelEnabled) {
+            try {
+                let key = 'sk-live-kL3JzfGtjyqvUIYFxHDAHZuadiFiQjyTMt8nO0bG';
+                if (fuelConfig && fuelConfig.apiKey) {
+                    const dec = decrypt(fuelConfig.apiKey);
+                    if (dec) key = dec;
+                }
+                const axios = require('axios');
+                await axios.get('https://fuel.indianapi.in/live_fuel_price?fuel_type=petrol&location_type=state', {
+                    headers: { 'x-api-key': key },
+                    timeout: 3000
+                });
+                fuelStatus = 'Connected';
+            } catch (e) {
+                fuelStatus = 'Disconnected';
+            }
+        } else {
+            fuelStatus = 'Disabled';
+        }
+
         res.json({
             weatherStatus,
             stockStatus,
+            preciousMetalsStatus,
+            fuelStatus,
             timestamp: new Date()
         });
     } catch (err) {
@@ -1969,7 +2476,7 @@ app.get('/api/author/performance', verifyToken, async (req, res) => {
         const AnalyticsLogV1 = require('./models/AnalyticsLogV1');
         const growthChart = await AnalyticsLogV1.aggregate([
             { $match: { 
-                articleId: { $in: articles.map(a => a._id.toString()) },
+                articleId: { $in: articles.map(a => a._id) },
                 timestamp: { $gte: startDate },
                 type: 'PAGE_VIEW'
             }},
@@ -1994,6 +2501,89 @@ app.get('/api/author/performance', verifyToken, async (req, res) => {
         });
     } catch (err) {
         handleError(res, err, 'Author Performance Error');
+    }
+});
+
+// --- RECRUITMENT APIs ---
+// GET /api/recruitment - Get recruitment settings for admin
+app.get('/api/recruitment', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const Recruitment = require('./models/Recruitment');
+        let recruitment = await Recruitment.findOne();
+        if (!recruitment) {
+            // Seed a default one if none exists
+            recruitment = new Recruitment({
+                title: 'Join the NewsPercent Team',
+                description: 'We\'re always looking for passionate journalists, designers, developers and creators who want to shape the future of digital journalism.',
+                googleFormLink: 'https://forms.google.com',
+                buttonText: 'Apply Now',
+                status: 'OPEN',
+                published: 'Published'
+            });
+            await recruitment.save();
+        }
+        res.json({ success: true, data: recruitment });
+    } catch (err) {
+        handleError(res, err, 'Get Recruitment Settings Error');
+    }
+});
+
+// PUT /api/recruitment - Update recruitment settings (Admin only)
+app.put('/api/recruitment', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const Recruitment = require('./models/Recruitment');
+        const { title, description, googleFormLink, buttonText, status, published } = req.body;
+        
+        let recruitment = await Recruitment.findOne();
+        if (recruitment) {
+            recruitment.title = title || recruitment.title;
+            recruitment.description = description !== undefined ? description : recruitment.description;
+            recruitment.googleFormLink = googleFormLink || recruitment.googleFormLink;
+            recruitment.buttonText = buttonText || recruitment.buttonText;
+            recruitment.status = status || recruitment.status;
+            recruitment.published = published || recruitment.published;
+            await recruitment.save();
+        } else {
+            recruitment = new Recruitment({
+                title,
+                description,
+                googleFormLink,
+                buttonText,
+                status,
+                published
+            });
+            await recruitment.save();
+        }
+        res.json({ success: true, data: recruitment });
+    } catch (err) {
+        handleError(res, err, 'Update Recruitment Settings Error');
+    }
+});
+
+// GET /api/public/recruitment - Get published recruitment settings for public Careers page
+app.get('/api/public/recruitment', async (req, res) => {
+    try {
+        const Recruitment = require('./models/Recruitment');
+        const recruitment = await Recruitment.findOne();
+        
+        // If not exists or is draft, return status as CLOSED
+        if (!recruitment || recruitment.published === 'Draft') {
+            return res.json({ 
+                success: true, 
+                data: { 
+                    status: 'CLOSED', 
+                    title: 'Join the NewsPercent Team',
+                    description: '',
+                    googleFormLink: '',
+                    buttonText: 'Apply Now',
+                    published: 'Draft'
+                } 
+            });
+        }
+        
+        res.json({ success: true, data: recruitment });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message, status: 'CLOSED' });
     }
 });
 
@@ -2313,6 +2903,98 @@ app.post('/api/admin/database/remove', verifyToken, requireAdmin, async (req, re
 // Serve static files from the React frontend build folder
 app.use(express.static(path.join(__dirname, 'newspercent', 'dist')));
 
+// Serve article views with server-side SEO meta injection
+app.get('/article/:slugOrId', async (req, res, next) => {
+    try {
+        const fs = require('fs');
+        const path = require('path');
+        const Article = require('./models/Article');
+        
+        const slugOrId = req.params.slugOrId;
+        
+        // Find article by slug or ID
+        let article;
+        if (mongoose.Types.ObjectId.isValid(slugOrId)) {
+            article = await Article.findById(slugOrId);
+        }
+        if (!article) {
+            article = await Article.findOne({ slug: slugOrId });
+        }
+        
+        const indexPath = path.join(__dirname, 'newspercent', 'dist', 'index.html');
+        if (!fs.existsSync(indexPath)) {
+            return next(); // Fallback to SPA routing
+        }
+        
+        let html = fs.readFileSync(indexPath, 'utf8');
+        
+        if (!article || article.status !== 'PUBLISHED') {
+            // Send default index.html if article not found or not published
+            return res.send(html);
+        }
+        
+        const title = article.seoTitle || `${article.title} | NewsPercent`;
+        const description = article.metaDescription || article.subtitle || '';
+        const keywords = article.keywords && article.keywords.length > 0 ? article.keywords.join(', ') : (article.category || '');
+        const ogImage = article.openGraphImage || article.featuredImage || '';
+        const canonical = article.canonicalUrl || `${process.env.APP_URL || 'https://newspercent.com'}/article/${article.slug || article._id}`;
+        const robots = article.robotsDirective || 'index, follow';
+        
+        // Generate structured JSON-LD data
+        const schema = article.schemaMarkup || {
+            "@context": "https://schema.org",
+            "@type": "NewsArticle",
+            "headline": article.title,
+            "image": [article.featuredImage || ''],
+            "datePublished": article.publishedAt || article.createdAt,
+            "dateModified": article.updatedAt || article.createdAt,
+            "description": description,
+            "mainEntityOfPage": {
+                "@type": "WebPage",
+                "@id": canonical
+            }
+        };
+        const jsonLdString = JSON.stringify(schema);
+        
+        // Construct target meta tags to inject in the HTML head
+        const metaTags = `
+    <title>${title}</title>
+    <meta name="description" content="${description.replace(/"/g, '&quot;')}" />
+    <meta name="keywords" content="${keywords.replace(/"/g, '&quot;')}" />
+    <meta name="robots" content="${robots}" />
+    <link rel="canonical" href="${canonical}" />
+    
+    <!-- Open Graph / Facebook / LinkedIn / WhatsApp -->
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="${title.replace(/"/g, '&quot;')}" />
+    <meta property="og:description" content="${description.replace(/"/g, '&quot;')}" />
+    <meta property="og:image" content="${ogImage}" />
+    <meta property="og:url" content="${canonical}" />
+    <meta property="og:site_name" content="NewsPercent" />
+    
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${title.replace(/"/g, '&quot;')}" />
+    <meta name="twitter:description" content="${description.replace(/"/g, '&quot;')}" />
+    <meta name="twitter:image" content="${ogImage}" />
+    
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+        ${jsonLdString}
+    </script>
+        `;
+        
+        // Replace default placeholder title and meta tags with injected tags
+        html = html.replace(/<title>.*?<\/title>/i, ''); // Remove default title tag if exists
+        html = html.replace('<head>', `<head>${metaTags}`);
+        
+        res.send(html);
+    } catch (err) {
+        console.error('[SEO INJECTION ERROR]:', err);
+        next();
+    }
+});
+
 // SPA fallback route for React frontend routes (excludes API calls)
 app.get(/.*/, (req, res, next) => {
     if (req.path.startsWith('/api/')) {
@@ -2330,18 +3012,12 @@ app.use((req, res, next) => {
 });
 
 // Global Error Handler
+// Global Error Handler
 app.use((err, req, res, next) => {
     const statusCode = err.status || 500;
     
-    console.error('=================================');
-    console.error('🚨 BACKEND EXCEPTION ENCOUNTERED:');
-    console.error(`Route: ${req.method} ${req.originalUrl}`);
-    console.error(`Status Code: ${statusCode}`);
-    console.error(`Message: ${err.message}`);
-    if (err.stack) {
-        console.error(`Stack: ${err.stack}`);
-    }
-    console.error('=================================');
+    // Log exception using our production logger
+    logError(err, req, `BACKEND EXCEPTION: ${req.method} ${req.originalUrl}`);
 
     const isMongoError = err.name === 'MongoError' || 
                          err.name === 'ValidationError' || 
@@ -2351,16 +3027,25 @@ app.use((err, req, res, next) => {
                          err.message.toLowerCase().includes('connection') ||
                          err.message.toLowerCase().includes('topology');
 
-    res.status(statusCode).json({
+    // In production, mask detailed 500 error messages to prevent leakage
+    const showRawMessage = process.env.NODE_ENV !== 'production' || statusCode < 500;
+    const responseError = showRawMessage ? (err.message || 'Internal Server Error') : 'Internal Server Error';
+
+    const errResponse = {
         success: false,
-        error: err.message || 'Internal Server Error',
+        error: responseError,
         route: req.originalUrl,
         statusCode: statusCode,
         databaseState: mongoose.connection.readyState === 1 ? 'CONNECTED' : 'DISCONNECTED',
         isMongoError,
-        timestamp: new Date().toISOString(),
-        stack: err.stack
-    });
+        timestamp: new Date().toISOString()
+    };
+
+    if (process.env.NODE_ENV !== 'production') {
+        errResponse.stack = err.stack;
+    }
+
+    res.status(statusCode).json(errResponse);
 });
 
 // --- STARTUP SEQUENCE ---
@@ -2391,22 +3076,23 @@ const startServer = async () => {
             const hasDist = fs.existsSync(path.join(__dirname, 'newspercent', 'dist', 'index.html'));
             const isDev = process.env.NODE_ENV !== 'production';
 
+            const appUrl = process.env.APP_URL || `http://localhost:${PORT}`;
             console.log('=================================');
             console.log('🚀 NewsPercent Backend Started');
             console.log('==============================\n');
             console.log('🌐 Backend URL:');
-            console.log(`http://localhost:${PORT}\n`);
+            console.log(`${appUrl}\n`);
             
             if (hasDist) {
-                console.log('📰 Frontend (if served by Express):');
-                console.log(`http://localhost:${PORT}\n`);
+                console.log('📰 Frontend (served by Express):');
+                console.log(`${appUrl}\n`);
             }
             
             console.log('⚙️ API Base URL:');
-            console.log(`http://localhost:${PORT}/api\n`);
+            console.log(`${appUrl}/api\n`);
             
             console.log('❤️ Health Check:');
-            console.log(`http://localhost:${PORT}/api/health\n`);
+            console.log(`${appUrl}/api/health\n`);
             
             console.log('📁 MongoDB:');
             console.log(mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected');

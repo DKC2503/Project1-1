@@ -77,7 +77,7 @@ const WorldPopulationModal: React.FC<WorldPopulationModalProps> = ({ isOpen, onC
         {/* Modal Header */}
         <header className="flex justify-between items-center px-4 py-4 sm:px-8 sm:py-6 border-b border-[var(--glass-border)] bg-[var(--surface-hover)]/30">
           <div className="flex items-center gap-3">
-            <Globe className="w-5 h-5 sm:w-6 sm:h-6 text-primary animate-spin-slow" />
+            <img src="/globe.jpg" alt="Globe" className="w-8 h-8 rounded-full object-cover animate-spin-slow" />
             <div>
               <h2 className="text-sm sm:text-xl font-black text-[var(--text-primary)] uppercase tracking-tight">
                 Population Intelligence
@@ -89,9 +89,9 @@ const WorldPopulationModal: React.FC<WorldPopulationModalProps> = ({ isOpen, onC
           </div>
           <button 
             onClick={onClose}
-            className="p-2 bg-[var(--surface-hover)] hover:bg-primary/10 hover:text-primary rounded-xl border border-[var(--glass-border)] hover:border-primary/20 transition-all cursor-pointer shrink-0"
+            className="p-2 bg-white/5 hover:bg-white/10 text-white rounded-xl border border-white/10 hover:border-white/20 transition-all cursor-pointer shrink-0"
           >
-            <X className="w-4 h-4 sm:w-5 sm:h-5" />
+            <X className="w-5 h-5 text-white" />
           </button>
         </header>
 

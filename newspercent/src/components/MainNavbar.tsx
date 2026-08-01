@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Search, ChevronLeft, ChevronRight, Menu, X } from 'lucide-react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import { Search, Menu, X } from 'lucide-react';
 import { FaInstagram, FaYoutube, FaWhatsapp, FaTelegram } from 'react-icons/fa';
 import { FaXTwitter } from 'react-icons/fa6';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
-import LoginModal from './LoginModal';
+const LoginModal = lazy(() => import('./LoginModal'));
 
 const SOCIAL_LINKS = {
   instagram: "https://www.instagram.com/news_percent?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==",
@@ -40,8 +40,6 @@ const MainNavbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [showLeftArrow, setShowLeftArrow] = useState(false);
-  const [showRightArrow, setShowRightArrow] = useState(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const { scrollY } = useScroll();
@@ -75,36 +73,7 @@ const MainNavbar: React.FC = () => {
     }
   };
 
-  const updateScrollButtons = () => {
-    if (scrollContainerRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
-      setShowLeftArrow(scrollLeft > 10);
-      setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10);
-    }
-  };
 
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (container) {
-      container.addEventListener('scroll', updateScrollButtons);
-      window.addEventListener('resize', updateScrollButtons);
-      updateScrollButtons();
-      return () => {
-        container.removeEventListener('scroll', updateScrollButtons);
-        window.removeEventListener('resize', updateScrollButtons);
-      };
-    }
-  }, []);
-
-  const scroll = (direction: 'left' | 'right') => {
-    if (scrollContainerRef.current) {
-      const scrollAmount = 300;
-      scrollContainerRef.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth'
-      });
-    }
-  };
 
   const handleLinkClick = () => {
     if (window.scrollY > 0) {
@@ -115,7 +84,9 @@ const MainNavbar: React.FC = () => {
 
   return (
     <>
-      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
+      <Suspense fallback={null}>
+        <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
+      </Suspense>
       
       <motion.nav
         style={{ height }}
@@ -156,32 +127,10 @@ const MainNavbar: React.FC = () => {
             </Link>
           </div>
 
-          {/* COLUMN 2: NAVIGATION (SCROLLABLE - Desktop Only) */}
           <div className="hidden lg:flex flex-1 items-center relative overflow-hidden h-full px-4">
-            <AnimatePresence>
-              {showLeftArrow && (
-                <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-[var(--background-deep)] to-transparent z-10 pointer-events-none light:from-white"
-                />
-              )}
-            </AnimatePresence>
-
-            {showLeftArrow && (
-              <button
-                onClick={() => scroll('left')}
-                className="absolute left-0 z-20 p-2 bg-[var(--background-deep)]/80 border border-[var(--glass-border)] rounded-full text-primary hover:bg-primary hover:text-white transition-all shadow-lg light:bg-white light:border-[#E8E2D8]"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-            )}
-
             <div 
               ref={scrollContainerRef}
               className="flex items-center gap-8 overflow-x-auto whitespace-nowrap scroll-smooth no-scrollbar w-full px-12"
-              style={{ paddingRight: '120px' }}
             >
               {NAV_CATEGORIES.map((link) => (
                 <Link
@@ -203,26 +152,6 @@ const MainNavbar: React.FC = () => {
                 </Link>
               ))}
             </div>
-
-            {showRightArrow && (
-              <button
-                onClick={() => scroll('right')}
-                className="absolute right-0 z-20 p-2 bg-[var(--background-deep)]/80 border border-[var(--glass-border)] rounded-full text-primary hover:bg-primary hover:text-white transition-all shadow-lg light:bg-white light:border-[#E8E2D8]"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            )}
-
-            <AnimatePresence>
-              {showRightArrow && (
-                <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-[var(--background-deep)] to-transparent z-10 pointer-events-none light:from-white"
-                />
-              )}
-            </AnimatePresence>
           </div>
 
           {/* COLUMN 3: ACTIONS & HAMBURGER */}

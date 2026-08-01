@@ -8,6 +8,8 @@ const systemSettingsSchema = new mongoose.Schema({
     marketApiEnabled: { type: Boolean, default: true },
     populationApiEnabled: { type: Boolean, default: true },
     emailServiceEnabled: { type: Boolean, default: true },
+    preciousMetalsApiEnabled: { type: Boolean, default: true },
+    fuelApiEnabled: { type: Boolean, default: true },
     emergencyMode: { type: Boolean, default: false },
     
     // Legacy mapping (kept for safety/compatibility)

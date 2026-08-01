@@ -1,0 +1,319 @@
+﻿PRODUCTION WEBSITE REFINEMENT UPDATE
+
+This task focuses ONLY on improving the public website.
+
+Do NOT modify:
+- Authentication
+- Dashboard
+- Admin Portal
+- Author Portal
+- Analytics
+- Database
+- Backend logic
+- APIs
+
+Only improve the public-facing website.
+
+══════════════════════════════════════════════
+1. WORLD POPULATION CARD
+══════════════════════════════════════════════
+
+The current Earth icon is too small and slightly blurry.
+
+Requirements:
+
+• Replace it with a much higher-resolution Earth image.
+• Prefer a realistic globe instead of a flat icon.
+• Increase size by approximately 50%.
+• Keep it perfectly centered.
+• Preserve the existing circular container.
+• Ensure it looks sharp on Retina/HiDPI displays.
+
+══════════════════════════════════════════════
+2. WEATHER CARD
+══════════════════════════════════════════════
+
+The moon/sun icon is too small.
+
+Requirements:
+
+• Replace it with a premium SVG icon.
+• Increase size by approximately 50%.
+• Keep the icon crisp on all devices.
+• Preserve spacing and alignment.
+
+══════════════════════════════════════════════
+3. REMOVE ESTIMATED READING TIME
+══════════════════════════════════════════════
+
+Completely remove all estimated reading time.
+
+Examples:
+
+6M READ
+5M READ
+8M READ
+
+Remove them from:
+
+• Homepage Hero
+• Featured Articles
+• Breaking News Feed
+• Search Results
+• Category Pages
+• Article Detail Page
+• Every public article card
+
+Also remove unnecessary separators.
+
+Example:
+
+Current:
+
+By Karthik D • 25 June 2026 • 6M READ
+
+Should become:
+
+By Karthik D • 25 June 2026
+
+Delete any unused reading-time calculation code if no longer required.
+
+══════════════════════════════════════════════
+4. QUICK LINKS
+══════════════════════════════════════════════
+
+Build complete professional pages for:
+
+• About Us
+• Contact Us
+• Careers
+• Advertise With Us
+• Privacy Policy
+• Editorial Policy
+• Terms & Conditions
+
+These pages should NOT look like plain text.
+
+Design them as modern corporate pages.
+
+══════════════════════════════════════════════
+DESIGN REQUIREMENTS
+══════════════════════════════════════════════
+
+Each page should include:
+
+• Large Hero Title
+
+• Short subtitle
+
+• Professional icon
+
+• Section cards
+
+• Good spacing
+
+• Responsive layout
+
+• Premium typography
+
+• Consistent NewsPercent branding
+
+• Soft animations
+
+• Scroll reveal animations
+
+• Nice section dividers
+
+• Mobile responsive
+
+══════════════════════════════════════════════
+PAGE SPECIFIC ICONS
+══════════════════════════════════════════════
+
+About Us
+→ Newspaper / Globe
+
+Contact
+→ Mail / Phone
+
+Careers
+→ Briefcase
+
+Advertise
+→ Megaphone
+
+Privacy
+→ Shield
+
+Editorial
+→ Pen / Newspaper
+
+Terms
+→ Document
+
+══════════════════════════════════════════════
+CONTACT PAGE
+══════════════════════════════════════════════
+
+Use exactly the Contact Us content I provided.
+
+Do NOT rewrite.
+
+Keep every section.
+
+Include clickable:
+
+Email
+
+Phone
+
+Website
+
+Social Media
+
+══════════════════════════════════════════════
+CAREERS
+══════════════════════════════════════════════
+
+Use my provided content exactly.
+
+Create beautiful cards for:
+
+Current Opportunities
+
+Recruitment Process
+
+Benefits
+
+══════════════════════════════════════════════
+ADVERTISE
+══════════════════════════════════════════════
+
+Use my provided content exactly.
+
+Create professional sections for:
+
+Advertising Opportunities
+
+Benefits
+
+Business Contact
+
+══════════════════════════════════════════════
+PRIVACY POLICY
+══════════════════════════════════════════════
+
+Use my provided content exactly.
+
+Display each topic inside elegant cards.
+
+══════════════════════════════════════════════
+EDITORIAL POLICY
+══════════════════════════════════════════════
+
+Use my content exactly.
+
+Highlight:
+
+Accuracy
+
+Integrity
+
+Transparency
+
+AI Usage
+
+Corrections
+
+══════════════════════════════════════════════
+TERMS & CONDITIONS
+══════════════════════════════════════════════
+
+Use my provided content exactly.
+
+Create clean legal sections.
+
+══════════════════════════════════════════════
+ABOUT US
+══════════════════════════════════════════════
+
+Create a premium About Us page for NewsPercent.
+
+Include:
+
+Who We Are
+
+Our Mission
+
+Our Vision
+
+Our Values
+
+Why NewsPercent Exists
+
+Our Editorial Commitment
+
+Technology We Use
+
+Message from NewsPercent
+
+Footer slogan:
+
+"A movement against noisy media."
+
+South India's First Youth-Led Digital News Network
+
+══════════════════════════════════════════════
+INTERACTIVITY
+══════════════════════════════════════════════
+
+Add subtle animations only.
+
+Examples:
+
+Cards fade in.
+
+Buttons lift slightly.
+
+Icons animate gently.
+
+Smooth scrolling.
+
+No flashy animations.
+
+══════════════════════════════════════════════
+VERIFY
+══════════════════════════════════════════════
+
+Verify all of the following:
+
+✓ Earth icon is larger and sharper.
+
+✓ Weather icon is larger and sharper.
+
+✓ Reading time has been removed everywhere.
+
+✓ Every Quick Link opens the correct page.
+
+✓ Every page is fully responsive.
+
+✓ Typography is consistent.
+
+✓ Icons display correctly.
+
+✓ Mobile layout works.
+
+✓ Existing functionality remains unchanged.
+
+IMPORTANT:
+
+Do NOT use placeholder text.
+
+Do NOT generate lorem ipsum.
+
+Use the exact content I supplied.
+
+Do NOT change the wording.
+
+Only improve presentation and user experience.
+══════════════════════════════════…

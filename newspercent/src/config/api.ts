@@ -2,8 +2,16 @@ import axios from 'axios';
 
 export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
+// Normalize baseURL: if it ends with /api or /api/, strip it since frontend paths explicitly start with /api
+let normalizedBaseURL = API_URL;
+if (normalizedBaseURL.endsWith('/api')) {
+    normalizedBaseURL = normalizedBaseURL.slice(0, -4);
+} else if (normalizedBaseURL.endsWith('/api/')) {
+    normalizedBaseURL = normalizedBaseURL.slice(0, -5);
+}
+
 const api = axios.create({
-    baseURL: API_URL,
+    baseURL: normalizedBaseURL,
     headers: {
         'Content-Type': 'application/json'
     }

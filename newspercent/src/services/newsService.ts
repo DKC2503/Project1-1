@@ -8,7 +8,6 @@ export interface NewsArticle {
   summary: string;
   author: string;
   publishDate: string;
-  readingTime: string;
   featuredImage: string;
   status: 'PENDING' | 'PUBLISHED' | 'REJECTED';
   aiScore?: number;
@@ -19,25 +18,33 @@ export interface NewsArticle {
   isMainBreaking?: boolean;
   isCategoryBreaking?: string | null;
   isBigBreaking?: boolean;
+  rawPublishDate?: string;
 }
 
-const mapArticle = (article: any): NewsArticle => ({
-  id: article._id,
-  _id: article._id,
-  category: article.category || 'UNKNOWN',
-  title: article.title || 'Untitled Intelligence',
-  summary: article.subtitle || (article.content ? article.content.replace(/<[^>]*>/g, '').substring(0, 160) + '...' : 'Intelligence briefing pending...'),
-  author: article.authorName || 'Field Agent',
-  publishDate: new Date(article.publishedAt || article.createdAt).toLocaleDateString(),
-  readingTime: '6m Read', 
-  featuredImage: article.featuredImage || '/logo.webp',
-  status: article.status === 'PUBLISHED' ? 'PUBLISHED' : 'PENDING',
-  shares: article.shares || 0,
-  isBreakingNews: article.isBreakingNews || false,
-  isMainBreaking: article.isMainBreaking || false,
-  isCategoryBreaking: article.isCategoryBreaking || null,
-  isBigBreaking: article.isBigBreaking || false
-});
+const mapArticle = (article: any): NewsArticle => {
+  let category = article.category || 'UNKNOWN';
+  if (category.toLowerCase() === 'breaking' || category.toLowerCase() === 'breaking news') {
+    category = article.isCategoryBreaking || article.breakingCategory || 'Global';
+  }
+  
+  return {
+    id: article._id,
+    _id: article._id,
+    category: category,
+    title: article.title || 'Untitled Intelligence',
+    summary: article.subtitle || (article.content ? article.content.replace(/<[^>]*>/g, '').substring(0, 160) + '...' : 'Intelligence briefing pending...'),
+    author: article.authorName || 'Field Agent',
+    publishDate: new Date(article.publishedAt || article.createdAt).toLocaleDateString(),
+    featuredImage: article.featuredImage || '/logo.webp',
+    status: article.status === 'PUBLISHED' ? 'PUBLISHED' : 'PENDING',
+    shares: article.shares || 0,
+    isBreakingNews: article.isBreakingNews || false,
+    isMainBreaking: article.isMainBreaking || false,
+    isCategoryBreaking: article.isCategoryBreaking || null,
+    isBigBreaking: article.isBigBreaking || false,
+    rawPublishDate: article.publishedAt || article.createdAt
+  };
+};
 
 export const fetchNews = async (category?: string): Promise<NewsArticle[]> => {
   try {
@@ -49,7 +56,11 @@ export const fetchNews = async (category?: string): Promise<NewsArticle[]> => {
     let data = mappedData;
     
     if (category && category !== 'Home') {
-      data = data.filter(article => article.category === category);
+      if (category.toLowerCase() === 'breaking') {
+        data = data.filter(article => article.isBreakingNews || article.isMainBreaking || article.isBigBreaking);
+      } else {
+        data = data.filter(article => article.category.toLowerCase() === category.toLowerCase());
+      }
     }
     
     return data;

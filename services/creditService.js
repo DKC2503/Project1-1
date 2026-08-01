@@ -212,6 +212,46 @@ const creditService = {
             const user = await User.findById(article.authorId);
             if (!user) return;
 
+            // If the article has dynamic totalCredits saved (from the admin review panel), we award that amount
+            if (article.totalCredits && article.totalCredits > 0) {
+                const settings = await settingsService.getSettings();
+                if (!settings.performanceCreditsEnabled) {
+                    console.log(`[CreditService] SKIPPED: Dynamic credit system disabled. Attempted: ${article.totalCredits} for ${article.authorId}`);
+                    return;
+                }
+                
+                // Create dynamic transaction record
+                await CreditTransaction.create({
+                    userId: article.authorId,
+                    role: user.role,
+                    creditType: 'AUTHOR_DYNAMIC_ARTICLE',
+                    description: `Published article: ${article.title} (SEO: +${article.awardedSeoCredits || 0}, Content: +${article.creditBreakdown?.contentQuality || 0}, Headline: +${article.creditBreakdown?.headline || 0})`,
+                    credits: article.totalCredits,
+                    source: 'AUTOMATED',
+                    referenceId: article._id,
+                    createdAt: new Date()
+                });
+
+                user.totalCredits += article.totalCredits;
+                user.monthlyCredits += article.totalCredits;
+                user.yearlyCredits += article.totalCredits;
+                user.lastActivityDate = new Date();
+                
+                await creditService.updateBadges(user);
+                await user.save();
+                
+                await ActivityLog.create({
+                    userId: article.authorId,
+                    userName: user.name,
+                    action: 'CREDIT_AWARD',
+                    details: { ruleKey: 'AUTHOR_DYNAMIC_ARTICLE', credits: article.totalCredits, referenceId: article._id }
+                });
+                
+                console.log(`[CreditService] Dynamically awarded ${article.totalCredits} total credits to Author ${article.authorId}`);
+                return;
+            }
+
+            // Fallback for legacy articles or if no dynamic credits are set
             if (['super_admin', 'admin', 'editor', 'reviewer'].includes(user.role)) {
                 // Award Admin Publishing Credits
                 await creditService.awardCredits(article.authorId, 'ADMIN_ARTICLE_PUBLISH', { 
@@ -227,6 +267,42 @@ const creditService = {
             }
         } catch (err) {
             console.error('[CreditService] Error processing article publish:', err);
+        }
+    },
+
+    /**
+     * Automated Article Delete Hook to negate credits
+     */
+    processArticleDelete: async (articleId) => {
+        try {
+            const transactions = await CreditTransaction.find({ referenceId: articleId });
+            for (const tx of transactions) {
+                const negateAmount = -tx.credits;
+                
+                // Create reversing transaction
+                await CreditTransaction.create({
+                    userId: tx.userId,
+                    role: tx.role,
+                    creditType: tx.creditType,
+                    description: `REVERSED: ${tx.description} (Article deleted)`,
+                    credits: negateAmount,
+                    source: 'AUTOMATED',
+                    referenceId: articleId,
+                    createdAt: new Date()
+                });
+
+                // Update User document totals
+                const user = await User.findById(tx.userId);
+                if (user) {
+                    user.totalCredits = Math.max(0, user.totalCredits + negateAmount);
+                    user.monthlyCredits = Math.max(0, user.monthlyCredits + negateAmount);
+                    user.yearlyCredits = Math.max(0, user.yearlyCredits + negateAmount);
+                    await user.save();
+                    console.log(`[CreditService] Negated ${tx.credits} credits for User ${user._id} due to deletion of Article ${articleId}`);
+                }
+            }
+        } catch (err) {
+            console.error('[CreditService] Error processing article delete:', err);
         }
     }
 };

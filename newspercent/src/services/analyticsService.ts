@@ -44,5 +44,13 @@ export const analyticsService = {
     archiveData: async () => {
         const response = await api.post('/api/analytics/archive');
         return response.data;
+    },
+
+    downloadReport: async (format: 'excel' | 'csv') => {
+        const response = await api.get('/api/analytics/report', {
+            params: { format },
+            responseType: 'blob'
+        });
+        return response.data;
     }
 };

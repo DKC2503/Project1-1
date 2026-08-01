@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   ChevronLeft,
   X,
@@ -17,10 +17,11 @@ import { useAuthStore } from '../../hooks/useAuthStore';
 import { useToastStore } from '../../hooks/useToastStore';
 
 // Mobile layout components
+import { lazy, Suspense } from 'react';
 import { MobileHeader } from './MobileHeader';
 import ShareButton from '../ShareButton';
-import LoginModal from '../LoginModal';
-import WorldPopulationModal from '../WorldPopulationModal';
+const LoginModal = lazy(() => import('../LoginModal'));
+const WorldPopulationModal = lazy(() => import('../WorldPopulationModal'));
 
 interface MobileArticleViewProps {
   article: any;
@@ -28,6 +29,7 @@ interface MobileArticleViewProps {
 }
 
 export const MobileArticleView: React.FC<MobileArticleViewProps> = ({ article, onBack }) => {
+  const navigate = useNavigate();
   const { user, token, logout } = useAuthStore();
   const { addToast } = useToastStore();
 
@@ -100,7 +102,16 @@ export const MobileArticleView: React.FC<MobileArticleViewProps> = ({ article, o
     <div className="relative min-h-screen bg-[var(--background-deep)] text-[var(--text-primary)] font-manrope pb-6 select-none">
       
       {/* HEADER */}
-      <MobileHeader onMenuClick={() => setIsMenuOpen(true)} onLogoTripleClick={() => setIsLoginOpen(true)} />
+      <MobileHeader 
+        onMenuClick={() => setIsMenuOpen(true)} 
+        onLogoTripleClick={() => setIsLoginOpen(true)} 
+        searchQuery=""
+        setSearchQuery={(query) => {
+          if (query.trim()) {
+            navigate(`/?search=${encodeURIComponent(query)}`);
+          }
+        }}
+      />
 
       <main className="max-w-4xl mx-auto px-4 py-6 font-manrope space-y-6">
         <button 
@@ -281,16 +292,20 @@ export const MobileArticleView: React.FC<MobileArticleViewProps> = ({ article, o
       </AnimatePresence>
 
       {/* World Population Portal Modal */}
-      <WorldPopulationModal 
-        isOpen={isPopModalOpen} 
-        onClose={() => setIsPopModalOpen(false)} 
-      />
-
+      <Suspense fallback={null}>
+        <WorldPopulationModal 
+          isOpen={isPopModalOpen} 
+          onClose={() => setIsPopModalOpen(false)} 
+        />
+      </Suspense>
+  
       {/* Login Access Portal Modal */}
-      <LoginModal 
-        isOpen={isLoginOpen} 
-        onClose={() => setIsLoginOpen(false)} 
-      />
+      <Suspense fallback={null}>
+        <LoginModal 
+          isOpen={isLoginOpen} 
+          onClose={() => setIsLoginOpen(false)} 
+        />
+      </Suspense>
 
       {/* FUNCTIONAL MODAL: ABOUT US */}
       <AnimatePresence>

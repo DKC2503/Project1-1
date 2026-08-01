@@ -71,7 +71,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
       const { user, token, loginLogId } = res.data;
 
       setStatus('success');
-      setMessage('Identity verified. Synchronizing node...');
+      setMessage('Identity verified. Loading Dashboard...');
       
       setAuth(user, token, loginLogId);
 
@@ -141,7 +141,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
             {step === 'otp' && (
               <button 
                 onClick={handleBack} 
-                className="absolute top-6 left-6 text-[var(--text-secondary)] hover:text-primary transition-colors p-2 bg-white/5 light:bg-black/5 rounded-full z-20"
+                className="absolute top-6 left-6 text-slate-800 dark:text-white hover:text-primary transition-colors p-2 bg-slate-100 dark:bg-white/10 rounded-full z-20 border border-slate-200 dark:border-white/10"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
@@ -149,7 +149,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
 
             <button 
               onClick={onClose} 
-              className="absolute top-6 right-6 text-[var(--text-secondary)] hover:text-primary transition-colors p-2 bg-white/5 light:bg-black/5 rounded-full z-20"
+              className="absolute top-6 right-6 text-slate-800 dark:text-white hover:text-primary transition-colors p-2 bg-slate-100 dark:bg-white/10 rounded-full z-20 border border-slate-200 dark:border-white/10"
             >
               <X className="w-5 h-5" />
             </button>
@@ -275,8 +275,8 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
             </div>
 
             <p className="text-[9px] text-[var(--text-secondary)] text-center mt-10 uppercase tracking-widest font-bold opacity-30 leading-relaxed max-w-[280px]">
-              Internal Access Terminal • Verified Nodes Only <br /> 
-              NEWSPERCENT Access Protocol Active
+              NewsPercent Publisher Portal <br /> 
+              Authorized Creator Access Only
             </p>
           </motion.div>
         </div>

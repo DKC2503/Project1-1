@@ -36,6 +36,7 @@ const CATEGORY_CONFIGS: Record<string, CategoryConfig> = {
   studies: { name: 'Studies', accent: '#C89B3C', description: 'Academic research, scientific breakthroughs, and pedagogical shifts.', layout: 'academic' },
   'case-studies': { name: 'Case Studies', accent: '#34C759', description: 'Strategic deep-dives into successful business models and failures.', layout: 'analysis' },
   technology: { name: 'Technology', accent: '#D92D20', description: 'Computing, artificial intelligence, and the silicon frontier.', layout: 'standard' },
+  breaking: { name: 'Breaking', accent: '#EF4444', description: 'Real-time alerts, crisis events, and breaking updates from our global desks.', layout: 'standard' },
 };
 
 import { useIsMobile } from '../hooks/useIsMobile';

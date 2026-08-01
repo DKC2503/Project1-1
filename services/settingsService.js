@@ -41,6 +41,8 @@ const settingsService = {
             updates.marketApiEnabled = false;
             updates.populationApiEnabled = false;
             updates.emailServiceEnabled = false;
+            updates.preciousMetalsApiEnabled = false;
+            updates.fuelApiEnabled = false;
             
             // Sync legacy keys
             updates.creditSystemEnabled = false;
@@ -81,6 +83,8 @@ const settingsService = {
             marketApiEnabled: 'MARKET_API',
             populationApiEnabled: 'POPULATION_API',
             emailServiceEnabled: 'EMAIL_SERVICE',
+            preciousMetalsApiEnabled: 'PRECIOUS_METALS_API',
+            fuelApiEnabled: 'FUEL_API',
             emergencyMode: 'EMERGENCY_MODE',
             
             creditSystemEnabled: 'CREDIT_SYSTEM',

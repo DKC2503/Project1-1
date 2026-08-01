@@ -2,36 +2,44 @@ import { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from './hooks/useAuthStore';
 import { useToastStore } from './hooks/useToastStore';
-import api from './config/api';
+import api, { API_URL } from './config/api';
 import Home from './pages/Home';
-import CategoryPage from './pages/CategoryPage';
-import ArticleView from './pages/ArticleView';
-import About from './pages/About';
-import Contact from './pages/Contact';
 
+const CategoryPage = lazy(() => import('./pages/CategoryPage'));
+const ArticleView = lazy(() => import('./pages/ArticleView'));
+const About = lazy(() => import('./pages/About'));
+const Contact = lazy(() => import('./pages/Contact'));
+const Careers = lazy(() => import('./pages/Careers'));
+const Advertise = lazy(() => import('./pages/Advertise'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const EditorialPolicy = lazy(() => import('./pages/EditorialPolicy'));
+const TermsConditions = lazy(() => import('./pages/TermsConditions'));
 const WeatherDashboard = lazy(() => import('./pages/WeatherDashboard'));
+
 import PortalLayout from './components/PortalLayout';
-import AdminOverview from './pages/AdminOverview';
-import ArticleReviewQueue from './pages/ArticleReviewQueue';
-import ContentEngine from './pages/ContentEngine';
-import AdminPublishingCommand from './pages/AdminPublishingCommand';
-import NodeManagement from './pages/NodeManagement';
-import SecurityProtocols from './pages/SecurityProtocols';
-import SystemSettings from './pages/SystemSettings';
-import CreditSettings from './pages/CreditSettings';
-import StorageSettings from './pages/StorageSettings';
-import DatabaseSettings from './pages/DatabaseSettings';
-import ExternalApiManager from './pages/ExternalApiManager';
-import AuthorOverview from './pages/AuthorOverview';
-import CreateArticle from './pages/CreateArticle';
-import AuthorPerformance from './pages/AuthorPerformance';
-import PerformanceDashboard from './pages/PerformanceDashboard';
-import AdminPerformance from './pages/AdminPerformance';
-import AnalyticsDashboard from './pages/AnalyticsDashboard';
-import FlashNewsControl from './pages/FlashNewsControl';
+const AdminOverview = lazy(() => import('./pages/AdminOverview'));
+const ArticleReviewQueue = lazy(() => import('./pages/ArticleReviewQueue'));
+const ContentEngine = lazy(() => import('./pages/ContentEngine'));
+const AdminPublishingCommand = lazy(() => import('./pages/AdminPublishingCommand'));
+const NodeManagement = lazy(() => import('./pages/NodeManagement'));
+const SecurityProtocols = lazy(() => import('./pages/SecurityProtocols'));
+const SystemSettings = lazy(() => import('./pages/SystemSettings'));
+const CreditSettings = lazy(() => import('./pages/CreditSettings'));
+const StorageSettings = lazy(() => import('./pages/StorageSettings'));
+const DatabaseSettings = lazy(() => import('./pages/DatabaseSettings'));
+const ExternalApiManager = lazy(() => import('./pages/ExternalApiManager'));
+const RecruitmentAdmin = lazy(() => import('./pages/RecruitmentAdmin'));
+const AuthorOverview = lazy(() => import('./pages/AuthorOverview'));
+const CreateArticle = lazy(() => import('./pages/CreateArticle'));
+const AuthorPerformance = lazy(() => import('./pages/AuthorPerformance'));
+const PerformanceDashboard = lazy(() => import('./pages/PerformanceDashboard'));
+const AdminPerformance = lazy(() => import('./pages/AdminPerformance'));
+const AnalyticsDashboard = lazy(() => import('./pages/AnalyticsDashboard'));
+const FlashNewsControl = lazy(() => import('./pages/FlashNewsControl'));
+
 import ToastContainer from './components/ToastContainer';
 import LoadingScreen from './components/LoadingScreen';
-import GlobalDialogProvider from './components/ui/GlobalDialogProvider';
+const GlobalDialogProvider = lazy(() => import('./components/ui/GlobalDialogProvider'));
 import { useSystemSettingsStore } from './hooks/useSystemSettingsStore';
 
 // Protected Route Component
@@ -64,7 +72,7 @@ function App() {
     // Server Health Check
     const checkServer = async () => {
       try {
-        console.log("[APP] Health check... Ping http://localhost:5000/api/health");
+        console.log(`[APP] Health check... Ping ${API_URL}/api/health`);
         const res = await api.get('/api/health');
         console.log("[APP] Health check SUCCESS:", res.data);
       } catch (err: any) {
@@ -118,7 +126,9 @@ function AppContent() {
   return (
     <>
       <ToastContainer />
-      <GlobalDialogProvider />
+      <Suspense fallback={null}>
+        <GlobalDialogProvider />
+      </Suspense>
       {settings?.emergencyMode && (
         <div className="fixed top-0 left-0 right-0 bg-red-600 text-white z-[9999] p-2 text-center text-[10px] font-black uppercase tracking-[0.4em] flex items-center justify-center gap-4">
           <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
@@ -126,43 +136,56 @@ function AppContent() {
           <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
         </div>
       )}
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<HomeWithLog />} />
-        <Route path="/about" element={<AboutWithLog />} />
-        <Route path="/contact" element={<ContactWithLog />} />
-        <Route path="/article/:id" element={<ArticleViewWithLog />} />
-        <Route path="/category/:slug" element={<CategoryPageWithLog />} />
-        <Route path="/weather" element={<WeatherDashboardWithLog />} />
+      <Suspense fallback={
+        <div className="min-h-screen bg-[var(--background-deep)] flex flex-col items-center justify-center gap-6">
+          <div className="w-10 h-10 border-t-2 border-primary border-r-2 border-primary/20 rounded-full animate-spin" />
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary italic">Decrypting Segment...</p>
+        </div>
+      }>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<HomeWithLog />} />
+          <Route path="/about" element={<AboutWithLog />} />
+          <Route path="/contact" element={<ContactWithLog />} />
+          <Route path="/careers" element={<CareersWithLog />} />
+          <Route path="/advertise" element={<AdvertiseWithLog />} />
+          <Route path="/privacy" element={<PrivacyPolicyWithLog />} />
+          <Route path="/editorial" element={<EditorialPolicyWithLog />} />
+          <Route path="/terms" element={<TermsConditionsWithLog />} />
+          <Route path="/article/:id" element={<ArticleViewWithLog />} />
+          <Route path="/category/:slug" element={<CategoryPageWithLog />} />
+          <Route path="/weather" element={<WeatherDashboardWithLog />} />
 
-        {/* Unified Portal (Roles handled within Layout/Routes) */}
-        <Route path="/admin" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'editor', 'reviewer']}><PortalLayout role="ADMIN" /></ProtectedRoute>}>
-          <Route index element={<AdminOverviewWithLog />} />
-          <Route path="pending" element={<ArticleReviewQueue />} />
-          <Route path="studio" element={<AdminPublishingCommand />} />
-          <Route path="articles" element={<ContentEngine />} />
-          <Route path="flash-news" element={<FlashNewsControl />} />
-          <Route path="users" element={<NodeManagement />} />
-          <Route path="history" element={<SecurityProtocols />} />
-          <Route path="merit" element={<AdminPerformance />} />
-          <Route path="analytics" element={<AnalyticsDashboard />} />
-          <Route path="settings/system" element={<SystemSettings />} />
-          <Route path="settings/credits" element={<CreditSettings />} />
-          <Route path="settings/storage" element={<StorageSettings />} />
-          <Route path="settings/database" element={<DatabaseSettings />} />
-          <Route path="settings/external-apis" element={<ExternalApiManager />} />
-        </Route>
+          {/* Unified Portal (Roles handled within Layout/Routes) */}
+          <Route path="/admin" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'editor', 'reviewer']}><PortalLayout role="ADMIN" /></ProtectedRoute>}>
+            <Route index element={<AdminOverviewWithLog />} />
+            <Route path="pending" element={<ArticleReviewQueue />} />
+            <Route path="studio" element={<AdminPublishingCommand />} />
+            <Route path="articles" element={<ContentEngine />} />
+            <Route path="flash-news" element={<FlashNewsControl />} />
+            <Route path="users" element={<NodeManagement />} />
+            <Route path="history" element={<SecurityProtocols />} />
+            <Route path="merit" element={<AdminPerformance />} />
+            <Route path="analytics" element={<AnalyticsDashboard />} />
+            <Route path="settings/system" element={<SystemSettings />} />
+            <Route path="settings/credits" element={<CreditSettings />} />
+            <Route path="settings/storage" element={<StorageSettings />} />
+            <Route path="settings/database" element={<DatabaseSettings />} />
+            <Route path="settings/external-apis" element={<ExternalApiManager />} />
+            <Route path="settings/recruitment" element={<RecruitmentAdmin />} />
+          </Route>
 
-        <Route path="/author" element={<ProtectedRoute allowedRoles={['author', 'super_admin', 'admin']}><PortalLayout role="AUTHOR" /></ProtectedRoute>}>
-          <Route index element={<AuthorOverview />} />
-          <Route path="new" element={<CreateArticle />} />
-          <Route path="performance" element={<AuthorPerformance />} />
-          <Route path="merit" element={<PerformanceDashboard />} />
-        </Route>
+          <Route path="/author" element={<ProtectedRoute allowedRoles={['author', 'super_admin', 'admin']}><PortalLayout role="AUTHOR" /></ProtectedRoute>}>
+            <Route index element={<AuthorOverview />} />
+            <Route path="new" element={<CreateArticle />} />
+            <Route path="performance" element={<AuthorPerformance />} />
+            <Route path="merit" element={<PerformanceDashboard />} />
+          </Route>
 
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </>
   );
 }
@@ -171,6 +194,11 @@ function AppContent() {
 const HomeWithLog = () => { console.log("[RENDER] Home"); return <Home />; };
 const AboutWithLog = () => { console.log("[RENDER] About"); return <About />; };
 const ContactWithLog = () => { console.log("[RENDER] Contact"); return <Contact />; };
+const CareersWithLog = () => { console.log("[RENDER] Careers"); return <Careers />; };
+const AdvertiseWithLog = () => { console.log("[RENDER] Advertise"); return <Advertise />; };
+const PrivacyPolicyWithLog = () => { console.log("[RENDER] PrivacyPolicy"); return <PrivacyPolicy />; };
+const EditorialPolicyWithLog = () => { console.log("[RENDER] EditorialPolicy"); return <EditorialPolicy />; };
+const TermsConditionsWithLog = () => { console.log("[RENDER] TermsConditions"); return <TermsConditions />; };
 const ArticleViewWithLog = () => { console.log("[RENDER] ArticleView"); return <ArticleView />; };
 const CategoryPageWithLog = () => { console.log("[RENDER] CategoryPage"); return <CategoryPage />; };
 const WeatherDashboardWithLog = () => { console.log("[RENDER] WeatherDashboard"); return <Suspense fallback={<div className="min-h-screen bg-[var(--background-deep)] flex items-center justify-center text-xs font-black uppercase text-[var(--text-secondary)] tracking-widest animate-pulse">Loading Weather...</div>}><WeatherDashboard /></Suspense>; };

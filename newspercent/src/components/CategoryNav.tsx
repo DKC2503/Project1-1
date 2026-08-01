@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useRef, useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '../lib/utils';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const navLinks = [
   { name: 'National', href: '/category/national' },
@@ -21,35 +20,40 @@ const navLinks = [
 ];
 
 const CategoryNav: React.FC = () => {
-  const [showLeftArrow, setShowLeftArrow] = useState(false);
-  const [showRightArrow, setShowRightArrow] = useState(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
 
-  const updateScrollButtons = () => {
+  const checkScroll = () => {
     if (scrollContainerRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
-      setShowLeftArrow(scrollLeft > 10);
-      setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10);
+      // Using a small tolerance (1.5px) for subpixel layout values
+      setCanScrollLeft(scrollLeft > 1.5);
+      setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 1.5);
     }
   };
 
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (container) {
-      container.addEventListener('scroll', updateScrollButtons);
-      window.addEventListener('resize', updateScrollButtons);
-      updateScrollButtons();
+      checkScroll();
+      container.addEventListener('scroll', checkScroll);
+      window.addEventListener('resize', checkScroll);
+      
+      // Also check scroll after a short delay to account for fonts/layout loading
+      const timer = setTimeout(checkScroll, 100);
       return () => {
-        container.removeEventListener('scroll', updateScrollButtons);
-        window.removeEventListener('resize', updateScrollButtons);
+        container.removeEventListener('scroll', checkScroll);
+        window.removeEventListener('resize', checkScroll);
+        clearTimeout(timer);
       };
     }
   }, []);
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
-      const scrollAmount = 300;
+      const scrollAmount = 240;
       scrollContainerRef.current.scrollBy({
         left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth'
@@ -59,26 +63,24 @@ const CategoryNav: React.FC = () => {
 
   return (
     <nav className="w-full bg-[var(--background-deep)] border-b border-[var(--glass-border)] py-4 sticky top-0 z-40">
-      <div className="max-w-[1600px] mx-auto px-8 relative flex items-center">
-        {/* Left Scroll Button */}
-        <AnimatePresence>
-          {showLeftArrow && (
-            <motion.button
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              onClick={() => scroll('left')}
-              className="absolute left-4 z-20 p-2 bg-[var(--background-deep)] border border-[var(--glass-border)] rounded-full text-primary hover:bg-primary hover:text-white transition-all shadow-lg"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </motion.button>
+      <div className="max-w-[1600px] mx-auto relative flex items-center px-12">
+        {/* Left Arrow Button */}
+        <button
+          onClick={() => scroll('left')}
+          className={cn(
+            "absolute left-2 p-2 text-[var(--text-primary)] hover:text-primary transition-all duration-300 z-10 hover:bg-[var(--surface-hover)] rounded-full cursor-pointer flex items-center justify-center",
+            !canScrollLeft && "opacity-20 cursor-not-allowed hover:bg-transparent hover:text-[var(--text-secondary)]"
           )}
-        </AnimatePresence>
+          disabled={!canScrollLeft}
+          title="Scroll Left"
+        >
+          <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+        </button>
 
         {/* Scrollable Container */}
         <div 
           ref={scrollContainerRef}
-          className="flex items-center gap-2 overflow-x-auto whitespace-nowrap scroll-smooth no-scrollbar w-full px-4"
+          className="flex items-center gap-2 overflow-x-auto whitespace-nowrap scroll-smooth no-scrollbar w-full py-1"
         >
           {navLinks.map((link) => (
             <Link
@@ -96,20 +98,18 @@ const CategoryNav: React.FC = () => {
           ))}
         </div>
 
-        {/* Right Scroll Button */}
-        <AnimatePresence>
-          {showRightArrow && (
-            <motion.button
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 10 }}
-              onClick={() => scroll('right')}
-              className="absolute right-4 z-20 p-2 bg-[var(--background-deep)] border border-[var(--glass-border)] rounded-full text-primary hover:bg-primary hover:text-white transition-all shadow-lg"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </motion.button>
+        {/* Right Arrow Button */}
+        <button
+          onClick={() => scroll('right')}
+          className={cn(
+            "absolute right-2 p-2 text-[var(--text-primary)] hover:text-primary transition-all duration-300 z-10 hover:bg-[var(--surface-hover)] rounded-full cursor-pointer flex items-center justify-center",
+            !canScrollRight && "opacity-20 cursor-not-allowed hover:bg-transparent hover:text-[var(--text-secondary)]"
           )}
-        </AnimatePresence>
+          disabled={!canScrollRight}
+          title="Scroll Right"
+        >
+          <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+        </button>
       </div>
     </nav>
   );

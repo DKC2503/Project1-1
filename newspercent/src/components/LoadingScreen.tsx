@@ -1,27 +1,38 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '../lib/utils';
 
 // Separate asset reference for the loading screen logo
 const LOADING_LOGO = '/logo.webp';
 
-const LoadingScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
+interface LoadingScreenProps {
+  onComplete: () => void;
+  subtext?: string;
+}
+
+const LoadingScreen: React.FC<LoadingScreenProps> = ({ onComplete, subtext }) => {
   const isPortalRoute = typeof window !== 'undefined' && (window.location.pathname.startsWith('/admin') || window.location.pathname.startsWith('/author'));
   const isLight = !isPortalRoute || document.documentElement.classList.contains('light');
 
   console.log("[LOADING] Rendering LoadingScreen. isLight:", isLight);
 
+  const onCompleteRef = useRef(onComplete);
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+
   useEffect(() => {
     console.log("[LOADING] Effect started, timer set for 2s");
     const timer = setTimeout(() => {
       console.log("[LOADING] Timer completed, calling onComplete");
-      onComplete();
+      onCompleteRef.current();
     }, 2000);
     return () => {
       console.log("[LOADING] Effect cleanup, timer cleared");
       clearTimeout(timer);
     };
-  }, [onComplete]);
+  }, []);
 
   return (
     <motion.div
@@ -110,7 +121,7 @@ const LoadingScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
               isLight ? "text-[#4A4A4A]" : "text-[#F5D76E]/90"
             )}
           >
-            South India's First Youth-Led Digital News Network
+            {subtext || "South India's First Youth-Led Digital News Network"}
           </motion.span>
         </div>
       </motion.div>

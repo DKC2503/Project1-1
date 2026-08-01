@@ -86,10 +86,14 @@ const HeroSection: React.FC = () => {
               {/* Header Overlay */}
               <div className="absolute top-0 left-0 right-0 p-6 sm:p-12 z-20 pointer-events-none">
                   <div className="flex items-center gap-3">
-                     <div className="w-2 h-2 bg-primary rounded-full animate-pulse shadow-[0_0_10px_rgba(255,59,48,0.8)]" />
+                     {(featured.isMainBreaking || featured.isBigBreaking || featured.isBreakingNews) && (
+                       <div className="w-2 h-2 bg-primary rounded-full animate-pulse shadow-[0_0_10px_rgba(255,59,48,0.8)]" />
+                     )}
                      <span className="text-[10px] font-black text-white uppercase tracking-[0.4em]">
-                       {featured.isMainBreaking ? '⚡ Main Breaking' : featured.isBigBreaking ? 'Big Breaking Transmission' : 'Featured Briefing'}
-                     </span>
+                       {featured.isMainBreaking || featured.isBigBreaking || featured.isBreakingNews
+                         ? `BREAKING NEWS • ${featured.category}` 
+                         : `Featured Briefing • ${featured.category}`}
+                      </span>
                   </div>
               </div>
 
@@ -116,12 +120,6 @@ const HeroSection: React.FC = () => {
                   </span>
                   <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-white/60">
                     {featured.publishDate}
-                  </span>
-                  <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-white/60">
-                    •
-                  </span>
-                  <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-white/60">
-                    {featured.readingTime || '6m Read'}
                   </span>
                 </div>
                 
@@ -172,7 +170,15 @@ const HeroSection: React.FC = () => {
                   {/* Content */}
                   <div className="flex-1 min-w-0 flex flex-col justify-between h-full py-0.5">
                     <div className="flex justify-between items-center gap-2">
-                      <span className="text-[9px] font-black text-primary uppercase tracking-widest truncate">{article.category}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="px-1.5 py-0.5 bg-red-600 text-white text-[8px] font-black tracking-widest uppercase rounded flex items-center gap-1 shadow-sm">
+                          <span className="w-1 h-1 bg-white rounded-full animate-pulse" />
+                          Breaking
+                        </span>
+                        <span className="text-[9px] font-black text-primary uppercase tracking-widest truncate">
+                          {article.category}
+                        </span>
+                      </div>
                       <div className="flex items-center gap-1.5 flex-shrink-0">
                          <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
                          <span className="text-[8px] font-black text-green-400 uppercase tracking-widest">Online</span>
@@ -183,8 +189,6 @@ const HeroSection: React.FC = () => {
                     </h4>
                     <div className="flex items-center gap-2 text-[8px] font-bold text-white/40 uppercase tracking-widest mt-1.5">
                       <span>{article.publishDate}</span>
-                      <span>•</span>
-                      <span>{article.readingTime || '6m Read'}</span>
                     </div>
                   </div>
                 </Link>
