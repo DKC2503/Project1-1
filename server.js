@@ -2928,17 +2928,16 @@ app.get('/article/:slugOrId', async (req, res, next) => {
             article = await Article.findOne({ slug: slugOrId });
         }
         
+        if (!article || article.status !== 'PUBLISHED') {
+            return next(); // Article not found or not published -> Pass to SPA fallback
+        }
+
         const indexPath = path.join(__dirname, 'newspercent', 'dist', 'index.html');
         if (!fs.existsSync(indexPath)) {
             return next(); // Fallback to SPA routing
         }
         
         let html = fs.readFileSync(indexPath, 'utf8');
-        
-        if (!article || article.status !== 'PUBLISHED') {
-            // Send default index.html if article not found or not published
-            return res.send(html);
-        }
         
         const title = article.seoTitle || `${article.title} | NewsPercent`;
         const description = article.metaDescription || article.subtitle || '';
@@ -2998,7 +2997,7 @@ app.get('/article/:slugOrId', async (req, res, next) => {
         res.send(html);
     } catch (err) {
         console.error('[SEO INJECTION ERROR]:', err);
-        next();
+        return next();
     }
 });
 
