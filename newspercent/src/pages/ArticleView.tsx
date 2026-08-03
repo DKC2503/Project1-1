@@ -11,7 +11,6 @@ import ShareButton from '../components/ShareButton';
 import { useAnalytics } from '../hooks/useAnalytics';
 import ArticleLoader from '../components/ArticleLoader';
 import { useToastStore } from '../hooks/useToastStore';
-import { useThemeStore } from '../hooks/useThemeStore';
 import { cn } from '../lib/utils';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { MobileArticleView } from '../components/mobile/MobileArticleView';
@@ -27,8 +26,7 @@ const ArticleView: React.FC = () => {
   const [likesCount, setLikesCount] = useState(0);
   const [likeLoading, setLikeLoading] = useState(false);
   const { addToast } = useToastStore();
-  const { theme } = useThemeStore();
-  const isLight = theme === 'light';
+  const isLight = !document.documentElement.classList.contains('dark');
 
   useAnalytics(id, article?.category);
 

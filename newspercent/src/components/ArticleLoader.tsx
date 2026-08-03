@@ -9,13 +9,10 @@ const MESSAGES = [
   'Opening News Report...'
 ];
 
-import { useThemeStore } from '../hooks/useThemeStore';
-
 const LOADING_LOGO = '/logo.webp';
 
 const ArticleLoader: React.FC = () => {
-  const { theme } = useThemeStore();
-  const isLight = theme === 'light';
+  const isLight = !document.documentElement.classList.contains('dark');
   const [message, setMessage] = useState('');
 
   useEffect(() => {

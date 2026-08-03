@@ -15,7 +15,6 @@ import { cn } from '../../lib/utils';
 import api from '../../config/api';
 import { useAuthStore } from '../../hooks/useAuthStore';
 import { useToastStore } from '../../hooks/useToastStore';
-import { useThemeStore } from '../../hooks/useThemeStore';
 
 // Mobile layout components
 import { lazy, Suspense } from 'react';
@@ -33,8 +32,7 @@ export const MobileArticleView: React.FC<MobileArticleViewProps> = ({ article, o
   const navigate = useNavigate();
   const { user, token, logout } = useAuthStore();
   const { addToast } = useToastStore();
-  const { theme } = useThemeStore();
-  const isLight = theme === 'light';
+  const isLight = !document.documentElement.classList.contains('dark');
 
   const [isLiked, setIsLiked] = useState(() => {
     const likedList = JSON.parse(localStorage.getItem('liked_articles') || '[]');
