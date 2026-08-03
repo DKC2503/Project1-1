@@ -37,6 +37,7 @@ const AdminPerformance = lazy(() => import('./pages/AdminPerformance'));
 const AnalyticsDashboard = lazy(() => import('./pages/AnalyticsDashboard'));
 const FlashNewsControl = lazy(() => import('./pages/FlashNewsControl'));
 
+import { useThemeStore } from './hooks/useThemeStore';
 import ToastContainer from './components/ToastContainer';
 import LoadingScreen from './components/LoadingScreen';
 const GlobalDialogProvider = lazy(() => import('./components/ui/GlobalDialogProvider'));
@@ -104,6 +105,7 @@ let wasPortal = false;
 function AppContent() {
   const location = useLocation();
   const { settings } = useSystemSettingsStore();
+  const { theme } = useThemeStore();
   console.log("[ROUTER] Current Route:", location.pathname);
 
   useEffect(() => {
@@ -118,10 +120,10 @@ function AppContent() {
       document.documentElement.classList.toggle('dark', savedTheme === 'dark');
     } else {
       wasPortal = false;
-      document.documentElement.classList.remove('dark');
-      document.documentElement.classList.add('light');
+      document.documentElement.classList.toggle('light', theme === 'light');
+      document.documentElement.classList.toggle('dark', theme === 'dark');
     }
-  }, [location.pathname]);
+  }, [location.pathname, theme]);
 
   return (
     <>

@@ -34,7 +34,7 @@ const AuthorOverview: React.FC = () => {
       setLoading(true);
       setError(null);
       const res = await api.get('/api/my-articles');
-      setArticles(res.data);
+      setArticles(res.data ?? []);
 
       try {
         const creditsRes = await api.get('/api/credits/me');

@@ -20,7 +20,7 @@ interface GrowthChartProps {
 export const PopulationGrowthChart: React.FC<GrowthChartProps> = ({ data, range }) => {
   // Filter data based on selected year range
   const currentYear = 2026;
-  const filteredData = data.filter(d => d.year >= currentYear - range);
+  const filteredData = (data ?? []).filter(d => d.year >= currentYear - range);
 
   // Format population labels (e.g. 8.1B)
   const formatYAxis = (tick: number) => {
@@ -32,9 +32,9 @@ export const PopulationGrowthChart: React.FC<GrowthChartProps> = ({ data, range 
       const dataPoint = payload[0].payload;
       
       // Calculate growth compared to previous year in data
-      const idx = data.findIndex(d => d.year === dataPoint.year);
+      const idx = (data ?? []).findIndex(d => d.year === dataPoint.year);
       let growthText = '--';
-      if (idx > 0) {
+      if (idx > 0 && data && data[idx - 1]) {
         const prevPop = data[idx - 1].population;
         const diff = dataPoint.population - prevPop;
         const pct = (diff / prevPop) * 100;
@@ -173,13 +173,15 @@ export const GenderDonutChart: React.FC<GenderChartProps> = ({ data }) => {
     return null;
   };
 
+  const chartData = data ?? [];
+
   return (
     <div className="w-full h-64 flex flex-col items-center justify-center">
       {/* Container with relative for absolute centered label */}
       <div className="relative flex items-center justify-center w-[200px] h-[200px] mb-4">
         <PieChart width={200} height={200}>
           <Pie
-            data={data}
+            data={chartData}
             cx="50%"
             cy="50%"
             innerRadius={60}
@@ -187,7 +189,7 @@ export const GenderDonutChart: React.FC<GenderChartProps> = ({ data }) => {
             paddingAngle={3}
             dataKey="value"
           >
-            {data.map((_, index) => (
+            {chartData.map((_, index) => (
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>
@@ -202,7 +204,7 @@ export const GenderDonutChart: React.FC<GenderChartProps> = ({ data }) => {
       </div>
 
       <div className="flex gap-8 text-[10px] font-bold uppercase tracking-wider mt-2">
-        {data.map((item, idx) => (
+        {chartData.map((item, idx) => (
           <div key={item.name} className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[idx] }} />
             <span className="text-[var(--text-secondary)]">{item.name}</span>
@@ -240,10 +242,12 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ data }) => {
     return null;
   };
 
+  const chartData = data ?? [];
+
   return (
     <div className="w-full h-72">
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+        <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
           <defs>
             <linearGradient id="projectionGrad" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.2}/>

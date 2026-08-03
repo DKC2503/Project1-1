@@ -104,7 +104,7 @@ const TeamManagement: React.FC = () => {
       setLoading(true);
       setError(null);
       const res = await api.get('/api/admin/users');
-      setUsers(res.data);
+      setUsers(res.data ?? []);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Intelligence network access denied. Systems non-responsive.');
     } finally {

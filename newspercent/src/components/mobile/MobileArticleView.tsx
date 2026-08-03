@@ -15,6 +15,7 @@ import { cn } from '../../lib/utils';
 import api from '../../config/api';
 import { useAuthStore } from '../../hooks/useAuthStore';
 import { useToastStore } from '../../hooks/useToastStore';
+import { useThemeStore } from '../../hooks/useThemeStore';
 
 // Mobile layout components
 import { lazy, Suspense } from 'react';
@@ -32,6 +33,8 @@ export const MobileArticleView: React.FC<MobileArticleViewProps> = ({ article, o
   const navigate = useNavigate();
   const { user, token, logout } = useAuthStore();
   const { addToast } = useToastStore();
+  const { theme } = useThemeStore();
+  const isLight = theme === 'light';
 
   const [isLiked, setIsLiked] = useState(() => {
     const likedList = JSON.parse(localStorage.getItem('liked_articles') || '[]');
@@ -159,26 +162,42 @@ export const MobileArticleView: React.FC<MobileArticleViewProps> = ({ article, o
         </div>
 
         {/* Premium Engagement Bar */}
-        <div className="flex flex-row items-center justify-center gap-3 p-4 rounded-xl bg-white border border-[#DADADA] shadow-sm">
+        <div 
+          className={cn(
+            "flex flex-row items-center justify-center gap-3 p-4 rounded-xl transition-all duration-300",
+            isLight 
+              ? "bg-white border border-[#DADADA] shadow-sm"
+              : "bg-[var(--card-bg)] border border-[var(--glass-border)] shadow-[var(--card-shadow)]"
+          )}
+        >
           <button 
             onClick={handleLike}
             disabled={likeLoading}
             className={cn(
               "flex-1 py-3 border rounded-lg transition-all duration-300 flex items-center justify-center gap-2.5 font-black uppercase text-[9px] tracking-widest cursor-pointer",
-              isLiked 
-                ? "bg-[#FFEBE5] border-[#FF5722]/30 text-[#FF5722]"
-                : "bg-white border-[#DADADA] text-[#111111]"
+              isLight
+                ? isLiked 
+                  ? "bg-[#FFEBE5] border-[#FF5722]/30 text-[#FF5722]"
+                  : "bg-white border-[#DADADA] text-[#111111]"
+                : isLiked
+                  ? "bg-red-500/10 border-red-500/30 text-red-500 hover:bg-red-500/20"
+                  : "bg-[var(--surface-hover)] border-[var(--glass-border)] text-[var(--text-primary)] hover:bg-primary/5 hover:border-primary/40 hover:text-primary"
             )}
             aria-label={isLiked ? `Unlike this article. Total likes: ${likesCount}` : `Like this article. Total likes: ${likesCount}`}
           >
             <span>{isLiked ? 'LIKED' : 'LIKE'}</span>
           </button>
-
+ 
           <ShareButton 
             articleId={article._id} 
             title={article.title} 
             shares={article.shares} 
-            className="flex-1 py-3 border rounded-lg text-[9px]"
+            className={cn(
+              "flex-1 py-3 border rounded-lg text-[9px]",
+              isLight
+                ? "bg-white border-[#DADADA] text-[#111111]"
+                : "bg-[var(--surface-hover)] border-[var(--glass-border)] text-[var(--text-primary)] hover:bg-primary/5 hover:border-primary/40"
+            )}
           />
         </div>
       </main>

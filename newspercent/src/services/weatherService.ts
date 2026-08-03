@@ -55,6 +55,8 @@ export const fetchWeather = async (lat?: number, lon?: number, query?: string): 
     if (res.data && res.data.success) {
       return {
         ...res.data.data,
+        weekly: res.data.data?.weekly ?? [],
+        hourly: res.data.data?.hourly ?? [],
         source: res.data.source,
         message: res.data.message
       };

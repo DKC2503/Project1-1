@@ -15,7 +15,7 @@ import { useToastStore } from '../hooks/useToastStore';
 import { cn } from '../lib/utils';
 
 const AdminPerformance: React.FC = () => {
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<any>({ totalCredits: 0, activeContributors: 0, topPerformer: 'N/A' });
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -33,7 +33,7 @@ const AdminPerformance: React.FC = () => {
       ]);
 
       // Sort users by totalCredits for ranking
-      const sortedUsers = [...uRes.data].sort((a, b) => (b.totalCredits || 0) - (a.totalCredits || 0));
+      const sortedUsers = [...(uRes.data ?? [])].sort((a, b) => (b.totalCredits || 0) - (a.totalCredits || 0));
       setUsers(sortedUsers);
 
       // Calculate simple stats from user list

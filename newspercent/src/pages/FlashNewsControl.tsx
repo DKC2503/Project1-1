@@ -27,7 +27,7 @@ const FlashNewsControl: React.FC = () => {
         try {
             setLoading(true);
             const res = await api.get('/api/admin/flash');
-            setFlashItems(res.data);
+            setFlashItems(res.data ?? []);
         } catch (err) {
             addToast('error', 'UPLINK FAILED', 'Could not retrieve live flash feed.');
         } finally {

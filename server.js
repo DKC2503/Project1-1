@@ -899,8 +899,8 @@ app.get('/api/breaking/main', async (req, res) => {
 // GET /api/breaking/categories
 app.get('/api/breaking/categories', async (req, res) => {
     try {
-        const categoriesList = ["Technology", "Business", "Politics", "Sports", "Entertainment", "Science", "Health", "Education"];
-        
+        const categoriesList = ["Technology", "Business", "Politics", "Sports", "Entertainment", "Science", "Health", "Education", "National", "Global", "Automobile", "Lifestyle", "Movies", "Startups", "Studies", "Case Studies", "Breaking"];
+        const Article = require('./models/Article');
         // Find articles that have isBreakingNews: true OR have isCategoryBreaking assigned (any non-null value)
         const articles = await Article.find({
             $or: [
@@ -1036,7 +1036,7 @@ app.put('/api/admin/breaking/category/:articleId', verifyToken, requireAdmin, as
         const { articleId } = req.params;
         const { category } = req.body;
 
-        const categoriesList = ["Technology", "Business", "Politics", "Sports", "Entertainment", "Science", "Health", "Education"];
+        const categoriesList = ["Technology", "Business", "Politics", "Sports", "Entertainment", "Science", "Health", "Education", "National", "Global", "Automobile", "Lifestyle", "Movies", "Startups", "Studies", "Case Studies", "Breaking"];
         if (!categoriesList.includes(category)) {
             return res.status(400).json({ error: 'Invalid category for Category Breaking News' });
         }
@@ -3036,6 +3036,17 @@ app.get('/article/:slugOrId', async (req, res, next) => {
     }
 });
 
+// Serve category views (fallback to SPA index.html)
+app.get('/category/:slug', (req, res, next) => {
+    const fs = require('fs');
+    const path = require('path');
+    const indexPath = path.join(activeDistDir, 'index.html');
+    if (fs.existsSync(indexPath)) {
+        return res.sendFile(indexPath);
+    }
+    return next();
+});
+
 // SPA fallback route for React frontend routes (excludes /api/*)
 app.use((req, res, next) => {
     if (req.method !== 'GET' || req.path.startsWith('/api')) {
@@ -3106,14 +3117,14 @@ const startServer = async () => {
         
         // 1. Connect to Database (wait for it)
         await connectDB();
-
+ 
         // Load settings during application startup
         console.log('[SYS] Loading system settings...');
         await settingsService.getSettings();
         
         // 2. Initialize Super Admin
         await initializeSuperAdmin();
-
+ 
         // 3. Analytics Archival Check (Run once on startup)
         console.log('[SYS] Checking for analytics archival...');
         const analyticsService = require('./services/analyticsService');

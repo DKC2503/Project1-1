@@ -64,7 +64,7 @@ const ContentEngine: React.FC = () => {
       // Admins fetch all articles, authors fetch their own
       const endpoint = isAdmin ? '/api/articles' : '/api/my-articles';
       const res = await api.get(endpoint);
-      setArticles(res.data);
+      setArticles(res.data ?? []);
     } catch (err: any) {
       const isNetworkError = !err.response;
       const status = err.response?.status || 'N/A';
@@ -126,7 +126,7 @@ const ContentEngine: React.FC = () => {
         addToast('error', 'DENIED', 'Document export is disabled.');
         return;
      }
-     const selected = articles.filter(a => selectedIds.includes(a._id));
+     const selected = (articles ?? []).filter(a => selectedIds.includes(a._id));
      for (const art of selected) {
         await creditService.exportArticle(art._id, art.title);
      }
@@ -215,12 +215,12 @@ const ContentEngine: React.FC = () => {
     }
   };
 
-  const filteredArticles = articles.filter(a => 
-    a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    a.authorName.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredArticles = (articles ?? []).filter(a => 
+    a?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    a?.authorName?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  if (loading && articles.length === 0) {
+  if (loading && (articles ?? []).length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
         <Loader2 className="w-10 h-10 text-primary animate-spin" />

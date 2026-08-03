@@ -34,8 +34,8 @@ const PerformanceDashboard: React.FC = () => {
           user ? creditService.getHistory(user._id) : []
         ]);
         setProfile(prof);
-        setLeaderboard(lead);
-        setHistory(hist as any);
+        setLeaderboard(lead ?? []);
+        setHistory((hist ?? []) as any);
       } catch (err) {
         console.error('Performance Data Error:', err);
       } finally {
@@ -53,6 +53,9 @@ const PerformanceDashboard: React.FC = () => {
       </div>
     );
   }
+
+  const badgeList = profile?.badges ?? [];
+  const achievementList = profile?.achievements ?? [];
 
   return (
     <div className="space-y-12 pb-20 font-manrope">
@@ -77,7 +80,7 @@ const PerformanceDashboard: React.FC = () => {
            </div>
         </div>
       </header>
-
+ 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
          <StatCard 
@@ -109,7 +112,7 @@ const PerformanceDashboard: React.FC = () => {
           color="orange"
          />
       </div>
-
+ 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
         {/* Left Side: Badges & Profile */}
         <div className="lg:col-span-4 space-y-10">
@@ -119,7 +122,7 @@ const PerformanceDashboard: React.FC = () => {
               </h3>
               
               <div className="flex flex-wrap gap-4">
-                 {profile?.badges.length ? profile.badges.map(badge => (
+                 {badgeList.length ? badgeList.map(badge => (
                    <div key={badge} className="px-4 py-2 bg-[var(--surface-hover)] border border-[var(--glass-border)] rounded-xl flex items-center gap-2 group hover:border-primary/40 transition-all cursor-default">
                        <Star className="w-3 h-3 text-primary" />
                        <span className="text-[9px] font-bold text-[var(--text-primary)] uppercase tracking-wider">{badge}</span>
@@ -129,14 +132,14 @@ const PerformanceDashboard: React.FC = () => {
                  )}
               </div>
            </div>
-
+ 
            <div className="liquid-glass p-8 rounded-[3rem] border-[var(--glass-border)]">
               <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-8 flex items-center gap-2">
                  <History className="w-4 h-4" /> Latest Achievements
               </h3>
               
               <div className="space-y-4">
-                 {profile?.achievements.slice(-5).reverse().map((ach, i) => (
+                 {achievementList.slice(-5).reverse().map((ach, i) => (
                    <div key={i} className="flex gap-4 p-4 bg-[var(--surface-hover)] rounded-2xl border border-[var(--glass-border)]">
                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                           <Star className="w-3 h-3 text-primary" />

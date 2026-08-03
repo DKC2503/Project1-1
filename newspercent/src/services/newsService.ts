@@ -49,7 +49,7 @@ const mapArticle = (article: any): NewsArticle => {
 export const fetchNews = async (category?: string): Promise<NewsArticle[]> => {
   try {
     const res = await api.get('/api/news');
-    const rawData = res.data as any[];
+    const rawData = (res.data ?? []) as any[];
     
     const mappedData = rawData.map(mapArticle) as NewsArticle[];
     
