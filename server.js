@@ -818,7 +818,15 @@ app.get('/api/articles/:id', async (req, res) => {
 
 app.post('/api/articles/:id/share', async (req, res) => {
     try {
-        const article = await Article.findById(req.params.id);
+        const idOrSlug = req.params.id;
+        let article = null;
+        if (mongoose.Types.ObjectId.isValid(idOrSlug)) {
+            article = await Article.findById(idOrSlug);
+        }
+        if (!article) {
+            article = await Article.findOne({ slug: idOrSlug });
+        }
+
         if (!article) return res.status(404).json({ error: 'Article not found' });
         
         article.shares += 1;
@@ -840,7 +848,20 @@ app.post('/api/articles/:id/share', async (req, res) => {
 // LIKE ARTICLE
 app.post('/api/articles/:id/like', async (req, res) => {
     try {
-        const article = await Article.findById(req.params.id);
+        const idOrSlug = req.params.id;
+        let article = null;
+        if (mongoose.Types.ObjectId.isValid(idOrSlug)) {
+            article = await Article.findById(idOrSlug);
+        }
+        if (!article) {
+            article = await Article.findOne({ slug: idOrSlug });
+        }
+
+        // Temporary logging for audit
+        console.log('[LIKE ARTICLE] req.params.id:', idOrSlug);
+        console.log('[LIKE ARTICLE] req.user:', req.user ? { _id: req.user._id, role: req.user.role } : null);
+        console.log('[LIKE ARTICLE] article:', article ? { _id: article._id, title: article.title, category: article.category } : null);
+
         if (!article) return res.status(404).json({ error: 'Article not found' });
         
         article.likes += 1;
@@ -855,14 +876,35 @@ app.post('/api/articles/:id/like', async (req, res) => {
         
         res.json({ success: true, likes: article.likes });
     } catch (err) {
-        handleError(res, err, 'Like Article Error');
+        console.error('[LIKE ARTICLE EXCEPTION STACK]:', err);
+        if (err.stack) {
+            console.error(err.stack);
+        }
+        res.status(500).json({ 
+            error: 'Like Article Error', 
+            details: err.message,
+            stack: err.stack 
+        });
     }
 });
 
 // UNLIKE ARTICLE
 app.delete('/api/articles/:id/like', async (req, res) => {
     try {
-        const article = await Article.findById(req.params.id);
+        const idOrSlug = req.params.id;
+        let article = null;
+        if (mongoose.Types.ObjectId.isValid(idOrSlug)) {
+            article = await Article.findById(idOrSlug);
+        }
+        if (!article) {
+            article = await Article.findOne({ slug: idOrSlug });
+        }
+
+        // Temporary logging for audit
+        console.log('[UNLIKE ARTICLE] req.params.id:', idOrSlug);
+        console.log('[UNLIKE ARTICLE] req.user:', req.user ? { _id: req.user._id, role: req.user.role } : null);
+        console.log('[UNLIKE ARTICLE] article:', article ? { _id: article._id, title: article.title, category: article.category } : null);
+
         if (!article) return res.status(404).json({ error: 'Article not found' });
         
         article.likes = Math.max(0, article.likes - 1);
@@ -877,7 +919,15 @@ app.delete('/api/articles/:id/like', async (req, res) => {
         
         res.json({ success: true, likes: article.likes });
     } catch (err) {
-        handleError(res, err, 'Unlike Article Error');
+        console.error('[UNLIKE ARTICLE EXCEPTION STACK]:', err);
+        if (err.stack) {
+            console.error(err.stack);
+        }
+        res.status(500).json({ 
+            error: 'Unlike Article Error', 
+            details: err.message,
+            stack: err.stack 
+        });
     }
 });
 
