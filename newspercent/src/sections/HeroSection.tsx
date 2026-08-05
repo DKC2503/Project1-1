@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { fetchNews, fetchMainBreaking, fetchBigBreaking, type NewsArticle } from '../services/newsService';
+import { fetchMainBreaking, fetchCategoryBreaking, type NewsArticle } from '../services/newsService';
 import { Link } from 'react-router-dom';
 import SocialSidebar from '../components/SocialSidebar';
 import { AlertTriangle, Loader2 } from 'lucide-react';
@@ -15,24 +15,24 @@ const MainBreakingFallback: React.FC = () => (
 );
 
 const HeroSection: React.FC = () => {
-  const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [mainBreaking, setMainBreaking] = useState<NewsArticle | null>(null);
-  const [bigBreaking, setBigBreaking] = useState<NewsArticle | null>(null);
+  const [categoryBreaking, setCategoryBreaking] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
-        // Fetch news, main breaking, and big breaking concurrently
-        const [newsData, mainData, bigData] = await Promise.all([
-          fetchNews(),
+        // Fetch main breaking and category breaking concurrently
+        const [mainData, categoryData] = await Promise.all([
           fetchMainBreaking(),
-          fetchBigBreaking()
+          fetchCategoryBreaking()
         ]);
-        setArticles(newsData);
         setMainBreaking(mainData);
-        setBigBreaking(bigData);
+        
+        // Extract non-null category breaking articles
+        const catArticles = Object.values(categoryData).filter((a): a is NewsArticle => a !== null);
+        setCategoryBreaking(catArticles);
       } catch (err) {
         console.error('Hero Load Error:', err);
       } finally {
@@ -61,13 +61,8 @@ const HeroSection: React.FC = () => {
     );
   }
 
-  // Determine what to display for the main banner.
-  // Prioritize the Main Breaking article if it exists,
-  // then the Big Breaking article if it exists,
-  // otherwise fall back to the first general article.
-  const featured = mainBreaking || bigBreaking || (articles.length > 0 ? articles[0] : null);
-
-  const breakingNewsFeed = articles.filter(a => a.isBreakingNews || a.isMainBreaking || a.isBigBreaking);
+  // Ensure the main hero displays only the active, valid Main Breaking article
+  const featured = mainBreaking;
 
   return (
     <section className="w-full max-w-[1600px] mx-auto px-4 sm:px-8 py-6 sm:py-12">
@@ -142,16 +137,16 @@ const HeroSection: React.FC = () => {
           )}
         </div>
 
-        {/* Right Side: Breaking News Feed (30% width) */}
+        {/* Right Side: Category Breaking News (30% width) */}
         <div className="w-full lg:w-[30%] flex flex-col">
           <div className="w-full mb-3 flex items-center justify-between border-b border-white/5 pb-2">
-            <span className="text-[10px] font-black text-white uppercase tracking-[0.3em]">Breaking News Feed</span>
+            <span className="text-[10px] font-black text-white uppercase tracking-[0.3em]">Category Breaking News</span>
             <div className="w-1.5 h-1.5 bg-primary rounded-full animate-ping" />
           </div>
           
           <div className="w-full flex-1 grid grid-cols-1 md:grid-cols-2 lg:flex lg:flex-col gap-3 lg:max-h-[460px] lg:overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent pr-1">
-            {breakingNewsFeed.length > 0 ? (
-              breakingNewsFeed.map(article => (
+            {categoryBreaking.length > 0 ? (
+              categoryBreaking.map(article => (
                 <Link 
                   key={article.id} 
                   to={`/article/${article.id}`} 
@@ -195,7 +190,7 @@ const HeroSection: React.FC = () => {
               ))
             ) : (
               <div className="text-center py-8 text-[10px] text-white/30 uppercase font-black tracking-widest">
-                No active breaking stories
+                No active category breaking stories
               </div>
             )}
           </div>

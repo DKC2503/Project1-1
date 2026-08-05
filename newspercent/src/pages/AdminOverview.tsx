@@ -64,15 +64,15 @@ const AdminOverview: React.FC = () => {
         api.get('/api/admin/external-apis/health')
       ]);
       
-      setStats(statsRes.data);
-      setArticles(articlesRes.data);
-      setSecurityStats(secStatsRes.data);
-      setRecentLogins(loginsRes.data.logs || []);
-      setSysSettings(settingsRes.data);
-      setCreditProfile(creditsRes.data);
+      setStats(statsRes.data || { totalArticles: 0, totalViews: 0, pendingReviews: 0, activeAuthors: 0, totalCredits: 0 });
+      setArticles(articlesRes.data ?? []);
+      setSecurityStats(secStatsRes.data || { totalLogins: 0, failedAttempts: 0, activeSessions: 0 });
+      setRecentLogins(loginsRes.data?.logs || []);
+      setSysSettings(settingsRes.data || {});
+      setCreditProfile(creditsRes.data || { totalCredits: 0 });
       setCreditHistory(historyRes.data || []);
-      setCurrentBigBreaking(bigBreakingRes.data.article);
-      setApiHealth(healthRes.data);
+      setCurrentBigBreaking(bigBreakingRes.data?.article || null);
+      setApiHealth(healthRes.data || {});
     } catch (err: any) {
       console.error('Analytics Fetch Error:', err);
       setError(err.response?.data?.error || err.message || 'Database connection failed');

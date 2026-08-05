@@ -118,7 +118,7 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({ role }) => {
   const fetchNotifications = async () => {
     try {
       const res = await api.get('/api/notifications');
-      setNotifications(res.data);
+      setNotifications(res.data ?? []);
     } catch (err) {
       console.error('Failed to fetch notifications', err);
     }
@@ -146,7 +146,7 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({ role }) => {
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [showNotifDropdown, showAccountDropdown]);
 
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const unreadCount = (notifications ?? []).filter(n => !n.isRead).length;
 
   const handleMarkAsRead = async (id: string) => {
     try {

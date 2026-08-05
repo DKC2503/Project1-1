@@ -936,7 +936,8 @@ app.delete('/api/articles/:id/like', async (req, res) => {
 // GET /api/breaking/main
 app.get('/api/breaking/main', async (req, res) => {
     try {
-        const breaking = await Article.findOne({ isMainBreaking: true, status: 'PUBLISHED' });
+        const breakingNewsHelper = require('./utils/breakingNewsHelper');
+        const breaking = await breakingNewsHelper.getCurrentMainBreaking();
         res.json({
             success: true,
             article: breaking || null
@@ -949,35 +950,23 @@ app.get('/api/breaking/main', async (req, res) => {
 // GET /api/breaking/categories
 app.get('/api/breaking/categories', async (req, res) => {
     try {
+        const breakingNewsHelper = require('./utils/breakingNewsHelper');
+        await breakingNewsHelper.cleanupExpiredBreaking();
+
         const categoriesList = ["Technology", "Business", "Politics", "Sports", "Entertainment", "Science", "Health", "Education", "National", "Global", "Automobile", "Lifestyle", "Movies", "Startups", "Studies", "Case Studies", "Breaking"];
-        const Article = require('./models/Article');
-        // Find articles that have isBreakingNews: true OR have isCategoryBreaking assigned (any non-null value)
+        const now = new Date();
         const articles = await Article.find({
-            $or: [
-                { isBreakingNews: true },
-                { isCategoryBreaking: { $exists: true, $ne: null } }
-            ],
+            isCategoryBreaking: { $exists: true, $ne: null },
+            categoryBreakingUntil: { $gt: now },
             status: 'PUBLISHED'
-        }).sort({ publishedAt: -1, createdAt: -1 });
-        
-        console.log("Category Breaking Articles Returned:", articles.map(a => ({
-            id: a._id,
-            title: a.title,
-            isCategoryBreaking: a.isCategoryBreaking,
-            isBreakingNews: a.isBreakingNews,
-            category: a.category
-        })));
-        
+        });
+
         const categoryMap = {};
         for (const cat of categoriesList) {
-            // Find the latest breaking news article in this category (case-insensitive check)
-            const matched = articles.find(a => 
-                (a.isCategoryBreaking && a.isCategoryBreaking.toLowerCase() === cat.toLowerCase()) ||
-                (a.isBreakingNews && a.category && a.category.toLowerCase() === cat.toLowerCase())
-            );
+            const matched = articles.find(a => a.isCategoryBreaking.toLowerCase() === cat.toLowerCase());
             categoryMap[cat] = matched || null;
         }
-        
+
         res.json({
             success: true,
             categories: categoryMap
@@ -1048,12 +1037,13 @@ app.put('/api/admin/breaking/main/:articleId', verifyToken, requireAdmin, async 
         }
 
         // Clear existing main breaking
-        await Article.updateMany({ isMainBreaking: true }, { $set: { isMainBreaking: false } });
-        
-        // Also clear/update the legacy single isBreakingNews field
-        await Article.updateMany({ isBreakingNews: true }, { $set: { isBreakingNews: false } });
+        await Article.updateMany(
+            { isMainBreaking: true }, 
+            { $set: { isMainBreaking: false, mainBreakingUntil: null, isBreakingNews: false } }
+        );
 
         article.isMainBreaking = true;
+        article.mainBreakingUntil = new Date(Date.now() + 48 * 60 * 60 * 1000);
         article.isBreakingNews = true;
         await article.save();
 
@@ -1072,8 +1062,10 @@ app.put('/api/admin/breaking/main/:articleId', verifyToken, requireAdmin, async 
 // DELETE /api/admin/breaking/main - Remove Main Breaking
 app.delete('/api/admin/breaking/main', verifyToken, requireAdmin, async (req, res) => {
     try {
-        await Article.updateMany({ isMainBreaking: true }, { $set: { isMainBreaking: false } });
-        await Article.updateMany({ isBreakingNews: true }, { $set: { isBreakingNews: false } });
+        await Article.updateMany(
+            { isMainBreaking: true }, 
+            { $set: { isMainBreaking: false, mainBreakingUntil: null, isBreakingNews: false } }
+        );
         res.json({ success: true, message: 'Main Breaking News assignment removed' });
     } catch (err) {
         handleError(res, err, 'Remove Main Breaking Error');
@@ -1097,9 +1089,13 @@ app.put('/api/admin/breaking/category/:articleId', verifyToken, requireAdmin, as
         }
 
         // Clear existing category breaking news for this category
-        await Article.updateMany({ isCategoryBreaking: category }, { $set: { isCategoryBreaking: null } });
+        await Article.updateMany(
+            { isCategoryBreaking: category }, 
+            { $set: { isCategoryBreaking: null, categoryBreakingUntil: null } }
+        );
 
         article.isCategoryBreaking = category;
+        article.categoryBreakingUntil = new Date(Date.now() + 48 * 60 * 60 * 1000);
         await article.save();
 
         res.json({ success: true, message: `Article assigned as Category Breaking News for ${category}`, article });
@@ -1112,7 +1108,10 @@ app.put('/api/admin/breaking/category/:articleId', verifyToken, requireAdmin, as
 app.delete('/api/admin/breaking/category/:category', verifyToken, requireAdmin, async (req, res) => {
     try {
         const { category } = req.params;
-        await Article.updateMany({ isCategoryBreaking: category }, { $set: { isCategoryBreaking: null } });
+        await Article.updateMany(
+            { isCategoryBreaking: category }, 
+            { $set: { isCategoryBreaking: null, categoryBreakingUntil: null } }
+        );
         res.json({ success: true, message: `Category Breaking News assignment removed for ${category}` });
     } catch (err) {
         handleError(res, err, 'Remove Category Breaking Error');
@@ -2979,6 +2978,7 @@ app.post('/api/admin/database/remove', verifyToken, requireAdmin, async (req, re
 });
 
 // Helper to resolve build dist directory across Hostinger / PM2 environment structures
+// Helper to resolve build dist directory across Hostinger / PM2 environment structures
 const getDistPath = () => {
     const fs = require('fs');
     const path = require('path');
@@ -2991,8 +2991,25 @@ const getDistPath = () => {
     return candidates.find(p => fs.existsSync(path.join(p, 'index.html'))) || candidates[0];
 };
 
-const activeDistDir = getDistPath();
-app.use(express.static(activeDistDir));
+const getActiveIndexPath = () => {
+    const fs = require('fs');
+    const path = require('path');
+    const candidates = [
+        path.join(__dirname, 'newspercent', 'dist'),
+        path.join(__dirname, 'dist'),
+        path.join(process.cwd(), 'newspercent', 'dist'),
+        path.join(process.cwd(), 'dist')
+    ];
+    const found = candidates.find(p => fs.existsSync(path.join(p, 'index.html')));
+    return found ? path.join(found, 'index.html') : path.join(candidates[0], 'index.html');
+};
+
+// Serve static assets from all candidate build directories to avoid race conditions
+const path = require('path');
+app.use(express.static(path.join(__dirname, 'newspercent', 'dist')));
+app.use(express.static(path.join(__dirname, 'dist')));
+app.use(express.static(path.join(process.cwd(), 'newspercent', 'dist')));
+app.use(express.static(path.join(process.cwd(), 'dist')));
 
 // Serve article views with server-side SEO meta injection
 app.get('/article/:slugOrId', async (req, res, next) => {
@@ -3016,7 +3033,7 @@ app.get('/article/:slugOrId', async (req, res, next) => {
             return next(); // Article not found or not published -> Pass to SPA fallback
         }
 
-        const indexPath = path.join(activeDistDir, 'index.html');
+        const indexPath = getActiveIndexPath();
         if (!fs.existsSync(indexPath)) {
             return next(); // Fallback to SPA routing
         }
@@ -3089,8 +3106,7 @@ app.get('/article/:slugOrId', async (req, res, next) => {
 // Serve category views (fallback to SPA index.html)
 app.get('/category/:slug', (req, res, next) => {
     const fs = require('fs');
-    const path = require('path');
-    const indexPath = path.join(activeDistDir, 'index.html');
+    const indexPath = getActiveIndexPath();
     if (fs.existsSync(indexPath)) {
         return res.sendFile(indexPath);
     }
@@ -3103,8 +3119,7 @@ app.use((req, res, next) => {
         return next();
     }
     const fs = require('fs');
-    const path = require('path');
-    const indexPath = path.join(activeDistDir, 'index.html');
+    const indexPath = getActiveIndexPath();
     if (fs.existsSync(indexPath)) {
         return res.sendFile(indexPath);
     }
