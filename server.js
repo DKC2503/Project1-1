@@ -1,3 +1,27 @@
+// --- GLOBAL EXCEPTION & REJECTION HANDLERS ---
+process.on("uncaughtException", (err) => {
+    console.error("🔥 CRITICAL: Uncaught Exception detected:", err.message);
+    console.error(err.stack);
+    try {
+        const { logError } = require('./middleware/logger');
+        logError(err, null, "UNCAUGHT EXCEPTION");
+    } catch (e) {
+        console.error("Failed to log uncaught exception to file:", e.message);
+    }
+    process.exit(1);
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+    console.error("🔥 CRITICAL: Unhandled Promise Rejection detected at:", promise, "reason:", reason);
+    try {
+        const { logError } = require('./middleware/logger');
+        const err = reason instanceof Error ? reason : new Error(String(reason));
+        logError(err, null, "UNHANDLED REJECTION");
+    } catch (e) {
+        console.error("Failed to log unhandled rejection to file:", e.message);
+    }
+});
+
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
@@ -3005,7 +3029,6 @@ const getActiveIndexPath = () => {
 };
 
 // Serve static assets from all candidate build directories to avoid race conditions
-const path = require('path');
 app.use(express.static(path.join(__dirname, 'newspercent', 'dist')));
 app.use(express.static(path.join(__dirname, 'dist')));
 app.use(express.static(path.join(process.cwd(), 'newspercent', 'dist')));
@@ -3176,68 +3199,127 @@ app.use((err, req, res, next) => {
 
 // --- STARTUP SEQUENCE ---
 const startServer = async () => {
+    const startupSteps = {
+        environmentValidation: 'PENDING',
+        databaseConnection: 'PENDING',
+        systemSettings: 'PENDING',
+        superAdminInit: 'PENDING',
+        analyticsArchival: 'PENDING',
+        expressListen: 'PENDING'
+    };
+
+    console.log('=================================');
+    console.log('🔄 Initializing System Startup...');
+
+    // 1. Validate Environment Variables
     try {
-        console.log('=================================');
-        console.log('🔄 Initializing System Startup...');
+        const requiredEnvVars = ['MONGODB_URI', 'JWT_SECRET'];
+        const missingVars = requiredEnvVars.filter(v => !process.env[v]);
         
-        // 1. Connect to Database (wait for it)
+        if (missingVars.length > 0) {
+            console.warn(`⚠️ [Startup Logger] WARNING: Missing environment variables: ${missingVars.join(', ')}`);
+            if (process.env.NODE_ENV === 'production') {
+                console.error(`❌ [Startup Logger] CRITICAL: Missing critical environment variables in production!`);
+                startupSteps.environmentValidation = 'FAILED';
+            } else {
+                startupSteps.environmentValidation = 'WARNING';
+            }
+        } else {
+            startupSteps.environmentValidation = 'SUCCESS';
+        }
+    } catch (err) {
+        startupSteps.environmentValidation = 'FAILED';
+        console.error('❌ [Startup Logger] Environment validation threw an error:', err.message);
+    }
+
+    // 2. Connect to Database
+    try {
+        console.log('[SYS] Connecting to database...');
         await connectDB();
- 
-        // Load settings during application startup
-        console.log('[SYS] Loading system settings...');
-        await settingsService.getSettings();
-        
-        // 2. Initialize Super Admin
-        await initializeSuperAdmin();
- 
-        // 3. Analytics Archival Check (Run once on startup)
-        console.log('[SYS] Checking for analytics archival...');
-        const analyticsService = require('./services/analyticsService');
-        await analyticsService.archiveMonthlyData();
-        
-        // 4. Start Express Server
+        startupSteps.databaseConnection = 'SUCCESS';
+    } catch (err) {
+        startupSteps.databaseConnection = 'FAILED';
+        console.error('❌ [Startup Logger] Database connection failed:', err.message);
+    }
+
+    // 3. Load system settings
+    if (startupSteps.databaseConnection === 'SUCCESS') {
+        try {
+            console.log('[SYS] Loading system settings...');
+            await settingsService.getSettings();
+            startupSteps.systemSettings = 'SUCCESS';
+        } catch (err) {
+            startupSteps.systemSettings = 'FAILED';
+            console.error('❌ [Startup Logger] Loading system settings failed:', err.message);
+        }
+    } else {
+        startupSteps.systemSettings = 'SKIPPED';
+    }
+
+    // 4. Initialize Super Admin
+    if (startupSteps.databaseConnection === 'SUCCESS') {
+        try {
+            console.log('[SYS] Initializing Super Admin...');
+            await initializeSuperAdmin();
+            startupSteps.superAdminInit = 'SUCCESS';
+        } catch (err) {
+            startupSteps.superAdminInit = 'FAILED';
+            console.error('❌ [Startup Logger] Super Admin initialization failed:', err.message);
+        }
+    } else {
+        startupSteps.superAdminInit = 'SKIPPED';
+    }
+
+    // 5. Analytics Archival Check
+    if (startupSteps.databaseConnection === 'SUCCESS') {
+        try {
+            console.log('[SYS] Checking for analytics archival...');
+            const analyticsService = require('./services/analyticsService');
+            await analyticsService.archiveMonthlyData();
+            startupSteps.analyticsArchival = 'SUCCESS';
+        } catch (err) {
+            startupSteps.analyticsArchival = 'FAILED';
+            console.error('❌ [Startup Logger] Analytics archival check failed:', err.message);
+        }
+    } else {
+        startupSteps.analyticsArchival = 'SKIPPED';
+    }
+
+    // 6. Start Express Server
+    try {
+        console.log(`[SYS] Starting Express server on port ${PORT}...`);
         app.listen(PORT, () => {
+            startupSteps.expressListen = 'SUCCESS';
             const fs = require('fs');
             const path = require('path');
             const hasDist = fs.existsSync(path.join(__dirname, 'newspercent', 'dist', 'index.html'));
             const isDev = process.env.NODE_ENV !== 'production';
+            const appUrl = process.env.APP_URL || `http://localhost:${PORT}`;
 
-            const appUrl = process.env.APP_URL;
             console.log('=================================');
             console.log('🚀 NewsPercent Backend Started');
-            console.log('==============================\n');
-            console.log('🌐 Backend URL:');
-            console.log(`${appUrl}\n`);
-            
+            console.log('=================================');
+            console.log(`🌐 Backend URL: ${appUrl}`);
             if (hasDist) {
-                console.log('📰 Frontend (served by Express):');
-                console.log(`${appUrl}\n`);
+                console.log(`📰 Frontend (served by Express): ${appUrl}`);
             }
-            
-            console.log('⚙️ API Base URL:');
-            console.log(`${appUrl}/api\n`);
-            
-            console.log('❤️ Health Check:');
-            console.log(`${appUrl}/api/health\n`);
-            
-            console.log('📁 MongoDB:');
-            console.log(mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected');
-            console.log('');
-            
-            console.log('📧 Email Service:');
-            console.log(process.env.EMAIL_USER && process.env.EMAIL_PASS ? 'Active' : 'Missing Credentials');
-            console.log('');
-            
-            console.log('🔐 JWT:');
-            console.log(process.env.JWT_SECRET ? 'Enabled' : 'Missing Secret');
-            console.log('=======');
-            
-            if (isDev && !hasDist) {
-                console.log('\n[SYS] Frontend Dev Server mode active');
-            }
+            console.log(`⚙️ API Base URL: ${appUrl}/api`);
+            console.log(`❤️ Health Check: ${appUrl}/api/health`);
+            console.log(`📁 MongoDB State: ${mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected'}`);
+            console.log(`📧 Email Service: ${process.env.EMAIL_USER && process.env.EMAIL_PASS ? 'Active' : 'Missing Credentials'}`);
+            console.log(`🔐 JWT Status: ${process.env.JWT_SECRET ? 'Configured' : 'Using Fallback Secret (Unsafe)'}`);
+            console.log('=================================');
+            console.log('[Startup Logger] Startup sequence status:');
+            console.log(JSON.stringify(startupSteps, null, 2));
+            console.log('=================================');
         });
     } catch (err) {
-        console.error('❌ CRITICAL STARTUP FAILURE:', err.message);
+        startupSteps.expressListen = 'FAILED';
+        console.error('❌ [Startup Logger] CRITICAL: Express server failed to start:', err.message);
+        console.log('=================================');
+        console.log('[Startup Logger] Final startup status before exit:');
+        console.log(JSON.stringify(startupSteps, null, 2));
+        console.log('=================================');
         process.exit(1);
     }
 };

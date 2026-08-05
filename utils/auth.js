@@ -8,7 +8,7 @@ const authUtils = {
     generateToken: (user) => {
         return jwt.sign(
             { id: user._id, email: user.email, role: user.role },
-            process.env.JWT_SECRET,
+            process.env.JWT_SECRET || 'newspercent_fallback_jwt_secret_key_2026',
             { expiresIn: '7d' }
         );
     }
