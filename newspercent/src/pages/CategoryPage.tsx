@@ -5,7 +5,7 @@ import TopHeader from '../components/TopHeader';
 import MainNavbar from '../components/MainNavbar';
 import Footer from '../components/Footer';
 import TrendingTopics from '../components/TrendingTopics';
-import LatestNewsSection from '../sections/LatestNewsSection';
+import TrendingSidebar from '../components/TrendingSidebar';
 import NewsCard from '../components/NewsCard';
 import LoadingAction from '../components/LoadingAction';
 import { Search } from 'lucide-react';
@@ -48,6 +48,7 @@ const CategoryPage: React.FC = () => {
   const { setIsLoading } = useThemeStore();
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [visibleCount, setVisibleCount] = useState(6);
   const config = CATEGORY_CONFIGS[slug || 'national'] || CATEGORY_CONFIGS.national;
   const isMobile = useIsMobile();
 
@@ -77,6 +78,29 @@ const CategoryPage: React.FC = () => {
     loadCategory();
   }, [slug, config.name, setIsLoading]);
 
+  useEffect(() => {
+    setVisibleCount(6);
+    setSearchQuery('');
+  }, [slug]);
+
+  const filteredArticles = articles.filter(article => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      article.title.toLowerCase().includes(query) ||
+      article.summary.toLowerCase().includes(query) ||
+      article.author.toLowerCase().includes(query)
+    );
+  });
+
+  const archiveArticles = searchQuery.trim() ? filteredArticles : filteredArticles.slice(4);
+  const displayArticles = archiveArticles.slice(0, visibleCount);
+  const hasMore = visibleCount < archiveArticles.length;
+
+  const handleLoadMore = () => {
+    setVisibleCount(prev => prev + 6);
+  };
+
   if (isMobile) {
     return (
       <MobileCategoryView
@@ -91,7 +115,6 @@ const CategoryPage: React.FC = () => {
     <div className="relative min-h-screen bg-[var(--background-deep)] transition-colors duration-300">
       <LoadingAction />
 
-      
       <TopHeader />
       <MainNavbar />
 
@@ -139,7 +162,7 @@ const CategoryPage: React.FC = () => {
         </div>
 
         {/* Featured Article Section */}
-        {articles.length > 0 ? (
+        {!searchQuery.trim() && articles.length > 0 ? (
           <section className="max-w-7xl mx-auto px-4 sm:px-8 py-10 sm:py-20">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
               <div className="lg:col-span-8">
@@ -161,7 +184,7 @@ const CategoryPage: React.FC = () => {
               </div>
             </div>
           </section>
-        ) : (
+        ) : !searchQuery.trim() && (
           <section className="max-w-7xl mx-auto px-4 sm:px-8 py-10 sm:py-20 text-center">
             <div className="py-12 border border-dashed border-[var(--glass-border)] rounded-[2rem] text-[var(--text-secondary)] font-bold uppercase tracking-wider">
               No articles available
@@ -200,8 +223,50 @@ const CategoryPage: React.FC = () => {
           <TrendingTopics />
         </div>
 
-        {/* Latest Feed */}
-        <LatestNewsSection />
+        {/* Category Archive Feed */}
+        <section className="w-full max-w-7xl mx-auto px-4 sm:px-8 pb-20 pt-10">
+          <div className="grid grid-cols-1 lg:grid-cols-10 gap-12">
+            {/* Main Feed */}
+            <div className="lg:col-span-7 space-y-12">
+              <div className="flex items-center justify-between border-b border-[var(--glass-border)] pb-4">
+                <h2 className="text-2xl font-bold tracking-tight uppercase font-manrope text-[var(--text-primary)]">
+                  {searchQuery ? `Search Results in ${config.name}` : `${config.name} Archive`}
+                </h2>
+                <div className="text-[10px] font-bold tracking-widest text-[var(--text-secondary)] uppercase">
+                  {searchQuery 
+                    ? `${filteredArticles.length} match(es) found` 
+                    : `${Math.max(0, articles.length - 4)} article(s) listed`}
+                </div>
+              </div>
+
+              {displayArticles.length === 0 ? (
+                <div className="py-12 text-center text-[var(--text-secondary)] font-bold uppercase tracking-wider border border-dashed border-[var(--glass-border)] rounded-[2rem]">
+                  {searchQuery ? 'No matching articles found' : 'No articles available in this archive'}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {displayArticles.map((article) => (
+                    <NewsCard key={article.id} article={article} />
+                  ))}
+                </div>
+              )}
+
+              {hasMore && (
+                <button 
+                  onClick={handleLoadMore}
+                  className="w-full py-5 border border-[var(--glass-border)] rounded-2xl text-[10px] font-bold tracking-widest uppercase text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] hover:border-primary transition-all cursor-pointer"
+                >
+                  Load More Stories
+                </button>
+              )}
+            </div>
+
+            {/* Sidebar */}
+            <div className="lg:col-span-3">
+              <TrendingSidebar />
+            </div>
+          </div>
+        </section>
 
         {/* Newsletter Section */}
         <section className="w-full max-w-7xl mx-auto px-4 sm:px-8 py-10 sm:py-20">

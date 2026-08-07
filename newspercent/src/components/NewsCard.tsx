@@ -16,11 +16,11 @@ const NewsCard: React.FC<NewsCardProps> = ({ article, variant = 'compact' }) => 
   const isBreakingCategory = slug?.toLowerCase() === 'breaking';
 
   return (
-    <Link to={`/article/${article.id}`} className="block group">
+    <Link to={`/article/${article.id}`} className="flex flex-col h-full group">
       <motion.div
         whileHover={{ y: -6, transition: { duration: 0.3 } }}
         className={cn(
-          "cursor-pointer liquid-glass transition-all duration-300 shadow-sm transition-all",
+          "cursor-pointer liquid-glass transition-all duration-300 shadow-sm flex flex-col h-full flex-1",
           "light:bg-white light:border-[#E8E2D8] light:shadow-sm light:hover:shadow-xl",
           variant === 'large' ? "rounded-[2.5rem] overflow-hidden" : "rounded-3xl overflow-hidden",
           variant === 'minimal' ? "flex flex-row gap-4 p-4" : ""
@@ -28,7 +28,7 @@ const NewsCard: React.FC<NewsCardProps> = ({ article, variant = 'compact' }) => 
       >
       {/* Thumbnail */}
       <div className={cn(
-        "relative overflow-hidden flex-shrink-0",
+        "relative overflow-hidden flex-shrink-0 flex-grow-0",
         variant === 'large' ? "w-full aspect-[16/9]" : 
         variant === 'minimal' ? "w-24 h-24 rounded-2xl" : "w-full aspect-[4/3]"
       )}>
@@ -84,17 +84,21 @@ const NewsCard: React.FC<NewsCardProps> = ({ article, variant = 'compact' }) => 
           </div>
         </div>
 
-        <h2 className={cn(
-          "text-[var(--text-primary)] font-bold leading-tight group-hover:text-primary transition-colors mb-4 font-lemon-milk",
-          variant === 'large' ? "text-4xl md:text-5xl tracking-tighter" : 
-          variant === 'minimal' ? "text-sm leading-snug" : "text-2xl tracking-tight"
-        )}>
+        <h2 
+          title={article.title}
+          aria-label={article.title}
+          className={cn(
+            "text-[var(--text-primary)] font-bold leading-tight group-hover:text-primary transition-colors mb-4 font-lemon-milk",
+            variant === 'large' ? "text-4xl md:text-5xl tracking-tighter line-clamp-2 md:line-clamp-3 lg:line-clamp-4" : 
+            variant === 'minimal' ? "text-sm leading-snug line-clamp-2" : "text-2xl tracking-tight line-clamp-2 md:line-clamp-3 lg:line-clamp-4"
+          )}
+        >
           {article.title}
         </h2>
 
         {variant !== 'minimal' && (
           <p className={cn(
-            "text-[var(--text-secondary)] leading-relaxed mb-8 line-clamp-3 font-medium",
+            "text-[var(--text-secondary)] leading-relaxed mb-8 line-clamp-2 lg:line-clamp-3 font-medium",
             "light:text-[#374151]",
             variant === 'large' ? "text-xl max-w-3xl" : "text-sm"
           )}>

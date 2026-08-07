@@ -51,10 +51,19 @@ export const MobileCategoryView: React.FC<MobileCategoryViewProps> = ({
     setIsMenuOpen(false);
   };
 
+  const [visibleCount, setVisibleCount] = useState(6);
+
   const filteredArticles = initialArticles.filter(article => 
     article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     article.summary.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const displayArticles = filteredArticles.slice(0, visibleCount);
+  const hasMore = visibleCount < filteredArticles.length;
+
+  const handleLoadMore = () => {
+    setVisibleCount(prev => prev + 6);
+  };
 
   const CATEGORIES = [
     { name: 'National', slug: 'national' },
@@ -119,7 +128,7 @@ export const MobileCategoryView: React.FC<MobileCategoryViewProps> = ({
 
           {filteredArticles.length > 0 ? (
             <div className="space-y-4">
-              {filteredArticles.map((article) => (
+              {displayArticles.map((article) => (
                 <Link 
                   to={`/article/${article.id}`} 
                   key={article.id}
@@ -153,6 +162,15 @@ export const MobileCategoryView: React.FC<MobileCategoryViewProps> = ({
                   </div>
                 </Link>
               ))}
+
+              {hasMore && (
+                <button 
+                  onClick={handleLoadMore}
+                  className="w-full py-4 border border-[var(--glass-border)] rounded-xl text-[9px] font-black tracking-widest uppercase text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] hover:border-primary transition-all cursor-pointer bg-white/5"
+                >
+                  Load More Transmissions
+                </button>
+              )}
             </div>
           ) : (
             <div className="p-8 border border-dashed border-white/10 rounded-xl text-center text-white/30 text-xs uppercase font-bold tracking-widest">

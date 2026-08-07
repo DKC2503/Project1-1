@@ -48,7 +48,11 @@ const EditorsPickSection: React.FC = () => {
                  <span className="px-3 py-1 bg-primary text-white text-[8px] sm:text-[10px] font-bold uppercase tracking-widest rounded-full mb-2 sm:mb-4 inline-block shadow-[0_0_20px_rgba(255,59,48,0.4)]">
                    Special Report
                  </span>
-                 <h3 className="text-lg sm:text-3xl md:text-5xl font-extrabold text-white leading-tight tracking-tight font-manrope group-hover:text-primary transition-colors">
+                 <h3 
+                   title={featured.title}
+                   aria-label={featured.title}
+                   className="text-lg sm:text-3xl md:text-5xl font-extrabold text-white leading-tight tracking-tight font-manrope group-hover:text-primary transition-colors line-clamp-2 lg:line-clamp-3"
+                 >
                    {featured.title}
                  </h3>
               </div>
