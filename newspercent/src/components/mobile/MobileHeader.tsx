@@ -38,26 +38,24 @@ export const MobileHeader: React.FC<MobileHeaderProps> = (props) => {
   const [searchResults, setSearchResults] = useState<NewsArticle[]>([]);
 
   // Fetch weather function
-  const loadWeather = async (targetCity?: string) => {
+  const loadWeather = async (lat?: number, lon?: number, city?: string) => {
     const sysSettings = useSystemSettingsStore.getState().settings;
     if (sysSettings && !sysSettings.weatherApiEnabled) {
       setWeatherLoading(false);
       return;
     }
 
+    const CACHE_KEY = 'n%_weather_cache';
+
     try {
       setWeatherLoading(true);
-      const queryCity = targetCity || localStorage.getItem('weather_city') || 'Visakhapatnam';
-      
-      const data = await fetchWeather(undefined, undefined, queryCity);
+      const data = await fetchWeather(lat, lon, city);
       if (data && data.source !== 'error') {
         setWeather(data);
-        localStorage.setItem('weather_city', data.city);
-      } else if (!targetCity) {
-        const fallbackData = await fetchWeather(undefined, undefined, 'Visakhapatnam');
-        if (fallbackData && fallbackData.source !== 'error') {
-          setWeather(fallbackData);
-        }
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+          data,
+          timestamp: Date.now()
+        }));
       }
     } catch (err) {
       console.error('[MobileHeader] Weather load error:', err);
@@ -73,26 +71,26 @@ export const MobileHeader: React.FC<MobileHeaderProps> = (props) => {
       return;
     }
 
-    const initWeather = async () => {
-      const storedCity = localStorage.getItem('weather_city');
-      if (storedCity) {
-        await loadWeather(storedCity);
-      } else {
-        await loadWeather('Visakhapatnam');
-        getGeolocation()
-          .then(async (coords) => {
-            const data = await fetchWeather(coords.lat, coords.lon);
-            if (data && data.source !== 'error') {
-              setWeather(data);
-              localStorage.setItem('weather_city', data.city);
-            }
-          })
-          .catch(() => {
-            console.log('[MobileHeader] Geolocation declined/failed, keeping default.');
-          });
+    const CACHE_KEY = 'n%_weather_cache';
+    const CACHE_EXPIRY = 10 * 60 * 1000; // 10 minutes cache
+
+    const cached = sessionStorage.getItem(CACHE_KEY);
+    if (cached) {
+      try {
+        const { data, timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp < CACHE_EXPIRY) {
+          setWeather(data);
+          setWeatherLoading(false);
+          return;
+        }
+      } catch (e) {
+        console.warn('Failed to parse weather cache', e);
       }
-    };
-    initWeather();
+    }
+
+    getGeolocation()
+      .then((coords) => loadWeather(coords.lat, coords.lon))
+      .catch(() => loadWeather()); // IP-based fallback
   }, [settings]);
 
   // Fetch economy rates

@@ -83,12 +83,20 @@ const SiteHeader: React.FC = () => {
     if (settings && settings.weatherApiEnabled === false) {
       return;
     }
+
+    const CACHE_KEY = 'n%_weather_cache';
+    const CACHE_EXPIRY = 10 * 60 * 1000; // 10 minutes cache
+
     const loadWeather = async (city?: string, lat?: number, lon?: number) => {
       try {
         const data = await fetchWeather(lat, lon, city);
         if (data && data.source !== 'error') {
           setWeather(data);
           setWeatherError(false);
+          sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+            data,
+            timestamp: Date.now()
+          }));
         } else {
           setWeatherError(true);
         }
@@ -98,9 +106,23 @@ const SiteHeader: React.FC = () => {
       }
     };
 
+    const cached = sessionStorage.getItem(CACHE_KEY);
+    if (cached) {
+      try {
+        const { data, timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp < CACHE_EXPIRY) {
+          setWeather(data);
+          setWeatherError(false);
+          return;
+        }
+      } catch (e) {
+        console.warn('Failed to parse weather cache', e);
+      }
+    }
+
     getGeolocation()
       .then(({ lat, lon }) => loadWeather(undefined, lat, lon))
-      .catch(() => loadWeather('Visakhapatnam'));
+      .catch(() => loadWeather()); // IP-based fallback
   }, [settings]);
 
   const handleLogoClick = (e: React.MouseEvent) => {

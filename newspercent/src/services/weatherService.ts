@@ -63,10 +63,10 @@ export const fetchWeather = async (lat?: number, lon?: number, query?: string): 
     }
     
     console.warn('[WeatherService] Backend returned error status:', res.data);
-    return getFallbackWeather(query || 'London', res.data?.message || 'Weather data temporarily unavailable');
+    return getFallbackWeather(query || 'New Delhi', res.data?.message || 'Weather data temporarily unavailable');
   } catch (error: any) {
     console.error('[WeatherService] Error fetching weather:', error.message);
-    return getFallbackWeather(query || 'London', 'Weather data temporarily unavailable');
+    return getFallbackWeather(query || 'New Delhi', 'Weather data temporarily unavailable');
   }
 };
 

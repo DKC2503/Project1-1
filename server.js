@@ -300,7 +300,23 @@ app.get('/api/weather/report', async (req, res) => {
         if (!query && lat && lon) {
             query = `${lat},${lon}`;
         }
-        const result = await weatherService.getWeatherData(query || 'London');
+        
+        if (!query) {
+            const userIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip;
+            const cleanIp = userIp ? userIp.replace('::ffff:', '') : '::1';
+            
+            const economyService = require('./services/economyService');
+            const geo = await economyService.getGeoLocation(cleanIp);
+            if (geo && geo.city) {
+                query = geo.city;
+            }
+        }
+        
+        if (!query) {
+            query = 'New Delhi';
+        }
+        
+        const result = await weatherService.getWeatherData(query);
         res.status(200).json(result);
     } catch (err) {
         handleError(res, err, 'Weather API Error');

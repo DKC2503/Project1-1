@@ -9,7 +9,7 @@ const weatherCache = {};
 const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
 
 const weatherService = {
-  getWeatherData: async (locationQuery = 'London') => {
+  getWeatherData: async (locationQuery = 'New Delhi') => {
     const ExternalApiConfig = require('../models/ExternalApiConfig');
     const activeConfig = await ExternalApiConfig.findOne({ serviceName: 'Weather API', status: 'ACTIVE' });
     
