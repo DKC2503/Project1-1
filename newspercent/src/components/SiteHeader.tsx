@@ -215,6 +215,16 @@ const SiteHeader: React.FC = () => {
                 placeholder="Search for news, topics, or events..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (searchQuery.trim()) {
+                      navigate(`/?search=${encodeURIComponent(searchQuery.trim())}`);
+                    } else {
+                      navigate('/');
+                    }
+                  }
+                }}
               />
             </div>
           </div>

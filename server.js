@@ -794,12 +794,65 @@ app.delete('/api/admin/users/:id', verifyToken, requireAdmin, async (req, res) =
 app.get('/api/news', async (req, res) => {
     try {
         let filter = { status: 'PUBLISHED' };
-        if (req.query.category && req.query.category !== 'Home') {
+        
+        if (req.query.search) {
+            const searchRegex = new RegExp(req.query.search, 'i');
+            filter.$or = [
+                { title: searchRegex },
+                { content: searchRegex },
+                { subtitle: searchRegex },
+                { authorName: searchRegex },
+                { category: searchRegex }
+            ];
+            const news = await Article.find(filter).sort({ publishedAt: -1 });
+            console.log(`[FETCH NEWS - SEARCH] Found ${news.length} articles matching "${req.query.search}"`);
+            return res.json(news);
+        } else if (req.query.category && req.query.category.toLowerCase() === 'breaking') {
+            filter.$or = [
+                { isBreakingNews: true },
+                { isMainBreaking: true },
+                { isBigBreaking: true }
+            ];
+            const news = await Article.find(filter).sort({ publishedAt: -1 });
+            console.log(`[FETCH NEWS - BREAKING] Found ${news.length} breaking articles`);
+            return res.json(news);
+        } else if (req.query.category && req.query.category !== 'Home') {
             filter.category = req.query.category;
+            const news = await Article.find(filter).sort({ publishedAt: -1 });
+            console.log(`[FETCH NEWS - CATEGORY] Found ${news.length} articles for category "${req.query.category}"`);
+            return res.json(news);
+        } else if (req.query.all === 'true') {
+            const news = await Article.find(filter).sort({ publishedAt: -1 });
+            console.log(`[FETCH NEWS - ALL] Found ${news.length} articles`);
+            return res.json(news);
+        } else {
+            // Curated Homepage Feed
+            const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
+            
+            // Get Top 10 most viewed published articles
+            const top10Articles = await Article.find({ status: 'PUBLISHED' })
+                .sort({ views: -1 })
+                .limit(10)
+                .select('_id');
+            const top10Ids = top10Articles.map(a => a._id);
+            
+            // Build filter for homepage curation:
+            // 1. Published in the last 48 hours
+            // 2. Or is one of the Top 10 most viewed published articles
+            // 3. Or is pinned (for future readiness)
+            const homepageFilter = {
+                status: 'PUBLISHED',
+                $or: [
+                    { publishedAt: { $gte: fortyEightHoursAgo } },
+                    { _id: { $in: top10Ids } },
+                    { isPinned: true }
+                ]
+            };
+            
+            const news = await Article.find(homepageFilter).sort({ publishedAt: -1 });
+            console.log(`[FETCH NEWS - HOMEPAGE] Found ${news.length} curated articles (48h/trending/pinned)`);
+            return res.json(news);
         }
-        const news = await Article.find(filter).sort({ publishedAt: -1 });
-        console.log(`[FETCH NEWS] Found ${news.length} articles. Categories:`, news.map(a => a.category));
-        res.json(news);
     } catch (err) {
         handleError(res, err, 'Fetch News Error');
     }

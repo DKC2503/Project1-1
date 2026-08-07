@@ -36,7 +36,6 @@ export const MobileHeader: React.FC<MobileHeaderProps> = (props) => {
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [localSearchQuery, setLocalSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<NewsArticle[]>([]);
-  const [allArticles, setAllArticles] = useState<NewsArticle[]>([]);
 
   // Fetch weather function
   const loadWeather = async (targetCity?: string) => {
@@ -113,46 +112,34 @@ export const MobileHeader: React.FC<MobileHeaderProps> = (props) => {
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch all articles when search is opened for instant live filtering
+  // Fetch matching articles from backend as user types with debounce
   useEffect(() => {
-    if (isSearchActive) {
-      const loadAllArticles = async () => {
-        try {
-          const res = await api.get('/api/news');
-          if (res.data) {
-            setAllArticles(res.data.map((art: any) => ({
-              id: art._id,
-              category: art.category || 'Global',
-              title: art.title || 'Untitled Report',
-              summary: art.subtitle || (art.content ? art.content.replace(/<[^>]*>/g, '').substring(0, 160) + '...' : 'Briefing details...'),
-              author: art.authorName || 'Field Agent',
-              publishDate: new Date(art.publishedAt || art.createdAt).toLocaleDateString(),
-              featuredImage: art.featuredImage || '/logo.webp'
-            })));
-          }
-        } catch (err) {
-          console.error('[MobileHeader] Search cache download error:', err);
-        }
-      };
-      loadAllArticles();
-    }
-  }, [isSearchActive]);
-
-  // Search filter loop
-  useEffect(() => {
-    if (!localSearchQuery.trim()) {
+    if (!isSearchActive || !localSearchQuery.trim()) {
       setSearchResults([]);
       return;
     }
-    const query = localSearchQuery.toLowerCase();
-    const matched = allArticles.filter(art => 
-      art.title.toLowerCase().includes(query) ||
-      art.summary.toLowerCase().includes(query) ||
-      art.category.toLowerCase().includes(query) ||
-      art.author.toLowerCase().includes(query)
-    );
-    setSearchResults(matched);
-  }, [localSearchQuery, allArticles]);
+
+    const delayDebounceFn = setTimeout(async () => {
+      try {
+        const res = await api.get('/api/news', { params: { search: localSearchQuery } });
+        if (res.data) {
+          setSearchResults(res.data.map((art: any) => ({
+            id: art._id,
+            category: art.category || 'Global',
+            title: art.title || 'Untitled Report',
+            summary: art.subtitle || (art.content ? art.content.replace(/<[^>]*>/g, '').substring(0, 160) + '...' : 'Briefing details...'),
+            author: art.authorName || 'Field Agent',
+            publishDate: new Date(art.publishedAt || art.createdAt).toLocaleDateString(),
+            featuredImage: art.featuredImage || '/logo.webp'
+          })));
+        }
+      } catch (err) {
+        console.error('[MobileHeader] Search query error:', err);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [localSearchQuery, isSearchActive]);
 
   // Handle escape key to close search
   useEffect(() => {

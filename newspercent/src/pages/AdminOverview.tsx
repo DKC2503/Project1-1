@@ -54,7 +54,7 @@ const AdminOverview: React.FC = () => {
       
       const [statsRes, articlesRes, secStatsRes, loginsRes, settingsRes, creditsRes, historyRes, bigBreakingRes, healthRes] = await Promise.all([
         api.get('/api/admin/analytics'),
-        api.get('/api/news'),
+        api.get('/api/news?all=true'),
         api.get('/api/security/stats'),
         api.get('/api/security/logins?limit=10'),
         api.get('/api/settings/public'),

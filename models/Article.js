@@ -30,6 +30,7 @@ const articleSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
     publishedAt: { type: Date, default: null },
+    isPinned: { type: Boolean, default: false },
 
     // SEO Configurations
     seoTitle: { type: String, default: '' },
