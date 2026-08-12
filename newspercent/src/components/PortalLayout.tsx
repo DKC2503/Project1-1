@@ -4,26 +4,31 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LayoutDashboard, 
   Newspaper, 
-  Briefcase,
+  Briefcase, 
   Users, 
-  User,
+  User, 
   LogOut, 
-  Shield,
-  FileSearch,
-  Database,
-  ChevronRight,
-  ChevronDown,
-  ShieldCheck,
-  Award,
-  Settings,
-  Zap,
-  TrendingUp,
-  Sun,
-  Moon,
-  Bell,
-  Menu,
-  X,
-  Loader2
+  Shield, 
+  FileSearch, 
+  Database, 
+  ChevronRight, 
+  ChevronDown, 
+  ShieldCheck, 
+  Award, 
+  Settings, 
+  Zap, 
+  TrendingUp, 
+  Sun, 
+  Moon, 
+  Bell, 
+  Menu, 
+  X, 
+  Loader2,
+  CheckCircle2,
+  Check,
+  CheckCheck,
+  AlertTriangle,
+  FileText
 } from 'lucide-react';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useDialogStore } from '../hooks/useDialogStore';
@@ -75,19 +80,71 @@ const UserAvatar: React.FC<UserAvatarProps> = ({ src, name, size = 'md', portalT
   );
 };
 
-const formatTimestamp = (dateStr: string) => {
+const getNotificationMeta = (notif: { title?: string; message?: string }) => {
+  const title = (notif.title || '').toLowerCase();
+  const msg = (notif.message || '').toLowerCase();
+
+  if (title.includes('breaking') || msg.includes('breaking')) {
+    return {
+      type: 'BREAKING ARTICLE',
+      icon: Zap,
+      iconColor: 'text-primary',
+      iconBg: 'bg-primary/10 border-primary/25',
+      glowGradient: 'from-primary/15'
+    };
+  }
+  if (title.includes('approved') || msg.includes('approved') || title.includes('published') || msg.includes('published')) {
+    return {
+      type: 'ARTICLE APPROVED',
+      icon: CheckCircle2,
+      iconColor: 'text-emerald-400',
+      iconBg: 'bg-emerald-500/10 border-emerald-500/25',
+      glowGradient: 'from-emerald-500/15'
+    };
+  }
+  if (title.includes('rejected') || msg.includes('rejected') || title.includes('revision') || msg.includes('revision') || title.includes('resubmit')) {
+    return {
+      type: title.includes('revision') ? 'REVISION REQUESTED' : title.includes('resubmit') ? 'ARTICLE RESUBMITTED' : 'ARTICLE REJECTED',
+      icon: AlertTriangle,
+      iconColor: 'text-rose-400',
+      iconBg: 'bg-rose-500/10 border-rose-500/25',
+      glowGradient: 'from-rose-500/15'
+    };
+  }
+  if (title.includes('submitted') || msg.includes('submitted') || title.includes('review') || msg.includes('review')) {
+    return {
+      type: 'NEW ARTICLE SUBMITTED',
+      icon: FileText,
+      iconColor: 'text-amber-400',
+      iconBg: 'bg-amber-500/10 border-amber-500/25',
+      glowGradient: 'from-amber-500/15'
+    };
+  }
+  return {
+    type: 'SYSTEM NOTIFICATION',
+    icon: Bell,
+    iconColor: 'text-[var(--text-secondary)]',
+    iconBg: 'bg-white/5 border-white/10',
+    glowGradient: 'from-white/5'
+  };
+};
+
+const formatNotificationTime = (dateStr: string) => {
+  if (!dateStr) return '';
   const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return '';
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / (60 * 1000));
   const diffHours = Math.floor(diffMs / (60 * 60 * 1000));
   const diffDays = Math.floor(diffMs / (24 * 60 * 60 * 1000));
 
-  if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays === 1) return 'Yesterday';
-  return date.toLocaleDateString();
+  if (diffMins < 1) return 'JUST NOW';
+  if (diffMins < 60) return `${diffMins}M`;
+  if (diffHours < 24) return `${diffHours}H`;
+  if (diffDays === 1) return '1D';
+  if (diffDays < 7) return `${diffDays}D`;
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }).toUpperCase();
 };
 
 interface PortalLayoutProps {
@@ -125,13 +182,11 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({ role }) => {
   };
 
   React.useEffect(() => {
-    if (role === 'ADMIN') {
-      fetchNotifications();
-      // Poll notifications every 30 seconds for live updates
-      const interval = setInterval(fetchNotifications, 30000);
-      return () => clearInterval(interval);
-    }
-  }, [role]);
+    fetchNotifications();
+    // Poll notifications every 30 seconds for live updates
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   React.useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
@@ -142,9 +197,24 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({ role }) => {
         setShowAccountDropdown(false);
       }
     };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowNotifDropdown(false);
+        setShowAccountDropdown(false);
+      }
+    };
     document.addEventListener('mousedown', handleOutsideClick);
-    return () => document.removeEventListener('mousedown', handleOutsideClick);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, [showNotifDropdown, showAccountDropdown]);
+
+  React.useEffect(() => {
+    setShowNotifDropdown(false);
+    setShowAccountDropdown(false);
+  }, [location.pathname]);
 
   const unreadCount = (notifications ?? []).filter(n => !n.isRead).length;
 
@@ -422,13 +492,13 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({ role }) => {
       </AnimatePresence>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
         {/* Dashboard Top Header Bar */}
         <header className={cn(
-          "h-20 border-b flex items-center justify-between px-4 sm:px-12 shrink-0 z-40 transition-all duration-300",
+          "h-20 border-b flex items-center justify-between px-4 sm:px-12 shrink-0 relative z-50 transition-all duration-300",
           portalTheme === 'light' 
-            ? "bg-white border-[#E5E7EB] shadow-[0_1px_2px_rgba(0,0,0,0.02)]" 
-            : "bg-[var(--background-deep)]/40 backdrop-blur-md border-[var(--glass-border)]"
+            ? "bg-white/95 backdrop-blur-md border-[#E5E7EB] shadow-[0_1px_2px_rgba(0,0,0,0.02)]" 
+            : "bg-[var(--background-deep)]/70 backdrop-blur-xl border-[var(--glass-border)]"
         )}>
           <div className="flex items-center gap-4">
             <button
@@ -446,83 +516,195 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({ role }) => {
             </span>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 sm:gap-6">
             {/* Notifications Widget */}
-            {role === 'ADMIN' && (
-              <div className="relative notifications-container">
-                <button 
-                  onClick={() => setShowNotifDropdown(prev => !prev)}
-                  className={cn(
-                    "p-2.5 rounded-full border transition-all flex items-center justify-center relative",
-                    portalTheme === 'light'
-                      ? "bg-[#F9F8F6] border-[#E5E7EB] text-[#555555] hover:text-primary hover:border-primary/30"
-                      : "bg-[var(--surface-hover)] border-[var(--glass-border)] text-[var(--text-secondary)] hover:text-primary",
-                    showNotifDropdown && "border-primary/50 text-primary"
-                  )}
-                  title="Notifications"
-                >
-                  <Bell className="w-4 h-4" />
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-primary text-white text-[9px] font-black flex items-center justify-center animate-pulse border-2 border-[var(--background-deep)] light:border-white">
-                      {unreadCount}
-                    </span>
-                  )}
-                </button>
+            <div className="relative notifications-container">
+              <button 
+                onClick={() => setShowNotifDropdown(prev => !prev)}
+                className={cn(
+                  "p-2.5 rounded-full border transition-all duration-300 flex items-center justify-center relative select-none cursor-pointer outline-none",
+                  portalTheme === 'light'
+                    ? "bg-[#F9F8F6] border-[#E5E7EB] text-[#555555] hover:text-primary hover:border-primary/30"
+                    : "bg-white/[0.04] border-white/10 text-[var(--text-secondary)] hover:text-white hover:border-white/20 hover:bg-white/[0.08]",
+                  showNotifDropdown && (portalTheme === 'light' 
+                    ? "border-primary text-primary bg-primary/5 ring-2 ring-primary/10" 
+                    : "border-primary/50 text-primary bg-primary/10 ring-2 ring-primary/20")
+                )}
+                title="Notifications"
+                aria-label="Toggle notifications"
+                aria-expanded={showNotifDropdown}
+              >
+                <Bell className="w-4 h-4" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-white text-[9px] font-black flex items-center justify-center shadow-lg shadow-primary/30 border-2 border-[var(--background-deep)] light:border-white animate-pulse">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
 
+              <AnimatePresence>
                 {showNotifDropdown && (
-                  <div className={cn(
-                    "absolute right-0 mt-4 w-96 rounded-[2rem] border shadow-2xl p-6 z-[100] transition-all",
-                    portalTheme === 'light'
-                      ? "bg-white border-[#E5E7EB] text-[#333333]"
-                      : "bg-[var(--card-bg)] border-[var(--glass-border)] text-[var(--text-primary)]"
-                  )}>
-                    <div className="flex items-center justify-between border-b pb-4 mb-4 border-[var(--glass-border)] light:border-[#E5E7EB]">
-                      <span className="text-xs font-black uppercase tracking-widest text-[var(--text-primary)]">Notifications</span>
-                      {unreadCount > 0 && (
-                        <button 
-                          onClick={handleMarkAllAsRead}
-                          className="text-[9px] font-black uppercase tracking-widest text-primary hover:underline"
-                        >
-                          Mark all as read
-                        </button>
-                      )}
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                    transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                    className={cn(
+                      "fixed inset-x-4 top-[84px] sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-3 sm:w-[440px]",
+                      "rounded-[24px] border shadow-[0_24px_60px_rgba(0,0,0,0.75),0_0_0_1px_rgba(255,255,255,0.06)_inset,0_1px_0_0_rgba(255,255,255,0.12)_inset]",
+                      "flex flex-col z-[100] overflow-hidden select-none",
+                      portalTheme === 'light'
+                        ? "bg-white/95 backdrop-blur-2xl border-[#E5E7EB] text-[#111111] shadow-[0_20px_50px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.04)_inset]"
+                        : "bg-[#0B0B0E]/90 backdrop-blur-2xl border-white/10 text-white"
+                    )}
+                  >
+                    {/* Header */}
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08] light:border-[#E5E7EB] bg-white/[0.02] light:bg-black/[0.02]">
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-[11px] font-black uppercase tracking-[0.2em] font-manrope text-[var(--text-primary)]">
+                          NOTIFICATIONS
+                        </span>
+                        {unreadCount > 0 ? (
+                          <span className="min-w-[20px] h-5 px-1.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-primary/20 text-primary border border-primary/30 flex items-center justify-center shadow-[0_0_12px_rgba(255,77,45,0.2)]">
+                            {unreadCount}
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full text-[8px] font-extrabold uppercase tracking-widest bg-emerald-500/10 text-emerald-400 light:text-emerald-600 border border-emerald-500/20">
+                            ALL READ
+                          </span>
+                        )}
+                      </div>
+                      
+                      <button
+                        onClick={() => setShowNotifDropdown(false)}
+                        className="p-1.5 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/[0.06] light:hover:bg-black/[0.05] transition-colors"
+                        title="Close panel"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
                     </div>
-                    <div className="max-h-80 overflow-y-auto pr-1 space-y-3 custom-scrollbar">
+
+                    {/* Scrollable Notification List */}
+                    <div className="max-h-[380px] overflow-y-auto p-3 space-y-2 glass-scrollbar">
                       {notifications.length === 0 ? (
-                        <div className="py-8 text-center text-[10px] uppercase font-bold tracking-widest text-[var(--text-secondary)] opacity-60">
-                          No notifications
+                        <div className="py-12 px-6 flex flex-col items-center justify-center text-center space-y-3">
+                          <div className="w-12 h-12 rounded-2xl bg-white/[0.03] light:bg-black/[0.03] border border-white/10 light:border-black/10 flex items-center justify-center text-[var(--text-secondary)]">
+                            <Bell className="w-5 h-5 opacity-40" />
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-[11px] font-black uppercase tracking-[0.15em] text-[var(--text-primary)]">
+                              No Notifications
+                            </p>
+                            <p className="text-[10px] text-[var(--text-secondary)] opacity-70 tracking-wide">
+                              You're all caught up with editorial updates.
+                            </p>
+                          </div>
                         </div>
                       ) : (
-                        notifications.map((notif) => (
-                          <div 
-                            key={notif._id}
-                            onClick={() => {
-                              if (!notif.isRead) handleMarkAsRead(notif._id);
-                            }}
-                            className={cn(
-                              "p-4 rounded-2xl cursor-pointer transition-all border text-left",
-                              notif.isRead 
-                                ? (portalTheme === 'light' 
-                                    ? "bg-transparent border-transparent text-[#666666]" 
-                                    : "bg-transparent border-transparent text-[var(--text-secondary)]")
-                                : (portalTheme === 'light' 
-                                    ? "bg-primary/5 border-primary/10 text-primary shadow-sm"
-                                    : "bg-[var(--surface-hover)] border-[var(--glass-border)] text-[var(--text-primary)]")
-                            )}
-                          >
-                            <div className="flex justify-between items-start gap-2 mb-1.5">
-                              <h4 className="text-[10px] font-black uppercase tracking-wider leading-tight">{notif.title}</h4>
-                              <span className="text-[8px] font-bold opacity-60 shrink-0 uppercase">{formatTimestamp(notif.createdAt)}</span>
+                        notifications.map((notif) => {
+                          const meta = getNotificationMeta(notif);
+                          const Icon = meta.icon;
+                          return (
+                            <div 
+                              key={notif._id}
+                              onClick={() => {
+                                if (!notif.isRead) handleMarkAsRead(notif._id);
+                              }}
+                              className={cn(
+                                "group relative p-3.5 rounded-[18px] transition-all duration-200 cursor-pointer text-left border overflow-hidden",
+                                notif.isRead 
+                                  ? (portalTheme === 'light' 
+                                      ? "bg-transparent border-transparent hover:bg-black/[0.03] text-[#555555]" 
+                                      : "bg-transparent border-transparent hover:bg-white/[0.03] text-[var(--text-secondary)] opacity-70 hover:opacity-100")
+                                  : (portalTheme === 'light' 
+                                      ? "bg-primary/[0.04] border-primary/20 text-[#111111] shadow-[0_2px_8px_rgba(255,77,45,0.06)]" 
+                                      : "bg-white/[0.05] border-white/[0.12] text-white shadow-[0_4px_20px_rgba(0,0,0,0.3)] hover:bg-white/[0.08]")
+                              )}
+                            >
+                              {/* Unread subtle accent gradient */}
+                              {!notif.isRead && (
+                                <div className={cn("absolute inset-0 bg-gradient-to-r opacity-5 pointer-events-none", meta.glowGradient)} />
+                              )}
+
+                              <div className="flex items-start gap-3 relative z-10">
+                                {/* Icon Pill */}
+                                <div className={cn(
+                                  "w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border transition-transform duration-200 group-hover:scale-105",
+                                  meta.iconBg
+                                )}
+                                >
+                                  <Icon className={cn("w-4 h-4", meta.iconColor)} />
+                                </div>
+
+                                {/* Content Area */}
+                                <div className="flex-1 min-w-0">
+                                  {/* Type and Timestamp row */}
+                                  <div className="flex items-center justify-between gap-2 mb-1">
+                                    <div className="flex items-center gap-1.5 min-w-0">
+                                      {!notif.isRead && (
+                                        <span className="w-1.5 h-1.5 rounded-full bg-primary ring-2 ring-primary/30 shrink-0" />
+                                      )}
+                                      <span className={cn(
+                                        "text-[8px] font-black uppercase tracking-widest truncate",
+                                        notif.isRead ? "text-[var(--text-secondary)] opacity-70" : "text-primary font-extrabold"
+                                      )}>
+                                        {meta.type}
+                                      </span>
+                                    </div>
+                                    <span className="text-[8px] font-bold uppercase tracking-wider text-[var(--text-secondary)] opacity-60 shrink-0 font-mono">
+                                      {formatNotificationTime(notif.createdAt)}
+                                    </span>
+                                  </div>
+
+                                  {/* Title */}
+                                  <h4 className={cn(
+                                    "text-[11px] uppercase tracking-wide leading-snug truncate",
+                                    notif.isRead 
+                                      ? "font-bold text-[var(--text-secondary)]" 
+                                      : "font-black text-[var(--text-primary)]"
+                                  )}>
+                                    {notif.title}
+                                  </h4>
+
+                                  {/* Description */}
+                                  <p className={cn(
+                                    "text-[10px] leading-relaxed mt-0.5 line-clamp-2",
+                                    notif.isRead
+                                      ? "text-[var(--text-secondary)] opacity-70 font-normal"
+                                      : "text-[var(--text-secondary)] font-medium"
+                                  )}>
+                                    {notif.message}
+                                  </p>
+                                </div>
+                              </div>
                             </div>
-                            <p className="text-[10px] font-medium leading-relaxed">{notif.message}</p>
-                          </div>
-                        ))
+                          );
+                        })
                       )}
                     </div>
-                  </div>
+
+                    {/* Footer */}
+                    <div className="p-3 border-t border-white/[0.08] light:border-[#E5E7EB] bg-white/[0.02] light:bg-black/[0.02] flex items-center justify-center">
+                      {unreadCount > 0 ? (
+                        <button
+                          onClick={handleMarkAllAsRead}
+                          className="w-full py-2.5 px-4 rounded-xl text-[10px] font-black uppercase tracking-[0.18em] text-primary hover:text-white bg-primary/[0.08] hover:bg-primary border border-primary/20 hover:border-primary shadow-[0_2px_12px_rgba(255,77,45,0.1)] hover:shadow-[0_4px_20px_rgba(255,77,45,0.35)] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
+                        >
+                          <CheckCheck className="w-3.5 h-3.5" />
+                          MARK ALL AS READ
+                        </button>
+                      ) : (
+                        <div className="py-1 text-center">
+                          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)] opacity-40 flex items-center justify-center gap-1.5">
+                            <Check className="w-3 h-3 text-primary" /> ALL NOTIFICATIONS READ
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
                 )}
-              </div>
-            )}
+              </AnimatePresence>
+            </div>
 
             {/* Theme Toggle Button */}
             <button 
@@ -634,7 +816,7 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({ role }) => {
         </header>
 
         {/* Scrollable Main Pages Container */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-12 custom-scrollbar relative">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-12 custom-scrollbar relative z-10">
           <motion.div
             key={location.pathname}
             initial={{ opacity: 0, x: 20 }}
