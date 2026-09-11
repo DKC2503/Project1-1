@@ -31,6 +31,7 @@ import { fetchMarketIntel, type StockData } from '../../services/marketService';
 
 // Component Imports
 import { MobileHeader } from './MobileHeader';
+import FlashNewsTicker from '../FlashNewsTicker';
 const WorldPopulationModal = lazy(() => import('../WorldPopulationModal'));
 const LoginModal = lazy(() => import('../LoginModal'));
 import { lazy, Suspense } from 'react';
@@ -396,6 +397,11 @@ export const MobileHome: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* FLASH NEWS STRIP (Full Width Scrolling Ticker, No FLASH! Label) */}
+        <div id="flash" className="w-full overflow-hidden rounded-2xl border border-[var(--glass-border)] bg-white/5">
+          <FlashNewsTicker />
+        </div>
 
         {loading && articles.length === 0 ? (
           <div className="py-16 text-center">

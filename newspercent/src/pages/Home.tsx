@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import SiteHeader from '../components/SiteHeader';
 import CategoryNav from '../components/CategoryNav';
 import StockTicker from '../components/StockTicker';
+import FlashNewsTicker from '../components/FlashNewsTicker';
 import Footer from '../components/Footer';
 import HeroSection from '../sections/HeroSection';
 import LatestNewsSection from '../sections/LatestNewsSection';
@@ -88,6 +89,9 @@ const Home = () => {
 
         {/* 1. Category Navigation */}
         <CategoryNav />
+
+        {/* 2. Breaking News Ticker (Full Width Scrolling Ticker, No FLASH Badge) */}
+        <FlashNewsTicker />
 
         {searchQuery ? (
           /* Search Results View */
