@@ -31,10 +31,8 @@ import { fetchMarketIntel, type StockData } from '../../services/marketService';
 
 // Component Imports
 import { MobileHeader } from './MobileHeader';
-import FlashNewsTicker from '../FlashNewsTicker';
 const WorldPopulationModal = lazy(() => import('../WorldPopulationModal'));
 const LoginModal = lazy(() => import('../LoginModal'));
-import LoadingScreen from '../LoadingScreen';
 import { lazy, Suspense } from 'react';
 
 // World Population Live Counter Constants
@@ -55,7 +53,6 @@ export const MobileHome: React.FC = () => {
   const [stocks, setStocks] = useState<StockData[]>([]);
   const [marketStatus, setMarketStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [loading, setLoading] = useState(true);
-  const [splashComplete, setSplashComplete] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isPopModalOpen, setIsPopModalOpen] = useState(false);
@@ -266,26 +263,9 @@ export const MobileHome: React.FC = () => {
     setIsMenuOpen(false);
   };
 
-  const showSplash = loading || !splashComplete;
-
   return (
     <>
-      <AnimatePresence mode="wait">
-        {showSplash && (
-          <LoadingScreen 
-            key="splash" 
-            onComplete={() => setSplashComplete(true)} 
-            subtext="SYNCING NEWS NETWORK..." 
-          />
-        )}
-      </AnimatePresence>
-
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: showSplash ? 0 : 1 }}
-        transition={{ duration: 0.8, ease: "easeInOut" }}
-        className="relative min-h-screen bg-[var(--background-deep)] text-[var(--text-primary)] font-manrope pb-12 select-none"
-      >
+      <div className="relative min-h-screen bg-[var(--background-deep)] text-[var(--text-primary)] font-manrope pb-12 select-none">
       
       {/* 1. MOBILE HEADER (Hamburger | N% Logo | Weather | Economy) */}
       <MobileHeader 
@@ -417,13 +397,15 @@ export const MobileHome: React.FC = () => {
           </div>
         )}
 
-        {/* 5. FLASH NEWS STRIP */}
-        <div id="flash" className="w-full overflow-hidden rounded-2xl border border-[var(--glass-border)] bg-white/5">
-          <FlashNewsTicker />
-        </div>
-
-        {/* 6. HERO ARTICLE */}
-        {heroArticle && (
+        {loading && articles.length === 0 ? (
+          <div className="py-16 text-center">
+            <div className="w-8 h-8 border-t-2 border-primary border-r-2 border-primary/20 rounded-full animate-spin mx-auto mb-3" />
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary italic">Loading intelligence feed...</p>
+          </div>
+        ) : (
+          <>
+            {/* HERO ARTICLE */}
+            {heroArticle && (
           <div id="trending" className="space-y-4">
             <div className="flex items-center gap-2 border-b border-[var(--glass-border)] pb-2">
               <span className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-[0.2em] flex items-center gap-1.5">
@@ -542,6 +524,8 @@ export const MobileHome: React.FC = () => {
             })}
           </div>
         </div>
+          </>
+        )}
 
       </div>
 
@@ -705,7 +689,7 @@ export const MobileHome: React.FC = () => {
           onClose={() => setIsLoginOpen(false)} 
         />
       </Suspense>
-      </motion.div>
+      </div>
     </>
   );
 };

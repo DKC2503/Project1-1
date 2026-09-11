@@ -2,7 +2,7 @@ import { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from './hooks/useAuthStore';
 import { useToastStore } from './hooks/useToastStore';
-import api, { API_URL } from './config/api';
+import api from './config/api';
 import Home from './pages/Home';
 
 const CategoryPage = lazy(() => import('./pages/CategoryPage'));
@@ -38,14 +38,21 @@ const AnalyticsDashboard = lazy(() => import('./pages/AnalyticsDashboard'));
 const FlashNewsControl = lazy(() => import('./pages/FlashNewsControl'));
 
 import ToastContainer from './components/ToastContainer';
-import LoadingScreen from './components/LoadingScreen';
 const GlobalDialogProvider = lazy(() => import('./components/ui/GlobalDialogProvider'));
 import { useSystemSettingsStore } from './hooks/useSystemSettingsStore';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles?: string[] }) => {
-  const { user, token } = useAuthStore();
+  const { user, token, isInitialized } = useAuthStore();
   
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen bg-[var(--background-deep)] flex items-center justify-center">
+        <div className="w-8 h-8 border-t-2 border-primary border-r-2 border-primary/20 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   if (!token || !user) {
     return <Navigate to="/" replace />;
   }
@@ -58,23 +65,18 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode,
 };
 
 function App() {
-  const { checkAuth, isInitialized, role } = useAuthStore();
+  const { checkAuth } = useAuthStore();
   const { addToast } = useToastStore();
   const { fetchSettings } = useSystemSettingsStore();
 
-  console.log("[APP] Starting Render. isInitialized:", isInitialized);
-
   useEffect(() => {
-    console.log("[APP] Initial Load Effect: Running checkAuth and fetchSettings");
-    checkAuth().then(() => console.log("[APP] checkAuth complete"));
-    fetchSettings().then(() => console.log("[APP] fetchSettings complete"));
+    checkAuth();
+    fetchSettings();
     
     // Server Health Check
     const checkServer = async () => {
       try {
-        console.log(`[APP] Health check... Ping ${API_URL}/api/health`);
-        const res = await api.get('/api/health');
-        console.log("[APP] Health check SUCCESS:", res.data);
+        await api.get('/api/health');
       } catch (err: any) {
         console.error("[APP] Health check FAILURE:", err.message);
         addToast('error', 'CRITICAL', 'SERVER OFFLINE');
@@ -82,15 +84,6 @@ function App() {
     };
     checkServer();
   }, [checkAuth, fetchSettings, addToast]);
-
-  if (!isInitialized) {
-    console.log("[APP] isInitialized is FALSE. Showing LoadingScreen.");
-    return <LoadingScreen onComplete={() => {
-      console.log("[APP] LoadingScreen onComplete triggered. Proceeding to App content.");
-    }} />;
-  }
-
-  console.log("[APP] isInitialized is TRUE. Rendering Router. User Role:", role);
 
   return (
     <Router>

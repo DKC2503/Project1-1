@@ -22,7 +22,6 @@ import api from '../config/api';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../hooks/useAuthStore';
-import LoadingScreen from '../components/LoadingScreen';
 import { useToastStore } from '../hooks/useToastStore';
 import { useDialogStore } from '../hooks/useDialogStore';
 import CyberSelect from '../components/CyberSelect';
@@ -271,7 +270,14 @@ const TeamManagement: React.FC = () => {
     }
   };
 
-  if (loading) return <LoadingScreen onComplete={() => {}} />;
+  if (loading) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
+        <RefreshCw className="w-10 h-10 text-primary animate-spin" />
+        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary italic">Loading clearance database...</p>
+      </div>
+    );
+  }
 
   if (error) {
     return (

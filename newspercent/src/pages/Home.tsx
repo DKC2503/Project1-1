@@ -3,16 +3,13 @@ import { useSearchParams } from 'react-router-dom';
 import SiteHeader from '../components/SiteHeader';
 import CategoryNav from '../components/CategoryNav';
 import StockTicker from '../components/StockTicker';
-import FlashNewsTicker from '../components/FlashNewsTicker';
 import Footer from '../components/Footer';
-import LoadingScreen from '../components/LoadingScreen';
 import HeroSection from '../sections/HeroSection';
 import LatestNewsSection from '../sections/LatestNewsSection';
 import CategoryFeed from '../sections/CategoryFeed';
 import EditorsPickSection from '../sections/EditorsPickSection';
 import NewsCard from '../components/NewsCard';
 import { fetchNews, type NewsArticle } from '../services/newsService';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useAnalytics } from '../hooks/useAnalytics';
 
 import { useIsMobile } from '../hooks/useIsMobile';
@@ -71,11 +68,9 @@ const SearchResultsSection: React.FC<SearchResultsSectionProps> = ({ query }) =>
 };
 
 const Home = () => {
-  const [isLoading, setIsLoading] = useState(true);
   const [searchParams] = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
   const isMobile = useIsMobile();
-  console.log("[HOME] Rendering. isLoading:", isLoading, "isMobile:", isMobile, "searchQuery:", searchQuery);
   useAnalytics();
 
   if (isMobile) {
@@ -84,31 +79,15 @@ const Home = () => {
 
   return (
     <div className="relative min-h-screen bg-[var(--background-deep)] transition-colors duration-300">
-      <AnimatePresence>
-        {isLoading && (
-          <LoadingScreen onComplete={() => {
-            console.log("[HOME] LoadingScreen complete. Setting isLoading to false.");
-            setIsLoading(false);
-          }} />
-        )}
-      </AnimatePresence>
-      
       {/* HEADER SECTION */}
       <SiteHeader />
       
-      <motion.main
-        initial={{ opacity: 0 }}
-        animate={{ opacity: isLoading ? 0 : 1 }}
-        transition={{ duration: 0.8 }}
-      >
+      <main>
         {/* Stock Ticker */}
         <StockTicker />
 
         {/* 1. Category Navigation */}
         <CategoryNav />
-
-        {/* 2. Flash News Ticker (Below Categories) */}
-        <FlashNewsTicker />
 
         {searchQuery ? (
           /* Search Results View */
@@ -138,7 +117,7 @@ const Home = () => {
             </div>
           </>
         )}
-      </motion.main>
+      </main>
 
       <Footer />
     </div>

@@ -97,26 +97,26 @@ const ArticleView: React.FC = () => {
     <div className="min-h-screen bg-[var(--background-deep)] transition-colors duration-300">
       <MainNavbar />
       
-      <main className="max-w-4xl mx-auto px-4 sm:px-8 pt-28 sm:pt-40 pb-16 sm:pb-24 font-manrope">
+      <main className="max-w-4xl mx-auto px-4 sm:px-8 pt-24 sm:pt-32 pb-12 sm:pb-20 font-manrope">
         <button 
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-primary transition-colors mb-12 uppercase text-[10px] font-bold tracking-[0.2em]"
+          className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-primary transition-colors mb-6 uppercase text-[10px] font-bold tracking-[0.2em]"
         >
           <ChevronLeft className="w-4 h-4" /> Back to Intelligence Feed
         </button>
 
-        <header className="mb-16">
-          <div className="flex items-center gap-4 mb-8">
-            <span className="px-5 py-2 bg-primary/10 border border-primary/20 rounded-xl text-primary text-[10px] font-black uppercase tracking-[0.2em]">
+        <header className="mb-8 sm:mb-10">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="px-3 py-1 bg-primary/10 border border-primary/20 rounded-full text-primary text-[9px] font-bold uppercase tracking-wider inline-flex items-center">
               {article.category}
             </span>
           </div>
 
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-[var(--text-primary)] mb-10 leading-[1.1] tracking-tight">
+          <h1 className="text-2xl sm:text-3xl lg:text-[2.25rem] font-extrabold text-[var(--text-primary)] mb-5 leading-tight tracking-tight">
             {article.title}
           </h1>
 
-          <div className="flex flex-wrap items-center justify-between gap-8 py-10 border-y border-[var(--glass-border)]">
+          <div className="flex flex-wrap items-center justify-between gap-4 py-4 border-y border-[var(--glass-border)]">
             <div className="flex flex-col">
               <span className="text-[var(--text-primary)] font-bold text-sm uppercase tracking-tight">{article.authorName}</span>
             </div>
@@ -131,7 +131,7 @@ const ArticleView: React.FC = () => {
         </header>
 
         {article.featuredImage && (
-          <div className="mb-16 rounded-[3rem] overflow-hidden border border-[var(--glass-border)] shadow-2xl group relative">
+          <div className="mb-10 sm:mb-12 rounded-[2rem] sm:rounded-[3rem] overflow-hidden border border-[var(--glass-border)] shadow-2xl group relative">
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 z-10" />
             <img 
               src={article.featuredImage} 

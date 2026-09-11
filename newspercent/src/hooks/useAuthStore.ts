@@ -43,7 +43,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   role: initialUser?.role || null,
   user: initialUser,
   loginLogId: localStorage.getItem('loginLogId'),
-  isInitialized: false,
+  isInitialized: !localStorage.getItem('token'),
 
   setAuth: (user, token, loginLogId) => {
     localStorage.setItem('token', token);

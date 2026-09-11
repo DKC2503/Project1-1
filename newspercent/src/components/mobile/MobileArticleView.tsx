@@ -114,33 +114,28 @@ export const MobileArticleView: React.FC<MobileArticleViewProps> = ({ article, o
         }}
       />
 
-      <main className="max-w-4xl mx-auto px-4 py-6 font-manrope space-y-6">
+      <main className="max-w-4xl mx-auto px-4 py-4 font-manrope space-y-4">
         <button 
           onClick={onBack}
-          className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-primary transition-colors uppercase text-[9px] font-bold tracking-[0.2em]"
+          className="flex items-center gap-1.5 text-[var(--text-secondary)] hover:text-primary transition-colors uppercase text-[9px] font-bold tracking-[0.2em]"
         >
           <ChevronLeft className="w-4 h-4" /> Back to feed
         </button>
 
-        <header className="space-y-4">
-          <div className="flex items-center gap-4">
-            <span className="px-3 py-1 bg-primary/10 border border-primary/20 rounded-md text-primary text-[8px] font-black uppercase tracking-[0.2em]">
+        <header className="space-y-2.5">
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 bg-primary/10 border border-primary/20 rounded-full text-primary text-[8px] sm:text-[9px] font-bold uppercase tracking-wider inline-flex items-center">
               {article.category}
             </span>
           </div>
 
-          <h1 className="text-2xl font-extrabold text-[var(--text-primary)] leading-tight uppercase font-lemon-milk">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] leading-snug tracking-tight font-manrope">
             {article.title}
           </h1>
 
-          <div className="flex flex-col gap-3 py-4 border-y border-[var(--glass-border)]">
-            <div className="flex flex-col leading-tight">
-              <span className="text-[var(--text-primary)] font-bold text-xs uppercase">{article.authorName}</span>
-            </div>
-
-            <div className="text-[9px] text-[var(--text-secondary)] font-bold uppercase tracking-wider">
-              <span>{new Date(article.publishedAt || article.createdAt).toLocaleDateString()}</span>
-            </div>
+          <div className="flex items-center justify-between py-2.5 border-y border-[var(--glass-border)] text-[9px] font-bold uppercase tracking-wider">
+            <span className="text-[var(--text-primary)] font-bold text-xs">{article.authorName}</span>
+            <span className="text-[var(--text-secondary)]">{new Date(article.publishedAt || article.createdAt).toLocaleDateString()}</span>
           </div>
         </header>
 
