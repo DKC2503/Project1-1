@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import DOMPurify from 'dompurify';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
@@ -151,7 +152,7 @@ export const MobileArticleView: React.FC<MobileArticleViewProps> = ({ article, o
         )}
 
         <div className="prose dark:prose-invert prose-red max-w-none text-[var(--text-secondary)] text-sm leading-relaxed font-manrope">
-          <div dangerouslySetInnerHTML={{ __html: article.content }} className="article-content" />
+          <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content) }} className="article-content" />
         </div>
 
         {/* Premium Engagement Bar */}

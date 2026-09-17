@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import DOMPurify from 'dompurify';
 import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import SiteHeader from '../components/SiteHeader';
@@ -137,7 +138,7 @@ const Careers: React.FC = () => {
               {/* Short Description */}
               <div 
                 className="text-[#555555] text-sm leading-relaxed max-w-2xl mx-auto font-medium prose prose-red text-left border border-[#E5E7EB] bg-white p-8 sm:p-12 rounded-[2.5rem] shadow-[0_10px_35px_rgba(0,0,0,0.01)]"
-                dangerouslySetInnerHTML={{ __html: recruitment.description }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(recruitment.description) }}
               />
 
               {/* Liquid Glass Apply Now Button */}

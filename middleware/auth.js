@@ -12,7 +12,11 @@ const authMiddleware = {
             }
 
             const token = authHeader.split(' ')[1];
-            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'newspercent_fallback_jwt_secret_key_2026');
+            if (!process.env.JWT_SECRET) {
+                console.error('CRITICAL: JWT_SECRET environment variable is missing.');
+                process.exit(1);
+            }
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
             
             const user = await User.findById(decoded.id);
 
@@ -53,7 +57,7 @@ const authMiddleware = {
     },
 
     requireSuperAdmin: (req, res, next) => {
-        if (!['admin', 'super_admin'].includes(req.user.role)) {
+        if (req.user.role !== 'super_admin') {
             console.log(`[AUTH] Super Admin clearance denied for: ${req.user.role}`);
             return res.status(403).json({ error: 'Super Admin clearance required.' });
         }

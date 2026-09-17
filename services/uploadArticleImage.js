@@ -62,7 +62,7 @@ const uploadArticleImage = async (fileBuffer, folder) => {
                 api_key: activeConfig.api_key,
                 api_secret: activeConfig.api_secret,
                 folder, 
-                resource_type: 'auto' 
+                resource_type: 'image' 
             },
             (error, result) => {
                 if (error) {

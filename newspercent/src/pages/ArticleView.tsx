@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import DOMPurify from 'dompurify';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ChevronLeft,
@@ -142,7 +143,7 @@ const ArticleView: React.FC = () => {
         )}
 
         <div className="prose dark:prose-invert prose-red max-w-none mb-20 font-manrope leading-[1.8] text-[var(--text-secondary)] light:text-[#374151]">
-          <div dangerouslySetInnerHTML={{ __html: article.content }} className="article-content" />
+          <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content) }} className="article-content" />
         </div>
 
         {/* Premium Engagement Bar */}

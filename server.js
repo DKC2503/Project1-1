@@ -23,6 +23,8 @@ process.on("unhandledRejection", (reason, promise) => {
 });
 
 const express = require('express');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const path = require('path');
 const cors = require('cors');
 const multer = require('multer');
@@ -217,6 +219,11 @@ require('./config/cloudinaryProfile');
 require('./config/cloudinaryArticle');
 
 const app = express();
+app.use(helmet());
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20 });
+const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 });
+app.use('/api/auth', authLimiter);
+app.use('/api', apiLimiter);
 const PORT = process.env.PORT || 3000;
 
 // Import Production Logging Middleware
@@ -244,7 +251,7 @@ app.use(cors({
     if (allowedOrigins.length === 0) {
       return callback(null, true);
     }
-    return callback(null, true);
+    return callback(new Error('Not allowed by CORS'));
   },
   credentials: true
 }));
@@ -766,7 +773,7 @@ app.patch('/api/admin/users/:id', verifyToken, requireAdmin, async (req, res) =>
         if (!targetUser) return res.status(404).json({ error: 'User not found' });
         
         const oldIsActive = targetUser.isActive;
-        Object.assign(targetUser, req.body);
+        ['name', 'bio', 'isActive', 'role'].forEach(k => { if (req.body[k] !== undefined) targetUser[k] = req.body[k]; });
         await targetUser.save();
 
         if (req.body.isActive === true && oldIsActive === false) {
@@ -823,7 +830,7 @@ app.get('/api/news', async (req, res) => {
             const news = await Article.find(filter).sort({ publishedAt: -1 });
             console.log(`[FETCH NEWS - SEARCH] Found ${news.length} articles matching "${req.query.search}"`);
             return res.json(news);
-        } else if (req.query.category && req.query.category.toLowerCase() === 'breaking') {
+        } else if (req.query.category && typeof req.query.category === 'string' && req.query.category.toLowerCase() === 'breaking') {
             filter.$or = [
                 { isBreakingNews: true },
                 { isMainBreaking: true },
@@ -832,7 +839,7 @@ app.get('/api/news', async (req, res) => {
             const news = await Article.find(filter).sort({ publishedAt: -1 });
             console.log(`[FETCH NEWS - BREAKING] Found ${news.length} breaking articles`);
             return res.json(news);
-        } else if (req.query.category && req.query.category !== 'Home') {
+        } else if (req.query.category && typeof req.query.category === 'string' && req.query.category !== 'Home') {
             filter.category = req.query.category;
             const news = await Article.find(filter).sort({ publishedAt: -1 });
             console.log(`[FETCH NEWS - CATEGORY] Found ${news.length} articles for category "${req.query.category}"`);
@@ -939,7 +946,7 @@ app.post('/api/articles/:id/share', async (req, res) => {
 });
 
 // LIKE ARTICLE
-app.post('/api/articles/:id/like', async (req, res) => {
+app.post('/api/articles/:id/like', verifyToken, async (req, res) => {
     try {
         const idOrSlug = req.params.id;
         let article = null;
@@ -973,16 +980,12 @@ app.post('/api/articles/:id/like', async (req, res) => {
         if (err.stack) {
             console.error(err.stack);
         }
-        res.status(500).json({ 
-            error: 'Like Article Error', 
-            details: err.message,
-            stack: err.stack 
-        });
+        handleError(res, err, 'Like Article Error');
     }
 });
 
 // UNLIKE ARTICLE
-app.delete('/api/articles/:id/like', async (req, res) => {
+app.delete('/api/articles/:id/like', verifyToken, async (req, res) => {
     try {
         const idOrSlug = req.params.id;
         let article = null;
@@ -1016,11 +1019,7 @@ app.delete('/api/articles/:id/like', async (req, res) => {
         if (err.stack) {
             console.error(err.stack);
         }
-        res.status(500).json({ 
-            error: 'Unlike Article Error', 
-            details: err.message,
-            stack: err.stack 
-        });
+        handleError(res, err, 'Unlike Article Error');
     }
 });
 
@@ -1383,7 +1382,7 @@ app.patch('/api/admin/articles/:id', verifyToken, requireEditor, async (req, res
         if (!article) return res.status(404).json({ error: 'Article not found' });
         
         const oldStatus = article.status;
-        Object.assign(article, req.body);
+        ['title', 'subtitle', 'content', 'category', 'featuredImage', 'status', 'revisionMessage', 'reviewComments'].forEach(k => { if (req.body[k] !== undefined) article[k] = req.body[k]; });
         
         // Generate and apply SEO defaults if empty
         const seoData = await applySeoDefaults(article, article._id);
@@ -1460,7 +1459,7 @@ app.delete('/api/admin/articles/:id', verifyToken, requireEditor, async (req, re
 });
 
 // Author/Admin APIs
-app.get('/api/articles', verifyToken, async (req, res) => {
+app.get('/api/articles', verifyToken, requireEditor, async (req, res) => {
     try {
         console.log('--- ADMIN FETCH ARTICLES ROUTE ---');
         console.log('User identity:', req.user.email, '| Clearance:', req.user.role);
@@ -1540,7 +1539,7 @@ app.patch('/api/articles/:id', verifyToken, async (req, res) => {
         console.log(`[UPDATE ARTICLE] ID: ${req.params.id} | Payload:`, JSON.stringify(req.body, null, 2));
 
         const oldStatus = article.status;
-        Object.assign(article, req.body);
+        ['title', 'subtitle', 'content', 'category', 'featuredImage', 'status', 'revisionMessage', 'reviewComments'].forEach(k => { if (req.body[k] !== undefined) article[k] = req.body[k]; });
         
         // Generate and apply SEO defaults if empty
         const seoData = await applySeoDefaults(article, article._id);
@@ -1613,7 +1612,7 @@ app.post('/api/articles', verifyToken, async (req, res) => {
 
         const seoData = await applySeoDefaults(req.body);
         const newArticle = await Article.create({
-            ...req.body,
+            title: req.body.title, subtitle: req.body.subtitle, content: req.body.content, category: req.body.category, featuredImage: req.body.featuredImage, status: req.body.status,
             ...seoData,
             authorId: req.user._id,
             authorName: req.user.name,
@@ -1650,7 +1649,7 @@ app.post('/api/articles', verifyToken, async (req, res) => {
 
 // Storage API
 const storage = multer.memoryStorage();
-const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
+const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 }, fileFilter: (req, file, cb) => { if (file.mimetype.startsWith('image/')) cb(null, true); else cb(new Error('Only images are allowed')); } });
 
 app.post('/api/upload', verifyToken, upload.single('file'), async (req, res) => {
     try {
@@ -2045,7 +2044,7 @@ app.post('/api/admin/external-apis/verify', verifyToken, requireAdmin, async (re
 
             if (!keyToTest || keyToTest === 'N/A' || keyToTest.includes('*')) {
                 // Fallback to env key
-                keyToTest = process.env.WEATHER_API_KEY || process.env.VITE_WEATHER_API_KEY || '71e7436123ba4731a9b191053261906';
+                keyToTest = process.env.WEATHER_API_KEY || process.env.VITE_WEATHER_API_KEY ;
             }
 
             const axios = require('axios');
@@ -2159,7 +2158,7 @@ app.post('/api/admin/external-apis/verify', verifyToken, requireAdmin, async (re
             }
 
             if (!keyToTest || keyToTest === 'N/A' || keyToTest.includes('*')) {
-                keyToTest = process.env.PRECIOUS_METALS_API_KEY || process.env.GOLD_API_KEY || 'goldapi-e534f854ad9d063b91a413673b705ee7-io';
+                keyToTest = process.env.PRECIOUS_METALS_API_KEY || process.env.GOLD_API_KEY ;
             }
 
             let maskedKeyLog = 'N/A';
@@ -2252,7 +2251,7 @@ app.post('/api/admin/external-apis/verify', verifyToken, requireAdmin, async (re
             }
 
             if (!keyToTest || keyToTest === 'N/A' || keyToTest.includes('*')) {
-                keyToTest = process.env.FUEL_API_KEY || 'sk-live-kL3JzfGtjyqvUIYFxHDAHZuadiFiQjyTMt8nO0bG';
+                keyToTest = process.env.FUEL_API_KEY ;
             }
 
             const axios = require('axios');
@@ -2494,7 +2493,7 @@ app.get('/api/admin/external-apis/health', verifyToken, requireAdmin, async (req
         let weatherStatus = 'Disconnected';
         if (isWeatherEnabled) {
             try {
-                let key = process.env.WEATHER_API_KEY || process.env.VITE_WEATHER_API_KEY || '71e7436123ba4731a9b191053261906';
+                let key = process.env.WEATHER_API_KEY || process.env.VITE_WEATHER_API_KEY ;
                 if (weatherConfig && weatherConfig.apiKey) {
                     const dec = decrypt(weatherConfig.apiKey);
                     if (dec) key = dec;
