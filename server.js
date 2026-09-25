@@ -840,7 +840,8 @@ app.get('/api/news', async (req, res) => {
             console.log(`[FETCH NEWS - BREAKING] Found ${news.length} breaking articles`);
             return res.json(news);
         } else if (req.query.category && typeof req.query.category === 'string' && req.query.category !== 'Home') {
-            filter.category = req.query.category;
+            const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            filter.category = new RegExp('^' + escapeRegExp(req.query.category) + '$', 'i');
             const news = await Article.find(filter).sort({ publishedAt: -1 });
             console.log(`[FETCH NEWS - CATEGORY] Found ${news.length} articles for category "${req.query.category}"`);
             return res.json(news);
@@ -3096,6 +3097,52 @@ const getActiveIndexPath = () => {
     return found ? path.join(found, 'index.html') : path.join(candidates[0], 'index.html');
 };
 
+// Dynamic Sitemap Generation
+app.get('/sitemap.xml', async (req, res) => {
+    try {
+        const escapeXml = (unsafe) => unsafe.replace(/[<>&'"]/g, c => {
+            switch (c) {
+                case '<': return '&lt;';
+                case '>': return '&gt;';
+                case '&': return '&amp;';
+                case '\'': return '&apos;';
+                case '"': return '&quot;';
+            }
+        });
+
+        const Article = require('./models/Article');
+        const articles = await Article.find({ status: 'PUBLISHED' }).select('slug _id publishedAt updatedAt');
+        
+        const categories = [
+            'national', 'global', 'politics', 'business', 'sports', 
+            'entertainment', 'automobile', 'lifestyle', 'movies', 
+            'startups', 'studies', 'case-studies', 'technology', 'breaking'
+        ];
+        
+        let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+        xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
+        xml += `  <url>\n    <loc>https://newspercent.com/</loc>\n    <lastmod>${new Date().toISOString()}</lastmod>\n    <changefreq>always</changefreq>\n    <priority>1.0</priority>\n  </url>\n`;
+        
+        categories.forEach(cat => {
+            xml += `  <url>\n    <loc>https://newspercent.com/category/${cat}</loc>\n    <changefreq>hourly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
+        });
+        
+        articles.forEach(article => {
+            const locId = article.slug || article._id.toString();
+            const lastmod = (article.updatedAt || article.publishedAt || new Date()).toISOString();
+            xml += `  <url>\n    <loc>https://newspercent.com/article/${escapeXml(locId)}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>0.6</priority>\n  </url>\n`;
+        });
+        
+        xml += `</urlset>`;
+        
+        res.header('Content-Type', 'application/xml');
+        return res.send(xml);
+    } catch (err) {
+        console.error('Sitemap generation error:', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
 // Serve static assets from all candidate build directories to avoid race conditions
 app.use(express.static(path.join(__dirname, 'newspercent', 'dist')));
 app.use(express.static(path.join(__dirname, 'dist')));
@@ -3199,7 +3246,15 @@ app.get('/category/:slug', (req, res, next) => {
     const fs = require('fs');
     const indexPath = getActiveIndexPath();
     if (fs.existsSync(indexPath)) {
-        return res.sendFile(indexPath);
+        const slug = req.params.slug;
+        const catName = slug.charAt(0).toUpperCase() + slug.slice(1);
+        let html = fs.readFileSync(indexPath, 'utf8');
+        html = html.replace(/<title>.*?<\/title>/, `<title>${catName} News | NEWSPERCENT</title>`);
+        html = html.replace(/<meta name="description" content=".*?" \/>/, `<meta name="description" content="Latest ${catName} news and real-time updates from NewsPercent." />`);
+        html = html.replace(/<link rel="canonical" href=".*?" \/>/, `<link rel="canonical" href="https://newspercent.com/category/${slug}" />`);
+        html = html.replace(/<meta property="og:title" content=".*?" \/>/, `<meta property="og:title" content="${catName} News | NEWSPERCENT" />`);
+        html = html.replace(/<meta property="og:url" content=".*?" \/>/, `<meta property="og:url" content="https://newspercent.com/category/${slug}" />`);
+        return res.send(html);
     }
     return next();
 });
@@ -3212,7 +3267,13 @@ app.use((req, res, next) => {
     const fs = require('fs');
     const indexPath = getActiveIndexPath();
     if (fs.existsSync(indexPath)) {
-        return res.sendFile(indexPath);
+        const validRoutes = ['/', '/about', '/contact', '/careers', '/advertise', '/privacy', '/editorial', '/terms', '/weather', '/admin', '/author'];
+        const isMatch = validRoutes.some(r => req.path === r || req.path.startsWith(r + '/')) || req.path.startsWith('/article/') || req.path.startsWith('/category/');
+        if (isMatch) {
+            return res.sendFile(indexPath);
+        } else {
+            return res.status(404).sendFile(indexPath);
+        }
     }
     return res.status(500).json({
         success: false,

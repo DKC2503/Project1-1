@@ -36,6 +36,7 @@ const PerformanceDashboard = lazy(() => import('./pages/PerformanceDashboard'));
 const AdminPerformance = lazy(() => import('./pages/AdminPerformance'));
 const AnalyticsDashboard = lazy(() => import('./pages/AnalyticsDashboard'));
 const FlashNewsControl = lazy(() => import('./pages/FlashNewsControl'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 
 import ToastContainer from './components/ToastContainer';
 const GlobalDialogProvider = lazy(() => import('./components/ui/GlobalDialogProvider'));
@@ -176,7 +177,7 @@ function AppContent() {
           </Route>
 
           {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
     </>
