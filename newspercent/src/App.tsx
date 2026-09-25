@@ -18,6 +18,7 @@ const WeatherDashboard = lazy(() => import('./pages/WeatherDashboard'));
 
 import PortalLayout from './components/PortalLayout';
 const AdminOverview = lazy(() => import('./pages/AdminOverview'));
+const MaintenanceDashboard = lazy(() => import('./pages/MaintenanceDashboard'));
 const ArticleReviewQueue = lazy(() => import('./pages/ArticleReviewQueue'));
 const ContentEngine = lazy(() => import('./pages/ContentEngine'));
 const AdminPublishingCommand = lazy(() => import('./pages/AdminPublishingCommand'));
@@ -101,7 +102,7 @@ function AppContent() {
   console.log("[ROUTER] Current Route:", location.pathname);
 
   useEffect(() => {
-    const isPortalRoute = location.pathname.startsWith('/admin') || location.pathname.startsWith('/author');
+    const isPortalRoute = location.pathname.startsWith('/admin') || location.pathname.startsWith('/author') || location.pathname.startsWith('/maintenance');
     if (isPortalRoute) {
       if (!wasPortal) {
         localStorage.setItem('portal-theme', 'dark');
@@ -151,7 +152,7 @@ function AppContent() {
           <Route path="/weather" element={<WeatherDashboardWithLog />} />
 
           {/* Unified Portal (Roles handled within Layout/Routes) */}
-          <Route path="/admin" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'editor', 'reviewer']}><PortalLayout role="ADMIN" /></ProtectedRoute>}>
+          <Route path="/admin" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'editor', 'reviewer', 'MAINTENANCE']}><PortalLayout role="ADMIN" /></ProtectedRoute>}>
             <Route index element={<AdminOverviewWithLog />} />
             <Route path="pending" element={<ArticleReviewQueue />} />
             <Route path="studio" element={<AdminPublishingCommand />} />
@@ -161,12 +162,16 @@ function AppContent() {
             <Route path="history" element={<SecurityProtocols />} />
             <Route path="merit" element={<AdminPerformance />} />
             <Route path="analytics" element={<AnalyticsDashboard />} />
-            <Route path="settings/system" element={<SystemSettings />} />
             <Route path="settings/credits" element={<CreditSettings />} />
+            <Route path="settings/recruitment" element={<RecruitmentAdmin />} />
+          </Route>
+
+          <Route path="/maintenance" element={<ProtectedRoute allowedRoles={['MAINTENANCE']}><PortalLayout role="MAINTENANCE" /></ProtectedRoute>}>
+            <Route index element={<MaintenanceDashboard />} />
+            <Route path="settings/system" element={<SystemSettings />} />
             <Route path="settings/storage" element={<StorageSettings />} />
             <Route path="settings/database" element={<DatabaseSettings />} />
             <Route path="settings/external-apis" element={<ExternalApiManager />} />
-            <Route path="settings/recruitment" element={<RecruitmentAdmin />} />
           </Route>
 
           <Route path="/author" element={<ProtectedRoute allowedRoles={['author', 'super_admin', 'admin']}><PortalLayout role="AUTHOR" /></ProtectedRoute>}>

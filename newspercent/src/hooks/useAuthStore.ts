@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import api from '../config/api';
 
-export type UserRole = 'super_admin' | 'admin' | 'editor' | 'reviewer' | 'author';
+export type UserRole = 'super_admin' | 'admin' | 'editor' | 'reviewer' | 'author' | 'MAINTENANCE';
 
 interface UserProfile {
   _id: string;

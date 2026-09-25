@@ -1,10 +1,9 @@
 import React from 'react';
-import { Clock, User, ArrowUpRight } from 'lucide-react';
+import { Clock, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link, useParams } from 'react-router-dom';
 import type { NewsArticle } from '../services/newsService';
 import { cn } from '../lib/utils';
-import ShareButton from './ShareButton';
  
 interface NewsCardProps {
   article: NewsArticle;
@@ -98,31 +97,13 @@ const NewsCard: React.FC<NewsCardProps> = ({ article, variant = 'compact' }) => 
 
         {variant !== 'minimal' && (
           <p className={cn(
-            "text-[var(--text-secondary)] leading-relaxed mb-8 line-clamp-2 lg:line-clamp-3 font-medium",
+            "text-[var(--text-secondary)] leading-relaxed line-clamp-2 lg:line-clamp-3 font-medium",
             "light:text-[#374151]",
             variant === 'large' ? "text-xl max-w-3xl" : "text-sm"
           )}>
             {article.summary}
           </p>
         )}
-
-        <div className={cn(
-          "flex items-center justify-between mt-auto pt-6 border-t border-[var(--glass-border)]",
-          variant === 'minimal' && "hidden"
-        )}>
-          <div className="flex items-center gap-6">
-            <ShareButton 
-              articleId={article.id} 
-              title={article.title} 
-              shares={article.shares} 
-              variant="full"
-              className="bg-transparent border-none p-0 h-auto"
-            />
-          </div>
-          <div className="w-10 h-10 rounded-full bg-[var(--surface-hover)] border border-[var(--glass-border)] flex items-center justify-center group-hover:bg-primary group-hover:border-primary transition-all duration-300 light:bg-[#F9F8F6]">
-            <ArrowUpRight className="w-5 h-5 text-[var(--text-primary)] group-hover:text-white" />
-          </div>
-        </div>
       </div>
     </motion.div>
     </Link>

@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import DOMPurify from 'dompurify';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { 
-  ChevronLeft,
   Calendar
 } from 'lucide-react';
 import api from '../config/api';
@@ -18,7 +17,6 @@ import { MobileArticleView } from '../components/mobile/MobileArticleView';
 
 const ArticleView: React.FC = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
   const [article, setArticle] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -91,7 +89,7 @@ const ArticleView: React.FC = () => {
   if (!article) return <div className="min-h-screen bg-[var(--background-deep)] flex items-center justify-center text-red-500 font-bold uppercase tracking-widest italic">Node Link Terminated: Article Not Found</div>;
 
   if (isMobile) {
-    return <MobileArticleView article={article} onBack={() => navigate(-1)} />;
+    return <MobileArticleView article={article} />;
   }
 
   return (
@@ -99,13 +97,6 @@ const ArticleView: React.FC = () => {
       <MainNavbar />
       
       <main className="max-w-4xl mx-auto px-4 sm:px-8 pt-24 sm:pt-32 pb-12 sm:pb-20 font-manrope">
-        <button 
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-primary transition-colors mb-6 uppercase text-[10px] font-bold tracking-[0.2em]"
-        >
-          <ChevronLeft className="w-4 h-4" /> Back to Intelligence Feed
-        </button>
-
         <header className="mb-8 sm:mb-10">
           <div className="flex items-center gap-3 mb-3">
             <span className="px-3 py-1 bg-primary/10 border border-primary/20 rounded-full text-primary text-[9px] font-bold uppercase tracking-wider inline-flex items-center">

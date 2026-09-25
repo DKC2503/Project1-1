@@ -3,7 +3,6 @@ import DOMPurify from 'dompurify';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
-  ChevronLeft,
   X,
   Info,
   Mail,
@@ -26,10 +25,9 @@ const WorldPopulationModal = lazy(() => import('../WorldPopulationModal'));
 
 interface MobileArticleViewProps {
   article: any;
-  onBack: () => void;
 }
 
-export const MobileArticleView: React.FC<MobileArticleViewProps> = ({ article, onBack }) => {
+export const MobileArticleView: React.FC<MobileArticleViewProps> = ({ article }) => {
   const navigate = useNavigate();
   const { user, token, logout } = useAuthStore();
   const { addToast } = useToastStore();
@@ -116,13 +114,6 @@ export const MobileArticleView: React.FC<MobileArticleViewProps> = ({ article, o
       />
 
       <main className="max-w-4xl mx-auto px-4 py-4 font-manrope space-y-4">
-        <button 
-          onClick={onBack}
-          className="flex items-center gap-1.5 text-[var(--text-secondary)] hover:text-primary transition-colors uppercase text-[9px] font-bold tracking-[0.2em]"
-        >
-          <ChevronLeft className="w-4 h-4" /> Back to feed
-        </button>
-
         <header className="space-y-2.5">
           <div className="flex items-center gap-2">
             <span className="px-2.5 py-0.5 bg-primary/10 border border-primary/20 rounded-full text-primary text-[8px] sm:text-[9px] font-bold uppercase tracking-wider inline-flex items-center">

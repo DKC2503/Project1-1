@@ -77,7 +77,9 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
 
       setTimeout(() => {
         onClose();
-        if (['super_admin', 'admin', 'editor', 'reviewer'].includes(user.role)) {
+        if (user.role === 'MAINTENANCE') {
+          navigate('/maintenance');
+        } else if (['super_admin', 'admin', 'editor', 'reviewer'].includes(user.role)) {
           navigate('/admin');
         } else if (user.role === 'author') {
           navigate('/author');

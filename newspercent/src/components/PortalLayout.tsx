@@ -28,7 +28,9 @@ import {
   Check,
   CheckCheck,
   AlertTriangle,
-  FileText
+  FileText,
+  Activity,
+  Globe
 } from 'lucide-react';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useDialogStore } from '../hooks/useDialogStore';
@@ -148,7 +150,7 @@ const formatNotificationTime = (dateStr: string) => {
 };
 
 interface PortalLayoutProps {
-  role: 'ADMIN' | 'AUTHOR';
+  role: 'ADMIN' | 'AUTHOR' | 'MAINTENANCE';
 }
 
 const PortalLayout: React.FC<PortalLayoutProps> = ({ role }) => {
@@ -265,21 +267,37 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({ role }) => {
   if (role === 'AUTHOR' && !canAccessAuthor) return <Navigate to="/" replace />;
 
   const allAdminLinks = [
-    { name: 'Dashboard', href: '/admin', icon: LayoutDashboard, color: 'text-primary', roles: ['super_admin', 'admin'] },
-    { name: 'Editorial Queue', href: '/admin/pending', icon: FileSearch, color: 'text-orange-500', roles: ['super_admin', 'admin', 'editor', 'reviewer'] },
-    { name: 'Publishing Center', href: '/admin/studio', icon: Newspaper, color: 'text-red-500', roles: ['super_admin', 'admin', 'editor'] },
-    { name: 'Content Manager', href: '/admin/articles', icon: Database, color: 'text-blue-500', roles: ['super_admin', 'admin', 'editor'] },
-    { name: 'Flash News', href: '/admin/flash-news', icon: Zap, color: 'text-orange-500', roles: ['super_admin', 'admin'] },
-    { name: 'Analytics', href: '/admin/analytics', icon: LayoutDashboard, color: 'text-success', roles: ['super_admin', 'admin'] },
-    { name: 'Users & Roles', href: '/admin/users', icon: Users, color: 'text-purple-500', roles: ['super_admin', 'admin'] },
-    { name: 'Performance & Credits', href: `/${role?.toLowerCase() || 'author'}/merit`, icon: Award, color: 'text-orange-500', roles: ['super_admin', 'admin', 'editor', 'reviewer', 'author'] },
-    { name: 'Security Logs', href: '/admin/history', icon: Shield, color: 'text-cyan-500', roles: ['super_admin', 'admin'] },
-    { name: 'Credit Settings', href: '/admin/settings/credits', icon: Zap, color: 'text-yellow-500', roles: ['super_admin'] },
-    { name: 'System Settings', href: '/admin/settings/system', icon: Settings, color: 'text-primary', roles: ['super_admin'] },
-    { name: 'Storage Management', href: '/admin/settings/storage', icon: Database, color: 'text-green-500', roles: ['super_admin', 'admin'] },
-    { name: 'Database Settings', href: '/admin/settings/database', icon: Database, color: 'text-blue-500', roles: ['super_admin', 'admin'] },
-    { name: 'External API Manager', href: '/admin/settings/external-apis', icon: Settings, color: 'text-orange-500', roles: ['super_admin', 'admin'] },
-    { name: 'Recruitment', href: '/admin/settings/recruitment', icon: Briefcase, color: 'text-amber-500', roles: ['super_admin', 'admin'] },
+    { name: 'Dashboard', href: '/admin', icon: LayoutDashboard, color: 'text-primary', roles: ['super_admin', 'admin', 'MAINTENANCE'] },
+    { name: 'Editorial Queue', href: '/admin/pending', icon: FileSearch, color: 'text-orange-500', roles: ['super_admin', 'admin', 'editor', 'reviewer', 'MAINTENANCE'] },
+    { name: 'Publishing Center', href: '/admin/studio', icon: Newspaper, color: 'text-red-500', roles: ['super_admin', 'admin', 'editor', 'MAINTENANCE'] },
+    { name: 'Content Manager', href: '/admin/articles', icon: Database, color: 'text-blue-500', roles: ['super_admin', 'admin', 'editor', 'MAINTENANCE'] },
+    { name: 'Flash News', href: '/admin/flash-news', icon: Zap, color: 'text-orange-500', roles: ['super_admin', 'admin', 'MAINTENANCE'] },
+    { name: 'Analytics', href: '/admin/analytics', icon: LayoutDashboard, color: 'text-success', roles: ['super_admin', 'admin', 'MAINTENANCE'] },
+    { name: 'Users & Roles', href: '/admin/users', icon: Users, color: 'text-purple-500', roles: ['super_admin', 'admin', 'MAINTENANCE'] },
+    { name: 'Performance & Credits', href: `/${role?.toLowerCase() || 'author'}/merit`, icon: Award, color: 'text-orange-500', roles: ['super_admin', 'admin', 'editor', 'reviewer', 'author', 'MAINTENANCE'] },
+    { name: 'Security Logs', href: '/admin/history', icon: Shield, color: 'text-cyan-500', roles: ['super_admin', 'admin', 'MAINTENANCE'] },
+    { name: 'Credit Settings', href: '/admin/settings/credits', icon: Zap, color: 'text-yellow-500', roles: ['super_admin', 'MAINTENANCE'] },
+    { name: 'System Settings', href: '/maintenance/settings/system', icon: Settings, color: 'text-primary', roles: ['MAINTENANCE'] },
+    { name: 'Storage Management', href: '/maintenance/settings/storage', icon: Database, color: 'text-green-500', roles: ['MAINTENANCE'] },
+    { name: 'Database Settings', href: '/maintenance/settings/database', icon: Database, color: 'text-blue-500', roles: ['MAINTENANCE'] },
+    { name: 'External API Manager', href: '/maintenance/settings/external-apis', icon: Settings, color: 'text-orange-500', roles: ['MAINTENANCE'] },
+    { name: 'Recruitment', href: '/admin/settings/recruitment', icon: Briefcase, color: 'text-amber-500', roles: ['super_admin', 'admin', 'MAINTENANCE'] },
+  ];
+
+  const maintenanceLinks = [
+    { isHeader: true, name: 'CONTENT & ADMINISTRATION' },
+    ...allAdminLinks.filter(l => l.roles.includes('MAINTENANCE') && !l.href.startsWith('/maintenance')),
+    { isHeader: true, name: 'SYSTEM & INFRASTRUCTURE' },
+    ...allAdminLinks.filter(l => l.href.startsWith('/maintenance/settings')),
+    { isHeader: true, name: 'MAINTENANCE' },
+    { name: 'Maintenance Dashboard', href: '/maintenance', icon: LayoutDashboard, color: 'text-primary' },
+    { name: 'Website Health', href: '/maintenance', icon: Activity, color: 'text-success' },
+    { name: 'Backend Health', href: '/maintenance', icon: Activity, color: 'text-primary' },
+    { name: 'Database Health', href: '/maintenance', icon: Database, color: 'text-cyan-500' },
+    { name: 'API Usage', href: '/maintenance', icon: Globe, color: 'text-orange-500' },
+    { name: 'Cloudinary Usage', href: '/maintenance', icon: Sun, color: 'text-blue-500' },
+    { name: 'Traffic / Analytics', href: '/maintenance', icon: TrendingUp, color: 'text-purple-500' },
+    { name: 'Monthly Reports', href: '/maintenance', icon: FileText, color: 'text-red-500' },
   ];
 
   const authorLinks = [
@@ -288,9 +306,11 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({ role }) => {
     { name: 'New Article', href: '/author/new', icon: Newspaper, color: 'text-orange-500' },
   ];
 
-  const links = role === 'ADMIN' 
-    ? allAdminLinks.filter(l => l.roles.includes(storedRole)) 
-    : authorLinks;
+  const links = role === 'MAINTENANCE' 
+    ? maintenanceLinks 
+    : role === 'ADMIN' 
+      ? allAdminLinks.filter(l => l.roles.includes(storedRole || '')) 
+      : authorLinks;
 
   const handleLogout = async () => {
     const confirmed = await dialog.confirm('Are you sure you want to sign out?', 'Sign Out', 'Sign Out', 'Cancel');
@@ -342,13 +362,20 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({ role }) => {
             </div>
             <span className="text-[8px] text-primary font-bold uppercase tracking-widest mt-1 flex items-center gap-1.5">
               <ShieldCheck className="w-2.5 h-2.5" />
-              {storedRole?.includes('admin') || ['editor', 'reviewer'].includes(storedRole || '') ? 'ADMINISTRATION' : 'AUTHOR CENTER'}
+              {role === 'MAINTENANCE' ? 'MAINTENANCE TEAM' : storedRole?.includes('admin') || ['editor', 'reviewer'].includes(storedRole || '') ? 'ADMINISTRATION' : 'AUTHOR CENTER'}
             </span>
           </div>
         </div>
 
         <nav className="flex-1 space-y-3 overflow-y-auto pr-2 custom-scrollbar">
-          {links.map((link) => {
+          {links.map((link: any, index: number) => {
+            if (link.isHeader) {
+              return (
+                <div key={`header-${index}`} className="pt-4 pb-1 px-2 text-[8px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)] opacity-70">
+                  {link.name}
+                </div>
+              );
+            }
             const Icon = link.icon;
             const isActive = location.pathname === link.href;
             return (
@@ -438,13 +465,20 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({ role }) => {
                   </div>
                   <span className="text-[8px] text-primary font-bold uppercase tracking-widest mt-1 flex items-center gap-1.5">
                     <ShieldCheck className="w-2.5 h-2.5" />
-                    {storedRole?.includes('admin') || ['editor', 'reviewer'].includes(storedRole || '') ? 'ADMINISTRATION' : 'AUTHOR CENTER'}
+                    {role === 'MAINTENANCE' ? 'MAINTENANCE TEAM' : storedRole?.includes('admin') || ['editor', 'reviewer'].includes(storedRole || '') ? 'ADMINISTRATION' : 'AUTHOR CENTER'}
                   </span>
                 </div>
               </div>
 
               <nav className="flex-1 space-y-3 overflow-y-auto pr-2 custom-scrollbar">
-                {links.map((link) => {
+                {links.map((link: any, index: number) => {
+                  if (link.isHeader) {
+                    return (
+                      <div key={`header-mobile-${index}`} className="pt-4 pb-1 px-2 text-[8px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)] opacity-70">
+                        {link.name}
+                      </div>
+                    );
+                  }
                   const Icon = link.icon;
                   const isActive = location.pathname === link.href;
                   return (

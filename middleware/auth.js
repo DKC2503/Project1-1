@@ -49,7 +49,7 @@ const authMiddleware = {
     },
 
     requireAdmin: (req, res, next) => {
-        if (!['admin', 'super_admin'].includes(req.user.role)) {
+        if (!['admin', 'super_admin', 'MAINTENANCE'].includes(req.user.role)) {
             console.log(`[AUTH] Admin clearance denied for: ${req.user.role}`);
             return res.status(403).json({ error: 'Admin clearance required.' });
         }
@@ -57,7 +57,7 @@ const authMiddleware = {
     },
 
     requireSuperAdmin: (req, res, next) => {
-        if (req.user.role !== 'super_admin') {
+        if (!['super_admin', 'MAINTENANCE'].includes(req.user.role)) {
             console.log(`[AUTH] Super Admin clearance denied for: ${req.user.role}`);
             return res.status(403).json({ error: 'Super Admin clearance required.' });
         }
@@ -65,7 +65,7 @@ const authMiddleware = {
     },
 
     requireEditor: (req, res, next) => {
-        if (!['editor', 'admin', 'super_admin'].includes(req.user.role)) {
+        if (!['editor', 'admin', 'super_admin', 'MAINTENANCE'].includes(req.user.role)) {
             console.log(`[AUTH] Editor clearance denied for: ${req.user.role}`);
             return res.status(403).json({ error: 'Editor clearance required.' });
         }
@@ -73,9 +73,17 @@ const authMiddleware = {
     },
 
     requireReviewer: (req, res, next) => {
-        if (!['reviewer', 'admin', 'super_admin'].includes(req.user.role)) {
+        if (!['reviewer', 'admin', 'super_admin', 'MAINTENANCE'].includes(req.user.role)) {
             console.log(`[AUTH] Reviewer clearance denied for: ${req.user.role}`);
             return res.status(403).json({ error: 'Reviewer clearance required.' });
+        }
+        next();
+    },
+
+    requireMaintenance: (req, res, next) => {
+        if (req.user.role !== 'MAINTENANCE') {
+            console.log(`[AUTH] Maintenance clearance denied for: ${req.user.role}`);
+            return res.status(403).json({ error: 'Maintenance clearance required.' });
         }
         next();
     }

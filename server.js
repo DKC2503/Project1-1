@@ -190,7 +190,7 @@ const uploadProfileImage = require('./services/uploadProfileImage');
 const uploadArticleImage = require('./services/uploadArticleImage');
 
 const authUtils = require('./utils/auth');
-const { verifyToken, requireAdmin, requireSuperAdmin, requireEditor, requireReviewer } = require('./middleware/auth');
+const { verifyToken, requireAdmin, requireSuperAdmin, requireEditor, requireReviewer, requireMaintenance } = require('./middleware/auth');
 
 // Helper for generating Admin Notifications
 const createAdminNotification = async (title, message) => {
@@ -1896,7 +1896,7 @@ app.put('/api/admin/settings/credits', verifyToken, requireAdmin, async (req, re
     }
 });
 
-app.get('/api/admin/settings', verifyToken, requireAdmin, async (req, res) => {
+app.get('/api/admin/settings', verifyToken, requireMaintenance, async (req, res) => {
     try {
         const settings = await settingsService.getSettings();
         res.json(settings);
@@ -1905,7 +1905,7 @@ app.get('/api/admin/settings', verifyToken, requireAdmin, async (req, res) => {
     }
 });
 
-app.patch('/api/admin/settings', verifyToken, requireSuperAdmin, async (req, res) => {
+app.patch('/api/admin/settings', verifyToken, requireMaintenance, async (req, res) => {
     try {
         const settings = await settingsService.updateSettings(req.body, req.user._id);
         
@@ -1926,7 +1926,7 @@ app.patch('/api/admin/settings', verifyToken, requireSuperAdmin, async (req, res
 const ExternalApiConfig = require('./models/ExternalApiConfig');
 
 // Get active external API configurations and lists
-app.get('/api/admin/external-apis', verifyToken, requireAdmin, async (req, res) => {
+app.get('/api/admin/external-apis', verifyToken, requireMaintenance, async (req, res) => {
     try {
         const weatherConfig = await ExternalApiConfig.findOne({ serviceName: 'Weather API', status: 'ACTIVE' }).sort({ startDate: -1 });
         const stockConfig = await ExternalApiConfig.findOne({ serviceName: 'Stock Market API', status: 'ACTIVE' }).sort({ startDate: -1 });
@@ -2019,7 +2019,7 @@ app.get('/api/admin/external-apis', verifyToken, requireAdmin, async (req, res) 
 });
 
 // Test proposed API Key connection
-app.post('/api/admin/external-apis/verify', verifyToken, requireAdmin, async (req, res) => {
+app.post('/api/admin/external-apis/verify', verifyToken, requireMaintenance, async (req, res) => {
     try {
         const { serviceName, provider, apiKey } = req.body;
         if (!serviceName || !provider) {
@@ -2318,7 +2318,7 @@ app.post('/api/admin/external-apis/verify', verifyToken, requireAdmin, async (re
 });
 
 // Rotate API Key / Activate new credentials
-app.post('/api/admin/external-apis/rotate', verifyToken, requireAdmin, async (req, res) => {
+app.post('/api/admin/external-apis/rotate', verifyToken, requireMaintenance, async (req, res) => {
     try {
         const { serviceName, provider, apiKey, reason } = req.body;
         if (!serviceName || !provider) {
@@ -2428,7 +2428,7 @@ app.post('/api/admin/external-apis/rotate', verifyToken, requireAdmin, async (re
 });
 
 // Toggle API enabled/disabled status
-app.patch('/api/admin/external-apis/toggle', verifyToken, requireAdmin, async (req, res) => {
+app.patch('/api/admin/external-apis/toggle', verifyToken, requireMaintenance, async (req, res) => {
     try {
         const { serviceName, enabled } = req.body;
         if (!serviceName || enabled === undefined) {
@@ -2476,7 +2476,7 @@ app.patch('/api/admin/external-apis/toggle', verifyToken, requireAdmin, async (r
 });
 
 // Get health/status of APIs
-app.get('/api/admin/external-apis/health', verifyToken, requireAdmin, async (req, res) => {
+app.get('/api/admin/external-apis/health', verifyToken, requireMaintenance, async (req, res) => {
     try {
         const weatherConfig = await ExternalApiConfig.findOne({ serviceName: 'Weather API', status: 'ACTIVE' });
         const stockConfig = await ExternalApiConfig.findOne({ serviceName: 'Stock Market API', status: 'ACTIVE' });
@@ -2808,7 +2808,7 @@ app.delete('/api/admin/flash/:id', verifyToken, requireAdmin, async (req, res) =
 
 // --- STORAGE CONFIGURATION ENDPOINTS ---
 
-app.get('/api/admin/storage/config', verifyToken, requireAdmin, async (req, res) => {
+app.get('/api/admin/storage/config', verifyToken, requireMaintenance, async (req, res) => {
     try {
         const articleConfig = await StorageConfig.findOne({ purpose: { $in: ['Article Content Images', 'article'] }, status: 'ACTIVE' }).sort({ startDate: -1 });
         const profileConfig = await StorageConfig.findOne({ purpose: { $in: ['Profile Images', 'profile'] }, status: 'ACTIVE' }).sort({ startDate: -1 });
@@ -2866,7 +2866,7 @@ app.get('/api/admin/storage/config', verifyToken, requireAdmin, async (req, res)
     }
 });
 
-app.post('/api/admin/storage/verify', verifyToken, requireAdmin, async (req, res) => {
+app.post('/api/admin/storage/verify', verifyToken, requireMaintenance, async (req, res) => {
     try {
         const { cloudName, apiKey, apiSecret, folderPrefix, purpose } = req.body;
         if (!cloudName || !apiKey || !apiSecret || !purpose) {
@@ -2905,7 +2905,7 @@ app.post('/api/admin/storage/verify', verifyToken, requireAdmin, async (req, res
     }
 });
 
-app.post('/api/admin/storage/config', verifyToken, requireAdmin, async (req, res) => {
+app.post('/api/admin/storage/config', verifyToken, requireMaintenance, async (req, res) => {
     try {
         const { cloudName, apiKey, apiSecret, folderPrefix, purpose, reason } = req.body;
         if (!cloudName || !apiKey || !apiSecret || !purpose) {
@@ -2991,7 +2991,7 @@ app.post('/api/admin/storage/config', verifyToken, requireAdmin, async (req, res
 
 // --- MONGODB CONNECTION API ---
 
-app.get('/api/admin/database/status', verifyToken, requireAdmin, async (req, res) => {
+app.get('/api/admin/database/status', verifyToken, requireMaintenance, async (req, res) => {
     try {
         const { getRegisteredClustersList } = require('./config/database');
         const clusters = await getRegisteredClustersList();
@@ -3008,7 +3008,7 @@ app.get('/api/admin/database/status', verifyToken, requireAdmin, async (req, res
     }
 });
 
-app.post('/api/admin/database/test', verifyToken, requireAdmin, async (req, res) => {
+app.post('/api/admin/database/test', verifyToken, requireMaintenance, async (req, res) => {
     const { uri } = req.body;
     try {
         const { testClusterConnection } = require('./config/database');
@@ -3019,7 +3019,7 @@ app.post('/api/admin/database/test', verifyToken, requireAdmin, async (req, res)
     }
 });
 
-app.post('/api/admin/database/register', verifyToken, requireAdmin, async (req, res) => {
+app.post('/api/admin/database/register', verifyToken, requireMaintenance, async (req, res) => {
     const { uri, notes } = req.body;
     try {
         const { registerNewCluster } = require('./config/database');
@@ -3030,7 +3030,7 @@ app.post('/api/admin/database/register', verifyToken, requireAdmin, async (req, 
     }
 });
 
-app.post('/api/admin/database/activate', verifyToken, requireAdmin, async (req, res) => {
+app.post('/api/admin/database/activate', verifyToken, requireMaintenance, async (req, res) => {
     const { clusterId } = req.body;
     try {
         const { makeClusterActive } = require('./config/database');
@@ -3041,7 +3041,7 @@ app.post('/api/admin/database/activate', verifyToken, requireAdmin, async (req, 
     }
 });
 
-app.post('/api/admin/database/remove', verifyToken, requireAdmin, async (req, res) => {
+app.post('/api/admin/database/remove', verifyToken, requireMaintenance, async (req, res) => {
     const { clusterId } = req.body;
     try {
         const { removeCluster } = require('./config/database');
@@ -3454,3 +3454,4 @@ const startServer = async () => {
 };
 
 startServer();
+
